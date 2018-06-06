@@ -1,0 +1,3 @@
+include setup.json
+include requirements.txt
+recursive-include jupyter-config *.json

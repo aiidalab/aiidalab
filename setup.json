@@ -1,0 +1,13 @@
+{
+    "name": "aiidalab",
+    "author": "The AiiDA team",
+    "author_email": "aiidalab@materialscloud.org",
+    "classifiers": [
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 2"
+    ],
+    "description": "Meta package for the AiiDA Lab python environment.",
+    "license": "MIT License",
+    "url": "https://aiidalab.materialscloud.org",
+    "version": "18.06.0rc1"
+}
