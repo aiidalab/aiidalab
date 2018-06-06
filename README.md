@@ -11,6 +11,12 @@ Amongst others, this includes
 
 Note: The relevant jupyter notebook extensions are enabled automatically.
 
+## Installation
+
+```
+git clone https://github.com/materialscloud-org/aiidalab-metapkg
+pip install --process-dependency-links -e aiidalab-metapkg/
+```
 
 ## License
 

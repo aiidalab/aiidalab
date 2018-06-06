@@ -25,6 +25,9 @@ if __name__ == '__main__':
             ])
         ],
         install_requires=requirements,
+        # for packages not yet published on pypi
+        dependency_links=[
+            'git+https://github.com/materialscloud-org/mc-aiida-widgets.git@0.1-alpha#egg=aiida-widgets-0.1-alpha'],
         zip_safe=False,
         **kwargs
     )
