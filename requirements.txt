@@ -8,6 +8,12 @@ aiida-raspa==0.2.1
 aiida-zeopp==0.1.1
 aiida-quantumespresso==2.0.1
 aiida-vasp==0.2.2
+aiida-widgets==0.1.0a0
+aiida-gudhi==0.1.0a0
+aiida-phtools==0.1.0a0
+aiida-yambo==0.2.5
+aiida-fleur==0.6.0gh
+aiida_siesta==0.11.5
 aldjemy==0.6.0
 alembic==0.9.6
 amqp==1.4.9
@@ -123,6 +129,3 @@ voluptuous==0.8.11
 wcwidth==0.1.7
 webencodings==0.5.1
 Werkzeug==0.14.1
-aiida-widgets==0.1.0a0
-aiida-gudhi==0.1.0a0
-aiida-phtools==0.1.0a0

@@ -14,9 +14,18 @@ Note: The relevant jupyter notebook extensions are enabled automatically.
 ## Installation
 
 ```
-git clone https://github.com/materialscloud-org/aiidalab-metapkg
-pip install --process-dependency-links -e aiidalab-metapkg/
+# install latest version from github
+pip install --process-dependency-links git+https://github.com/materialscloud-org/aiidalab-metapkg
+# note: pip can *enable* nbextensions, but not install them
+jupyter nbextension install --sys-prefix --py fileupload        
+
+# alternative: install specific tag
+# pip install --process-dependency-links git+https://github.com/materialscloud-org/aiidalab-metapkg@v18.06.0rc1
 ```
+
+## Testing
+
+Note: `pip install -e .` does *not* process the `data_files` and thus does not enable the jupyter extensions.
 
 ## License
 
