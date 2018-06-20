@@ -9,5 +9,5 @@
     "description": "Meta package for the AiiDA Lab python environment.",
     "license": "MIT License",
     "url": "https://aiidalab.materialscloud.org",
-    "version": "18.06.0rc1"
+    "version": "18.06.0rc4"
 }
