@@ -4,7 +4,7 @@ aiida-codtools==1.0.1
 aiida-core[rest,atomic_tools]==0.12.1
 aiida-cp2k==0.9
 aiida-nwchem==1.0.2
-aiida-raspa==0.2.1
+aiida-raspa==0.2.2
 aiida-zeopp==0.1.1
 aiida-quantumespresso==2.0.1
 aiida-vasp==0.2.2
