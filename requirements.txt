@@ -12,7 +12,7 @@ aiida-widgets==0.1.0a0
 aiida-gudhi==0.1.0a0
 aiida-phtools==0.1.0a0
 aiida-yambo==0.2.5
-aiida-fleur==0.6.0
+aiida-fleur==0.6.0gh
 aiida_siesta==0.11.5
 aiida-wannier90==1.0.0
 aldjemy==0.6.0
