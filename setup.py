@@ -14,6 +14,8 @@ if __name__ == '__main__':
         packages=find_packages(),
         include_package_data=True,
         reentry_register=True,
+        long_description=open('README.md').read(),
+        long_description_content_type='text/markdown',
         data_files=[
             # like `jupyter nbextension enable --sys-prefix`
             ("etc/jupyter/nbconfig/notebook.d", [
