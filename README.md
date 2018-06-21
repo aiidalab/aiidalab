@@ -15,7 +15,7 @@ Note: The relevant jupyter notebook extensions are enabled automatically.
 
 ```
 # install latest version from pypi
-pip install --process-dependency-links aiidalab
+pip install aiidalab
 # note: pip can *enable* nbextensions, but not install them
 jupyter nbextension install --sys-prefix --py fileupload        
 ```

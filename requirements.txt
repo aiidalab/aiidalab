@@ -9,10 +9,10 @@ aiida-zeopp==0.1.1
 aiida-quantumespresso==2.0.1
 aiida-vasp==0.2.2
 aiida-widgets==0.1.0a0
-aiida-gudhi==0.1.0a0
-aiida-phtools==0.1.0a0
+aiida-gudhi==0.1.0a3
+aiida-phtools==0.1.0a1
 aiida-yambo==0.2.5
-aiida-fleur==0.6.0gh
+#aiida-fleur==0.6.0
 aiida_siesta==0.11.5
 aiida-wannier90==1.0.0
 aldjemy==0.6.0
@@ -84,6 +84,7 @@ passlib==1.7.1
 pathlib2==2.3.0
 pexpect==4.6.0
 pickleshare==0.7.4
+pip==10.0.1
 plumpy==0.7.12
 portalocker==1.1.0
 prompt-toolkit==1.0.15

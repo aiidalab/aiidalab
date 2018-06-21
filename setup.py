@@ -27,11 +27,10 @@ if __name__ == '__main__':
             ])
         ],
         install_requires=requirements,
-        # for packages not yet published on pypi
+        # For packages not yet published on pypi
+        # Note: this only works when installing aiidalab from github
         dependency_links=[
-            'git+https://github.com/ltalirz/aiida-gudhi.git@v0.1.0a#egg=aiida-gudhi-0.1.0a0',
-            'git+https://github.com/ltalirz/aiida-phtools.git@v0.1.0a0#egg=aiida-phtools-0.1.0a0',
-            'git+https://github.com/broeder-j/aiida-fleur@0.6.0#egg=aiida-fleur-0.6.0gh'
+            'git+https://github.com/broeder-j/aiida-fleur@0.6.0#egg=aiida-fleur-0.6.0'
         ],
         zip_safe=False,
         **kwargs
