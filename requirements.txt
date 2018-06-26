@@ -105,7 +105,7 @@ pythreejs==0.4.1
 pytz==2017.3
 PyYAML==3.12
 reentry==1.2.1a2
-requests==2.18.4
+requests==2.19.1
 scandir==1.7
 scipy==1.0.0
 seekpath==1.8.0
