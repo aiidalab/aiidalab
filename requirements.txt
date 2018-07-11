@@ -104,7 +104,7 @@ python-mimeparse==0.1.4
 pythreejs==0.4.1
 pytz==2017.3
 PyYAML==3.12
-reentry==1.2.1a2
+reentry==1.2.1
 requests==2.19.1
 scandir==1.7
 scipy==1.0.0
