@@ -36,7 +36,7 @@ click==6.7
 click-plugins
 click-spinner
 configparser==3.5.0
-cryptography==2.2.2
+cryptography==2.3
 cycler==0.10.0
 decorator==4.3.0
 Django==1.7.11
@@ -46,7 +46,7 @@ entrypoints==0.2.3
 enum34==1.1.6
 ete3==3.0.0b35
 fileupload==0.1.5
-Flask==0.12.2
+Flask==0.12.3
 frozendict==1.2
 functools32==3.2.3.post2
 future==0.16.0
@@ -79,7 +79,7 @@ notebook==5.5.0
 numpy==1.14.3
 pandas==0.22.0
 pandocfilters==1.4.2
-paramiko==2.4.0
+paramiko==2.4.1
 passlib==1.7.1
 pathlib2==2.3.0
 pexpect==4.6.0
@@ -90,7 +90,6 @@ portalocker==1.1.0
 prompt-toolkit==1.0.15
 psutil==5.4.0
 psycopg2-binary==2.7.4
-ptyprocess==0.5.2
 pyasn1==0.4.3
 pycifrw==4.4
 pycparser==2.18
