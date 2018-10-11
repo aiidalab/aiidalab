@@ -3,7 +3,7 @@
     "author": "The AiiDA team",
     "author_email": "aiidalab@materialscloud.org",
     "description": "Meta package for the AiiDA Lab python environment.",
-    "url": "https://github.com/materialscloud-org/aiidalab-metapkg",
+    "url": "https://github.com/aiidalab/aiidalab-metapkg",
     "license": "MIT License",
     "version": "18.09.0",
     "classifiers": [
