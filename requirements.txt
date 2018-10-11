@@ -8,7 +8,7 @@ aiida-raspa==0.2.2
 aiida-zeopp==0.1.1
 aiida-quantumespresso==2.0.1
 aiida-vasp==0.2.2
-aiida-widgets==0.1.0a0
+aiidalab-widgets-base==0.2.0a2
 aiida-gudhi==0.1.0a3
 aiida-phtools==0.1.0a1
 aiida-yambo==0.2.5
