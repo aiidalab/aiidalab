@@ -12,8 +12,8 @@ aiidalab-widgets-base==0.2.0a2
 aiida-gudhi==0.1.0a3
 aiida-phtools==0.1.0a1
 aiida-yambo==0.2.5
-#aiida-fleur==0.6.0
-aiida_siesta==0.11.5
+aiida-fleur==0.6.2
+aiida-siesta==0.9.10
 aiida-wannier90==1.0.0
 aldjemy==0.6.0
 alembic==0.9.6
@@ -93,7 +93,6 @@ psycopg2-binary==2.7.4
 pyasn1==0.4.3
 pycifrw==4.4
 pycparser==2.18
-pycrypto==2.6.1
 Pygments==2.2.0
 pymysql==0.8.0
 pyparsing==2.2.0

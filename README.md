@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/aiidalab/aiidalab-metapkg.svg?branch=master)](https://travis-ci.org/aiidalab/aiidalab-metapkg)
+
 # aiidalab-metapkg
 
 The `aiidalab` metapackage sets up the python environment found on the 
@@ -26,7 +28,7 @@ jupyter nbextension install --sys-prefix --py fileupload
 
 ```
 # install latest version from github
-pip install --process-dependency-links git+https://github.com/aiidalab/aiidalab-metapkg
+pip install git+https://github.com/aiidalab/aiidalab-metapkg
 jupyter nbextension install --sys-prefix --py fileupload        
 ```
 
