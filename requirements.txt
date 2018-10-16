@@ -1,4 +1,4 @@
-aiida==0.12.1
+aiida==0.12.2
 aiida-ase==1.0.1
 aiida-codtools==1.0.1
 aiida-core[rest,atomic_tools]==0.12.1
