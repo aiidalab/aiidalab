@@ -77,7 +77,7 @@ nbformat==4.4.0
 nglview==1.0
 notebook==5.5.0
 numpy==1.14.3
-pandas==0.22.0
+pandas==0.23.4
 pandocfilters==1.4.2
 paramiko==2.4.2
 passlib==1.7.1
@@ -102,7 +102,7 @@ python-mimeparse==0.1.4
 pythreejs==0.4.1
 pytz==2017.3
 PyYAML==3.12
-reentry==1.2.1
+reentry==1.2.2
 requests==2.20.0
 scandir==1.7
 scipy==1.0.0
