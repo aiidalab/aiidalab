@@ -1,7 +1,7 @@
 aiida==0.12.2
 aiida-ase==1.0.1
 aiida-codtools==1.0.1
-aiida-core[rest,atomic_tools]==0.12.1
+aiida-core[rest,atomic_tools]==0.12.2
 aiida-cp2k==0.9
 aiida-nwchem==1.0.2
 aiida-raspa==0.2.2
@@ -41,6 +41,7 @@ cycler==0.10.0
 decorator==4.3.0
 Django==1.7.11
 django-extensions==1.5.0
+dulwich==0.19.7
 ecdsa==0.13
 entrypoints==0.2.3
 enum34==1.1.6
