@@ -18,11 +18,11 @@ Note: The relevant jupyter notebook extensions are enabled automatically.
 ```
 # install latest version from pypi
 pip install aiidalab
-# note: pip can *enable* nbextensions [1], but not install them
+# note: pip can *enable* nbextensions [1,2], but not install them
 jupyter nbextension install --sys-prefix --py fileupload        
 ```
-[1] See the [jupyter-notebook documentation](http://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Distributing%20Jupyter%20Extensions%20as%20Python%20Packages.html#Automatically-enabling-a-server-extension-and-nbextension)
-[1] http://jupyter-contrib-nbextensions.readthedocs.io/en/latest/install.html
+[1] See the [jupyter-notebook documentation](http://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Distributing%20Jupyter%20Extensions%20as%20Python%20Packages.html#Automatically-enabling-a-server-extension-and-nbextension)  
+[2] http://jupyter-contrib-nbextensions.readthedocs.io/en/latest/install.html
 
 ## Testing
 
