@@ -13,7 +13,6 @@ aiida-vasp==0.2.4
 aiida-wannier90==1.0.0
 aiida-yambo==0.2.5
 aiida-zeopp==0.2.0
-aiida==0.12.2
 aiidalab-widgets-base==0.2.0a2
 appmode-aiidalab==0.4.0.1
 backports-abc==0.5
