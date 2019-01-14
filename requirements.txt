@@ -7,7 +7,7 @@ aiida-gudhi==0.1.0a3
 aiida-nwchem==1.0.2
 aiida-phtools==0.1.0a1
 aiida-quantumespresso==2.1.0
-aiida-raspa==0.3.0
+aiida-raspa==0.3.1
 aiida-siesta==0.9.10
 aiida-vasp==0.2.4
 aiida-wannier90==1.0.0
