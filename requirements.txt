@@ -43,6 +43,7 @@ notebook==5.7.8
 requests-cache==0.4.13
 pandocfilters==1.4.2
 pip<=18.1
+pymatgen==2018.12.12
 pythreejs==2.0.2
 testpath==0.4.2
 tornado<5
