@@ -58,7 +58,7 @@ docutils==0.14
 dulwich==0.19.11
 ecdsa==0.13
 entrypoints==0.3
-enum34==1.1.6 ; python_version < '3'
+enum34==1.1.6 ; python_version < '3.4'
 ete3==3.1.1
 fileupload==0.1.5
 flask-cache==0.13.1
@@ -116,7 +116,7 @@ pandocfilters==1.4.2
 paramiko==2.4.2
 parsevasp==0.2.22
 passlib==1.7.1
-pathlib2==2.3.0 ; python_version < '3.6'
+pathlib2==2.3.0 ; python_version == '2.7' or python_version == '3.3'
 pattern==2.6
 pbr==5.1.3
 pexpect==4.7.0 ; sys_platform != 'win32'
@@ -153,6 +153,7 @@ pyyaml==3.12
 pyzmq==18.0.1
 qe-tools==1.1.0
 reentry==1.2.2
+requests-cache==0.4.13
 requests==2.21.0
 ruamel.ordereddict==0.4.13 ; platform_python_implementation == 'CPython' and python_version <= '2.7'
 ruamel.yaml==0.15.91
