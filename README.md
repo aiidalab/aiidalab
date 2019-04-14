@@ -34,12 +34,13 @@ jupyter nbextension install --sys-prefix --py fileupload
 
 Note: `pip install -e .` does *not* process the `data_files` and thus does not enable the jupyter extensions.
 
-## Preparing a release
+## Updating requirements
 
+Start by adjusting the [`Pipfile`](Pipfile) according to the latest releases.
+Then do:
 ```
 pip install pipenv
-pipenv lock --pre  # creates/updates Pipfile.lock
-pipenv install --pre
+pipenv lock --requirements > requirements.txt
 ```
 
 ## License
