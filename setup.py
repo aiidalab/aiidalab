@@ -10,6 +10,10 @@ if __name__ == '__main__':
     with open('requirements.txt', 'r') as rfile:
         requirements = rfile.read().splitlines()
 
+    # -i https://pypi.org/simple not supported in install_requires
+    if requirements[0].startswith('-i'):
+        requirements.pop(0)
+
     setup(
         packages=find_packages(),
         include_package_data=True,
