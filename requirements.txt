@@ -1,5 +1,9 @@
 aiida-core==1.0.0b2
--e git+https://github.com/aiidateam/aiida-quantumespresso@e5e1a4b47e7d19c59af8174157d7eb65a3b9292d#egg=aiida_quantumespressso
+aiida-cp2k==1.0.0b1
+aiida-diff==1.0.0a1
+aiida-qeq==1.0.0a1
+-e git+https://github.com/aiidateam/aiida-quantumespresso@e5e1a4b47e7d19c59af8174157d7eb65a3b9292d#egg=aiida_quantumespresso
+aiida-zeopp==1.0.0a2
 aldjemy==0.9.1
 alembic==1.0.7
 aniso8601==6.0.0
@@ -166,6 +170,7 @@ tzlocal==1.5.1
 ujson==1.35
 uritools==2.2.0
 urllib3==1.24.2
+voluptuous==0.11.5
 wcwidth==0.1.7
 webencodings==0.5.1
 Werkzeug==0.15.2
