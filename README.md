@@ -43,6 +43,9 @@ pip install pipenv
 pipenv lock --requirements > requirements.txt
 ```
 
+Note: We try to keep the number of explicit dependencies in the `Pipfile` to a minimum.
+Consider using [pipdeptree](https://pypi.org/project/pipdeptree/) to figure out the dependency tree and which dependencies are actually needed.
+
 ## License
 
 MIT
