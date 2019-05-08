@@ -15,8 +15,6 @@ ase==3.17.0
 asn1crypto==0.24.0
 attrs==19.1.0
 backports-abc==0.5
-backports.functools-lru-cache==1.5
-backports.shutil-get-terminal-size==1.0.0
 backports.tempfile==1.0
 backports.weakref==1.0.post1
 bcrypt==3.1.6
@@ -26,14 +24,12 @@ bokeh==1.1.0
 bqplot==0.11.5
 certifi==2019.3.9
 cffi==1.12.3
-chainmap==1.0.3
 chardet==3.0.4
 circus==0.15.0
 Click==7.0
 click-completion==0.5.0
 click-plugins==1.0.4
 click-spinner==0.1.8
-configparser==3.7.4
 cookiecutter==1.6.0
 cryptography==2.6.1
 cycler==0.10.0
@@ -44,7 +40,6 @@ dulwich==0.19.11
 ecdsa==0.13
 elementpath==1.1.6
 entrypoints==0.3
-enum34==1.1.6
 ete3==3.1.1
 fileupload==0.1.5
 Flask==1.0.2
@@ -55,14 +50,10 @@ flask-marshmallow==0.9.0
 Flask-RESTful==0.3.7
 Flask-SQLAlchemy==2.3.2
 frozendict==1.2
-funcsigs==1.0.2
-functools32==3.2.3.post2
 furl==2.0.0
 future==0.17.1
-futures==3.2.0
 html5lib==1.0.1
 idna==2.8
-ipaddress==1.0.22
 ipydatawidgets==4.0.0
 ipykernel==4.10.0
 ipympl==0.2.1
@@ -102,7 +93,6 @@ pandas==0.24.2
 pandocfilters==1.4.2
 paramiko==2.4.2
 passlib==1.7.1
-pathlib2==2.3.3
 pbr==5.1.3
 pexpect==4.7.0
 pickleshare==0.7.5
@@ -138,9 +128,7 @@ qe-tools==1.1.2
 reentry==1.2.2
 requests==2.21.0
 requests-cache==0.5.0
-ruamel.ordereddict==0.4.13
 ruamel.yaml==0.15.94
-scandir==1.10.0
 scipy==1.2.1
 seekpath==1.8.4
 Send2Trash==1.5.0
@@ -148,7 +136,6 @@ shellingham==1.3.1
 shortuuid==0.5.0
 simplegeneric==0.8.1
 simplejson==3.16.0
-singledispatch==3.4.0.3
 six==1.12.0
 spglib==1.12.2.post0
 SQLAlchemy==1.2.18
@@ -165,7 +152,6 @@ topika==0.2.0
 tornado==4.5.3
 traitlets==4.3.2
 traittypes==0.2.1
-typing==3.6.6
 tzlocal==1.5.1
 ujson==1.35
 uritools==2.2.0
