@@ -15,7 +15,7 @@ aiida-wannier90==1.0.0
 aiida-yambo==0.2.5
 aiida-zeopp==0.2.0
 aiida==0.12.3
-aiidalab-widgets-base==0.3.0b1
+aiidalab-widgets-base==0.4.0b2
 alabaster==0.7.12
 aldjemy==0.8.0
 alembic==0.9.9
