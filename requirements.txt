@@ -1,8 +1,8 @@
-aiida-core==1.0.0b2
+aiida-core==1.0.0b3
 aiida-cp2k==1.0.0b1
-aiida-diff==1.0.0a1
+aiida-diff==1.0.0b1
 aiida-qeq==1.0.0a1
-#-e git+https://github.com/aiidateam/aiida-quantumespresso@e5e1a4b47e7d19c59af8174157d7eb65a3b9292d#egg=aiida_quantumespresso
+#-e git+https://github.com/aiidateam/aiida-quantumespresso@v3.0.0a3#egg=aiida_quantumespresso
 aiida-zeopp==1.0.0a2
 aldjemy==0.9.1
 alembic==1.0.7
