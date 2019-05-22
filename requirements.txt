@@ -4,7 +4,7 @@ aiida-diff==1.0.0a1
 aiida-quantumespresso==3.0.0a3
 aiida-qeq==1.0.0a1
 aiida-zeopp==1.0.0a2
-aiidalab-widgets-base==1.0.0a1
+aiidalab-widgets-base==1.0.0a2
 aldjemy==0.9.1
 alembic==1.0.7
 aniso8601==6.0.0
