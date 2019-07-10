@@ -6,7 +6,9 @@ verify_ssl = true
 [dev-packages]
 aiida-core = {extras = ['rest', 'atomic_tools', 'jupyter'],version = "~=1.0.0b4"}
 aiida-cp2k = "~=1.0.0a2"
+aiida-qeq = "~=1.0.0a1"
 aiida-quantumespresso = "~=3.0.0a3"
+aiida-zeopp = "~=1.0.0b1"
 
 [packages]
 #aiida-ase = "~=1.0.1"
@@ -20,7 +22,6 @@ aiida-quantumespresso = "~=3.0.0a3"
 #aiida-vasp = "~=0.2.4"
 #aiida-wannier90 = "~=1.0.0"
 #aiida-yambo = "~=0.2.5"
-#aiida-zeopp = "~=0.2.0"
 aiidalab-widgets-base = "~=1.0.0a4"
 appmode-aiidalab = "~=0.5.0"
 bokeh = "~=1.0.4"
