@@ -1,5 +1,8 @@
 -i https://pypi.org/simple
-aiida-core[atomic_tools,jupyter,rest]==1.0.0b4
+aiidalab-widgets-base==1.0.0a4
+appmode-aiidalab==0.5.0.1
+arrow==0.14.2
+aiida-core[atomic_tools,rest]==1.0.0b4
 aiida-cp2k==1.0.0b2
 aiida-qeq==1.0.0a1
 aiida-quantumespresso==3.0.0a3
@@ -9,11 +12,16 @@ alembic==1.0.7
 aniso8601==7.0.0
 ase==3.17.0
 asn1crypto==0.24.0
+attrs==19.1.0
 backports.functools-lru-cache==1.5 ; python_version == '2.7'
 backports.shutil-get-terminal-size==1.0.0 ; python_version == '2.7'
 backports.tempfile==1.0 ; python_version < '3.2'
 backports.weakref==1.0.post1
 bcrypt==3.1.7
+binaryornot==0.4.4
+bleach==3.1.0
+bokeh==1.0.4
+bqplot==0.11.6
 certifi==2019.6.16
 cffi==1.12.3
 chardet==3.0.4
@@ -23,14 +31,19 @@ click-config-file==0.5.0
 click-spinner==0.1.8
 click==7.0
 configobj==5.0.6
+configparser==3.7.4 ; python_version == '2.7'
+cookiecutter==1.6.0
 cryptography==2.7
 cycler==0.10.0
 decorator==4.4.0
 defusedxml==0.6.0
 django==1.11.20
+dulwich==0.19.11
 elementpath==1.1.8
+entrypoints==0.3
 enum34==1.1.6 ; python_version == '2.7'
 ete3==3.1.1
+fileupload==0.1.5
 flask-cache==0.13.1
 flask-cors==3.0.7
 flask-httpauth==3.2.4
@@ -39,39 +52,61 @@ flask-restful==0.3.7
 flask-sqlalchemy==2.3.2
 flask==1.1.1
 frozendict==1.2
+functools32==3.2.3.post2 ; python_version < '3'
 funcsigs==1.0.2 ; python_version < '3.3'
 furl==2.0.0
 future==0.17.1
 futures==3.2.0
+html5lib==1.0.1
 idna==2.8
 ipaddress==1.0.22 ; python_version == '2.7'
+ipydatawidgets==4.0.1
+ipykernel==4.10.0
+ipympl==0.2.1
 ipython-genutils==0.2.0
 ipython==5.8.0
+ipywidgets==7.5.0
 itsdangerous==1.1.0
+jinja2-time==0.2.0
 jinja2==2.10.1
+jsonschema==3.0.1
+jupyter-client==5.3.1
+jupyter-core==4.5.0
 kiwipy[rmq]==0.5.1
 kiwisolver==1.1.0
+lxml==4.3.4
 mako==1.0.13
+markdown==3.0.1
 markupsafe==1.1.1
 marshmallow-sqlalchemy==0.16.0
 marshmallow==3.0.0rc5
 matplotlib==2.2.4
+mistune==0.8.4
 mock==2.0.0 ; python_version < '3.3'
 monty==2.0.4
 mpmath==1.1.0
 networkx==2.2
+nbconvert==5.5.0
+nbformat==4.4.0
+nglview==1.1.9
+notebook==5.7.8
 numpy==1.16.4
+packaging==19.0
 orderedmultidict==1.0
 palettable==3.1.1
 pandas==0.24.2
+pandocfilters==1.4.2
 paramiko==2.4.2
 passlib==1.7.1
-pathlib2==2.3.4 ; python_version in '2.6 2.7 3.2 3.3'
+pathlib2==2.3.4 ; python_version == '2.7' or python_version == '3.3'
 pbr==5.4.0
 pexpect==4.7.0 ; sys_platform != 'win32'
 pickleshare==0.7.5
+pillow==6.1.0
 pika==1.0.0
 plumpy==0.14.1
+poyo==0.4.2
+prometheus-client==0.7.1
 prompt-toolkit==1.0.16
 psutil==5.5.1
 psycopg2-binary==2.8
@@ -86,20 +121,24 @@ pymatgen==2018.12.12
 pymysql==0.9.3
 pynacl==1.3.0
 pyparsing==2.4.0
+pyrsistent==0.15.3
 python-dateutil==2.8.0
 python-editor==1.0.4
 python-memcached==1.59
+pythreejs==2.0.2
 pytz==2019.1
 pyyaml==5.1.1
 pyzmq==18.0.2
 qe-tools==1.1.2
 reentry==1.3.1
+requests-cache==0.4.13
 requests==2.22.0
 ruamel.ordereddict==0.4.13 ; platform_python_implementation == 'CPython' and python_version <= '2.7'
 ruamel.yaml==0.15.98
 scandir==1.10.0 ; python_version < '3.5'
 scipy==1.2.2
 seekpath==1.8.4
+send2trash==1.5.0
 shellingham==1.3.1
 shortuuid==0.5.0
 simplegeneric==0.8.1
@@ -114,16 +153,22 @@ sqlparse==0.3.0
 subprocess32==3.5.4
 sympy==1.4
 tabulate==0.8.3
+terminado==0.8.2
 tempita==0.5.3.dev0
+testpath==0.4.2
 topika==0.2.0
 tornado==5.1.1
 traitlets==4.3.2
+traittypes==0.2.1
 typing==3.6.6 ; python_version < '3.5'
 tzlocal==1.5.1
 uritools==2.2.0
 urllib3==1.25.3
 voluptuous==0.11.5
 wcwidth==0.1.7
+webencodings==0.5.1
 werkzeug==0.15.4
+whichcraft==0.5.2
+widgetsnbextension==3.5.0
 wrapt==1.11.1
 xmlschema==1.0.6
