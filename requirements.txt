@@ -1,8 +1,6 @@
 -i https://pypi.org/simple
 aiidalab-widgets-base==1.0.0a4
-appmode-aiidalab==0.5.0.1
-arrow==0.14.2
-aiida-core[atomic_tools,rest]==1.0.0b4
+aiida-core[atomic_tools,rest]==1.0.0b5
 aiida-cp2k==1.0.0b2
 aiida-qeq==1.0.0a1
 aiida-quantumespresso==3.0.0a3
@@ -10,13 +8,11 @@ aiida-zeopp==1.0.0b1
 aldjemy==0.9.1
 alembic==1.0.7
 aniso8601==7.0.0
-ase==3.17.0
+appmode-aiidalab==0.5.0.1
+arrow==0.14.2
+ase==3.18.0
 asn1crypto==0.24.0
 attrs==19.1.0
-backports.functools-lru-cache==1.5 ; python_version == '2.7'
-backports.shutil-get-terminal-size==1.0.0 ; python_version == '2.7'
-backports.tempfile==1.0 ; python_version < '3.2'
-backports.weakref==1.0.post1
 bcrypt==3.1.7
 binaryornot==0.4.4
 bleach==3.1.0
@@ -31,7 +27,6 @@ click-config-file==0.5.0
 click-spinner==0.1.8
 click==7.0
 configobj==5.0.6
-configparser==3.7.4 ; python_version == '2.7'
 cookiecutter==1.6.0
 cryptography==2.7
 cycler==0.10.0
@@ -41,7 +36,6 @@ django==1.11.20
 dulwich==0.19.11
 elementpath==1.1.8
 entrypoints==0.3
-enum34==1.1.6 ; python_version == '2.7'
 ete3==3.1.1
 fileupload==0.1.5
 flask-cache==0.13.1
@@ -52,16 +46,13 @@ flask-restful==0.3.7
 flask-sqlalchemy==2.3.2
 flask==1.1.1
 frozendict==1.2
-functools32==3.2.3.post2 ; python_version < '3'
-funcsigs==1.0.2 ; python_version < '3.3'
 furl==2.0.0
 future==0.17.1
-futures==3.2.0
+graphviz==0.10.1
 html5lib==1.0.1
 idna==2.8
-ipaddress==1.0.22 ; python_version == '2.7'
 ipydatawidgets==4.0.1
-ipykernel==4.10.0
+ipykernel==5.1.1
 ipympl==0.2.1
 ipython-genutils==0.2.0
 ipython==5.8.0
@@ -75,52 +66,48 @@ jupyter-core==4.5.0
 kiwipy[rmq]==0.5.1
 kiwisolver==1.1.0
 lxml==4.3.4
-mako==1.0.13
+mako==1.0.14
 markdown==3.0.1
 markupsafe==1.1.1
 marshmallow-sqlalchemy==0.16.0
-marshmallow==3.0.0rc5
-matplotlib==2.2.4
+marshmallow==3.0.0rc8
+matplotlib==3.1.1
 mistune==0.8.4
-mock==2.0.0 ; python_version < '3.3'
+mock==2.0.0
 monty==2.0.4
 mpmath==1.1.0
-networkx==2.2
+networkx==2.3
 nbconvert==5.5.0
 nbformat==4.4.0
 nglview==1.1.9
 notebook==5.7.8
-numpy==1.16.4
+numpy==1.17.0rc2
+orderedmultidict==1.0.1
 packaging==19.0
-orderedmultidict==1.0
-palettable==3.1.1
-pandas==0.24.2
+palettable==3.2.0
+pandas==0.25.0
 pandocfilters==1.4.2
-paramiko==2.4.2
-passlib==1.7.1
-pathlib2==2.3.4 ; python_version == '2.7' or python_version == '3.3'
-pbr==5.4.0
+paramiko==2.6.0
+pbr==5.4.1
 pexpect==4.7.0 ; sys_platform != 'win32'
 pickleshare==0.7.5
-pillow==6.1.0
 pika==1.0.0
-plumpy==0.14.1
+pillow==6.1.0
+plumpy==0.14.2
 poyo==0.4.2
 prometheus-client==0.7.1
 prompt-toolkit==1.0.16
 psutil==5.5.1
 psycopg2-binary==2.8
 ptyprocess==0.6.0 ; os_name != 'nt'
-pyasn1==0.4.5
-pyblake2==1.1.2 ; python_version < '3.6'
-pycifrw==4.2.1
+pycifrw==4.4
 pycparser==2.19
 pydispatcher==2.0.5
 pygments==2.4.2
 pymatgen==2018.12.12
 pymysql==0.9.3
 pynacl==1.3.0
-pyparsing==2.4.0
+pyparsing==2.4.1
 pyrsistent==0.15.3
 python-dateutil==2.8.0
 python-editor==1.0.4
@@ -133,42 +120,36 @@ qe-tools==1.1.2
 reentry==1.3.1
 requests-cache==0.4.13
 requests==2.22.0
-ruamel.ordereddict==0.4.13 ; platform_python_implementation == 'CPython' and python_version <= '2.7'
-ruamel.yaml==0.15.98
-scandir==1.10.0 ; python_version < '3.5'
-scipy==1.2.2
+ruamel.yaml==0.15.100
+scipy==1.3.0
 seekpath==1.8.4
 send2trash==1.5.0
 shellingham==1.3.1
 shortuuid==0.5.0
 simplegeneric==0.8.1
-simplejson==3.16.0
-singledispatch==3.4.0.3 ; python_version < '3.4'
 six==1.12.0
 spglib==1.12.2.post0
 sqlalchemy-migrate==0.12.0
 sqlalchemy-utils==0.33.11
 sqlalchemy==1.3.3
 sqlparse==0.3.0
-subprocess32==3.5.4
 sympy==1.4
 tabulate==0.8.3
-terminado==0.8.2
 tempita==0.5.3.dev0
+terminado==0.8.2
 testpath==0.4.2
 topika==0.2.0
-tornado==5.1.1
+tornado==4.5.3 # very important, otherwise aiida does not work correctly
 traitlets==4.3.2
 traittypes==0.2.1
-typing==3.6.6 ; python_version < '3.5'
 tzlocal==1.5.1
 uritools==2.2.0
 urllib3==1.25.3
 voluptuous==0.11.5
 wcwidth==0.1.7
 webencodings==0.5.1
-werkzeug==0.15.4
-whichcraft==0.5.2
+werkzeug==0.15.5
+whichcraft==0.6.0
 widgetsnbextension==3.5.0
 wrapt==1.11.1
 xmlschema==1.0.6
