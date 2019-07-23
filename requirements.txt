@@ -1,5 +1,5 @@
 -i https://pypi.org/simple
-aiidalab-widgets-base==1.0.0a4
+aiidalab-widgets-base==1.0.0a5
 aiida-core[atomic_tools,rest]==1.0.0b5
 aiida-cp2k==1.0.0b2
 aiida-qeq==1.0.0a1
