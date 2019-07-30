@@ -4,11 +4,12 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+ase = "~=3.17.0"
 
 [packages]
 aiida-ase = "~=1.0.1"
 aiida-codtools = "~=1.0.1"
-aiida-core = { extras = ['rest', 'atomic_tools'], version = "~=0.12.3" }
+aiida-core = { extras = ['rest', 'atomic_tools'], version = "~=0.12.4" }
 aiida-cp2k = "~=0.10"
 aiida-fleur = "~=0.6.3"
 aiida-gudhi = "==0.1.0a3"
@@ -22,7 +23,6 @@ aiida-wannier90 = "~=1.0.0"
 aiida-yambo = "~=0.2.5"
 aiida-zeopp = "~=0.2.0"
 aiidalab-widgets-base = "==0.4.0b2"
-ase = "~=3.17.0"
 appmode-aiidalab = "~=0.5.0"
 bokeh = "~=1.0.4"
 bqplot = "~=0.11.5"
