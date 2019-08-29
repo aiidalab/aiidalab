@@ -2,12 +2,12 @@
     "name": "aiidalab",
     "author": "The AiiDA team",
     "author_email": "aiidalab@materialscloud.org",
-    "description": "Meta package for the AiiDA Lab python environment.",
+    "description": "Meta package for the AiiDA lab python environment.",
     "url": "https://github.com/aiidalab/aiidalab-metapkg",
     "license": "MIT License",
-    "version": "19.05.3",
+    "version": "19.07.0a2",
     "classifiers": [
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 2"
+        "Programming Language :: Python :: 3"
     ]
 }

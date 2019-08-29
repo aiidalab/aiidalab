@@ -11,7 +11,9 @@ Amongst others, this includes
  * jupyter
  * ...
 
-Note: The relevant jupyter notebook extensions are enabled automatically.
+The relevant jupyter notebook extensions are enabled automatically.
+
+**Note:** This is the development version for **AiiDA 1.0**.
 
 ## Installation
 

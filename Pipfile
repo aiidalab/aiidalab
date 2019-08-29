@@ -4,46 +4,38 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-ase = "~=3.17.0"
+aiida-core = {extras = ['rest', 'atomic_tools'],version = "~=1.0.0b6"}
+aiida-cp2k = "~=1.0.0a2"
+aiida-qeq = "~=1.0.0a1"
+aiida-quantumespresso = "~=3.0.0a3"
+aiida-zeopp = "~=1.0.0b1"
 
 [packages]
-aiida-ase = "~=1.0.1"
-aiida-codtools = "~=1.0.1"
-aiida-core = { extras = ['rest', 'atomic_tools'], version = "~=0.12.4" }
-aiida-cp2k = "~=0.10"
-aiida-fleur = "~=0.6.3"
-aiida-gudhi = "==0.1.0a3"
-aiida-nwchem = "~=1.0.2"
-aiida-phtools = "==0.1.0a1"
-aiida-quantumespresso = "~=2.1.0"
-aiida-raspa = "~=0.3.1"
-aiida-siesta = "~=0.9.10"
-aiida-vasp = "~=0.2.4"
-aiida-wannier90 = "~=1.0.0"
-aiida-yambo = "~=0.2.5"
-aiida-zeopp = "~=0.2.0"
-aiidalab-widgets-base = "==0.4.0b2"
-appmode-aiidalab = "~=0.5.0"
-bokeh = "~=1.0.4"
-bqplot = "~=0.11.5"
-cookiecutter = "~=1.6.0"
-dulwich = "~=0.19.11"
-fileupload = "~=0.1.5"
-html5lib = "~=1.0.1"
-ipympl = "~=0.2.1"
-ipython = "<6.0"
-lxml = "~=4.3.2"
-nglview = "~=1.1.9"
+#aiida-ase = "~=1.0.1"
+#aiida-codtools = "~=1.0.1"
+#aiida-fleur = "~=0.6.3"
+#aiida-gudhi = "==0.1.0a3"
+#aiida-nwchem = "~=1.0.2"
+#aiida-phtools = "==0.1.0a1"
+#aiida-raspa = "~=0.3.1"
+#aiida-siesta = "~=0.9.10"
+#aiida-vasp = "~=0.2.4"
+#aiida-wannier90 = "~=1.0.0"
+#aiida-yambo = "~=0.2.5"
+aiidalab-widgets-base = "~=1.0.0a4"
+notebook = "~=5.7.0"
+pip = "~=18.1"
 pythreejs = "~=2.0.2"
 requests-cache = "~=0.4.13"
-tornado = "<5"
 Markdown = "~=3.0.1"
 
 [requires]
 python_version = "2.7"
-
 #[pipenv]
 # Note: For some reason, the atomic_tools extra breaks locking with
 # allow_prereleases = True. You can still use prereleases by providing an exact
 # version.
 #allow_prereleases = true
+
+[pipenv]
+allow_prereleases = true
