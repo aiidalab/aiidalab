@@ -4,7 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-aiida-core = {extras = ['rest', 'atomic_tools'],version = "~=1.0.0b4"}
+aiida-core = {extras = ['rest', 'atomic_tools'],version = "~=1.0.0b6"}
 aiida-cp2k = "~=1.0.0a2"
 aiida-qeq = "~=1.0.0a1"
 aiida-quantumespresso = "~=3.0.0a3"
