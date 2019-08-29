@@ -42,7 +42,10 @@ Start by adjusting the [`Pipfile`](Pipfile) according to the latest releases.
 Then do:
 ```
 pip install pipenv
-pipenv lock --requirements > requirements.txt
+pipenv lock # Pipfile.lock
+pipenv lock --requirements > requirements.txt_stable # To extract the dependencies of the stable packages
+pipenv lock --dev --requirements > requirements.txt_dev # To extract the dependencies of the development packages
+cat requirements.txt_stable requirements.txt_dev | sort | uniq > requirements.txt
 ```
 
 Note: We try to keep the number of explicit dependencies in the `Pipfile` to a minimum.
