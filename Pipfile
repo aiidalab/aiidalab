@@ -39,6 +39,7 @@ requests-cache = "~=0.4.13"
 Markdown = "~=3.0.1"
 #specified in aiida-core but somehow not respected...
 ipython = "<6"
+tornado = "<5"
 
 [requires]
 python_version = ">=3.6"
