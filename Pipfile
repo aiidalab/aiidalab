@@ -30,6 +30,7 @@ bokeh = "~=1.0.4"
 bqplot = "~=0.11.7"
 cookiecutter = "~=1.6.0"
 dulwich = "~=0.19.13"
+lxml = "~=4.4.1"
 notebook = "~=5.7.0"
 packaging = "~=19.1"
 pip = "~=18.1"
@@ -38,7 +39,7 @@ requests-cache = "~=0.4.13"
 Markdown = "~=3.0.1"
 
 [requires]
-python_version = "2.7"
+python_version = "3.7"
 #[pipenv]
 # Note: For some reason, the atomic_tools extra breaks locking with
 # allow_prereleases = True. You can still use prereleases by providing an exact
