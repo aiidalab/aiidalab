@@ -93,7 +93,7 @@ pbr==5.4.3
 pexpect==4.7.0 ; sys_platform != 'win32'
 pickleshare==0.7.5
 pika==1.0.0
-pillow==6.1.0
+pillow==6.2.0
 plumpy==0.14.2
 poyo==0.5.0
 prometheus-client==0.7.1
