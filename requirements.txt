@@ -34,7 +34,7 @@ cryptography==2.7
 cycler==0.10.0
 decorator==4.4.0
 defusedxml==0.6.0
-django==1.11.20
+django==1.11.23
 dulwich==0.19.13
 elementpath==1.1.8
 entrypoints==0.3
