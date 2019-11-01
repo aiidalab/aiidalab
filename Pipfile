@@ -4,25 +4,32 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-aiida-core = {extras = ['rest', 'atomic_tools'],version = "~=1.0.0b6"}
-aiida-cp2k = "~=1.0.0b3"
-aiida-qeq = "~=1.0.0a1"
-aiida-quantumespresso = "~=3.0.0a5"
-aiida-zeopp = "~=1.0.0b1"
-aiida-raspa = "~=1.0.0a1"
-
-[packages]
 #aiida-ase = "~=1.0.1"
-#aiida-codtools = "~=1.0.1"
+aiida-castep = "~=1.0.0b1"
+#aiida-codtools = "~=2.0.0b1"
+aiida-core = {extras = ['rest', 'atomic_tools'],version = "==1.0.0"}
+aiida-cp2k = "~=1.0.0b4"
+#aiida-crystal17 = "~=0.10.0b5"
+aiida-ddec = "~=1.0.0a1"
+aiida-diff = "~=1.0.0b1"
 #aiida-fleur = "~=0.6.3"
 #aiida-gudhi = "==0.1.0a3"
+#aiida-lammps = "~=0.4.0b3"
 #aiida-nwchem = "~=1.0.2"
+aiida-optimize = "~=0.2.0"
 #aiida-phtools = "==0.1.0a1"
+aiida-qeq = "~=1.0.0a1"
+aiida-quantumespresso = "~=3.0.0a5"
+aiida-raspa = "~=1.0.0a1"
 #aiida-siesta = "~=0.9.10"
+aiida-tbmodels = "~=0.2.0"
 #aiida-vasp = "~=0.2.4"
 #aiida-wannier90 = "~=1.0.0"
+aiida-zeopp = "~=1.0.0"
 #aiida-yambo = "~=0.2.5"
-aiidalab-widgets-base = "~=1.0.0a4"
+
+[packages]
+aiidalab-widgets-base = "~=1.0.0a6"
 appmode-aiidalab = "~=0.5.0.1"
 arrow = "~=0.14.6"
 binaryornot = "~=0.4.4"
