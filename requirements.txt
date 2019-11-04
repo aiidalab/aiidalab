@@ -1,6 +1,7 @@
 -i https://pypi.org/simple
 aiida-bands-inspect==0.2.0b1
 aiida-castep==1.0.0b1
+aiida-codtools==2.0.0
 aiida-core[atomic_tools,rest]==1.0.0
 aiida-cp2k==1.0.0b4
 aiida-ddec==1.0.0a1
@@ -17,7 +18,7 @@ aldjemy==0.9.1
 alembic==1.2.1
 aniso8601==8.0.0
 appmode-aiidalab==0.5.0.1
-appnope==0.1.0 ; platform_system == 'Darwin'
+appnope==0.1.0 ; sys_platform == 'darwin'
 arrow==0.14.7
 ase==3.18.1
 attrs==19.3.0
@@ -98,7 +99,7 @@ numpy==1.17.3
 orderedmultidict==1.0.1
 packaging==19.2
 palettable==3.3.0
-pandas==0.25.2
+pandas==0.25.3
 pandocfilters==1.4.2
 paramiko==2.6.0
 passlib==1.7.1
@@ -123,7 +124,7 @@ pymysql==0.9.3
 pynacl==1.3.0
 pyparsing==2.4.2
 pyrsistent==0.15.5
-python-dateutil==2.8.0
+python-dateutil==2.8.1
 python-editor==1.0.4
 python-memcached==1.59
 pythreejs==2.0.2

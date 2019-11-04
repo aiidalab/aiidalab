@@ -6,7 +6,7 @@ verify_ssl = true
 [dev-packages]
 #aiida-ase = "~=1.0.1"
 aiida-castep = "~=1.0.0b1"
-#aiida-codtools = "~=2.0.0b1"
+aiida-codtools = "~=2.0.0"
 aiida-core = {extras = ['rest', 'atomic_tools'],version = "==1.0.0"}
 aiida-cp2k = "~=1.0.0b4"
 #aiida-crystal17 = "~=0.10.0b5"
