@@ -6,7 +6,7 @@ verify_ssl = true
 [dev-packages]
 #aiida-ase = "~=1.0.1"
 aiida-castep = "~=1.0.0b1"
-#aiida-codtools = "~=2.0.0b1"
+aiida-codtools = "~=2.0.0"
 aiida-core = {extras = ['rest', 'atomic_tools'],version = "==1.0.0"}
 aiida-cp2k = "~=1.0.0b4"
 #aiida-crystal17 = "~=0.10.0b5"
@@ -29,7 +29,7 @@ aiida-zeopp = "~=1.0.0"
 #aiida-yambo = "~=0.2.5"
 
 [packages]
-aiidalab-widgets-base = "~=1.0.0a6"
+aiidalab-widgets-base = "~=1.0.0a7"
 appmode-aiidalab = "~=0.5.0.1"
 arrow = "~=0.14.6"
 binaryornot = "~=0.4.4"
@@ -41,6 +41,7 @@ lxml = "~=4.4.1"
 notebook = "~=5.7.0"
 packaging = "~=19.1"
 pip = "~=18.1"
+pybel = "~=0.13.2"
 pythreejs = "~=2.0.2"
 requests-cache = "~=0.4.13"
 Markdown = "~=3.0.1"
