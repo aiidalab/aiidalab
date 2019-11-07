@@ -13,12 +13,12 @@ aiida-raspa==1.0.0a1
 aiida-tbmodels==0.2.0
 aiida-tools==0.2.0
 aiida-zeopp==1.0.0
-aiidalab-widgets-base==1.0.0a6
+aiidalab-widgets-base==1.0.0a7
 aldjemy==0.9.1
 alembic==1.2.1
 aniso8601==8.0.0
 appmode-aiidalab==0.5.0.1
-appnope==0.1.0 ; platform_system == 'Darwin'
+appnope==0.1.0 ; sys_platform == 'darwin'
 arrow==0.14.7
 ase==3.18.1
 attrs==19.3.0
