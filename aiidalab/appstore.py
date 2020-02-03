@@ -14,11 +14,11 @@ import ipywidgets as ipw
 from IPython.display import clear_output
 from IPython.lib import backgroundjobs as bg
 
-from .app import AppBase
+from .app import AiidalabApp
 from .config import aiidalab_apps
 
-class AppStore(ipw.HBox):
-    def __init__(self,):
+class AiidalabAppStore(ipw.HBox):
+    def __init__(self):
         def update_cache():
             """Run this process asynchronously"""
             requests_cache.install_cache(cache_name='apps_meta', backend='sqlite',
@@ -80,14 +80,14 @@ class AppStore(ipw.HBox):
             description='Show only installed',
             disabled=False)
         self.only_installed.observe(self.change_vis_list, names='value')
-        self.apps_to_display = [ AppBase(name, app, aiidalab_apps) for name, app in self.registry_sorted_list ]
+        self.apps_to_display = [ AiidalabApp(name, app, aiidalab_apps) for name, app in self.registry_sorted_list ]
         
         self.categorys_counter = Counter([category for app in self.apps_to_display for category in app.categories])
         self.category_title_key_mapping = { self.categories_dict[key]['title'] if key in self.categories_dict else key:key
                              for key in self.categories_dict }
         self.category_filter.options =  [ key for key in self.category_title_key_mapping]
         self.update_page_selector()
-        return super(AppStoreControl, self).__init__(
+        return super().__init__(
             [self.only_installed, ipw.VBox([self.category_filter,
                                             ipw.HBox([self.apply_category_filter, self.clear_category_filter])
                                            ])])
@@ -112,7 +112,7 @@ class AppStore(ipw.HBox):
         After this the page selector update is called
         
         """
-        self.apps_to_display = [AppBase(name, app, aiidalab_apps) for name, app
+        self.apps_to_display = [AiidalabApp(name, app, aiidalab_apps) for name, app
                                 in self.registry_sorted_list]
 
         if self.only_installed.value:

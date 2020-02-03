@@ -24,7 +24,7 @@ class Version(ipw.VBox):
         self.info = ipw.HTML('')
         super(Version, self).__init__([self.selected, self.change_btn, self.info])
 
-class AppBase():
+class AiidalabApp():
     def __init__(self, name, app_data, aiidalab_apps):  #, custom_update=False):
         if app_data is not None:
             self._git_url = app_data['git_url']
