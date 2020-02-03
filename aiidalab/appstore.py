@@ -15,7 +15,7 @@ from IPython.display import clear_output
 from IPython.lib import backgroundjobs as bg
 
 from .app import AiidalabApp
-from .config import aiidalab_apps
+from .config import aiidalab_apps, aiidalab_registry
 
 class AiidalabAppStore(ipw.HBox):
     def __init__(self):
@@ -23,7 +23,7 @@ class AiidalabAppStore(ipw.HBox):
             """Run this process asynchronously"""
             requests_cache.install_cache(cache_name='apps_meta', backend='sqlite',
                                          expire_after=3600, old_data_on_error=True)
-            requests.get(registry_url)
+            requests.get(aiidalab_registry)
             requests_cache.install_cache(cache_name='apps_meta', backend='sqlite')
 
         # try-except is a fix for Quantum Mobile release v19.03.0 that does not have requests_cache installed
@@ -33,9 +33,9 @@ class AiidalabAppStore(ipw.HBox):
                                                                  # update_cache_background variable will be present
         except NameError:
             pass
-        registry_url = 'https://aiidalab.materialscloud.org/appsdata/apps_meta.json'
+
         try:
-            requested_dict = requests.get(registry_url).json()
+            requested_dict = requests.get(aiidalab_registry).json()
             if 'update_cache_background' in locals():
                 update_cache_background.start()
             self.registry_sorted_list = sorted(requested_dict['apps'].items())

@@ -17,7 +17,7 @@ import ipywidgets as ipw
 from IPython.lib import backgroundjobs as bg
 
 from .app import AiidalabApp
-from .config import aiidalab_home, aiidalab_apps
+from .config import aiidalab_home, aiidalab_apps, aiidalab_registry
 
 CONFIG_FN = ".launcher.json"
 
@@ -29,9 +29,6 @@ def read_config():
 
 def write_config(config):
     json.dump(config, open(CONFIG_FN,'w'), indent=2)
-
-
-registry_url = u'https://aiidalab.materialscloud.org/appsdata/apps_meta.json'
 
 def mk_buttons(name):
     layout = ipw.Layout(width="40px")
@@ -96,7 +93,7 @@ class AiidalabHome(ipw.HBox):
         def update_cache():
             """Run this process asynchronously."""
             requests_cache.install_cache(cache_name='apps_meta', backend='sqlite', expire_after=3600, old_data_on_error=True)
-            requests.get(registry_url)
+            requests.get(aiidalab_registry)
             requests_cache.install_cache(cache_name='apps_meta', backend='sqlite')
 
         # try-except is a fix for Quantum Mobile release v19.03.0 that does not have requests_cache installed
@@ -108,7 +105,7 @@ class AiidalabHome(ipw.HBox):
             pass
 
         try:
-            self.app_registry = requests.get(registry_url).json()['apps']
+            self.app_registry = requests.get(aiidalab_registry).json()['apps']
             if 'update_cache_background' in globals():
                 update_cache_background.start()
         except ValueError:
