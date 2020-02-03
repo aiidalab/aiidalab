@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import re
 import os
 import requests
@@ -23,7 +25,7 @@ class Version(ipw.VBox):
         super(Version, self).__init__([self.selected, self.change_btn, self.info])
 
 class AppBase():
-    def __init__(self, name, app_data, aiidalab_apps, custom_update=False):
+    def __init__(self, name, app_data, aiidalab_apps):  #, custom_update=False):
         if app_data is not None:
             self._git_url = app_data['git_url']
             self._meta_url = app_data['meta_url']
@@ -50,7 +52,7 @@ class AppBase():
     def has_git_repo(self):
         from dulwich.errors import NotGitRepository
         try:
-            r = Repo(self._get_appdir())
+            Repo(self._get_appdir())
             return True
         except NotGitRepository:
             return False
@@ -61,9 +63,10 @@ class AppBase():
         s = status(self.repo)
         if s.unstaged:
             return True
-        for name, value in s.staged.items():
+        for _, value in s.staged.items():
             if value:
                 return True
+        return False
 
     def found_local_commits(self):
         """Check whether user did some work in the current branch.
@@ -73,14 +76,14 @@ class AppBase():
           can be that there are no local commits in it
         - if it is a remote branch - check properly"""
         # no local commits if it is a tag
-        if self.current_version.startswith('refs/tags/'):
+        if self.current_version.startswith(b'refs/tags/'):
             return False
         # here it is assumed that if the branch is local, it has some stuff done in it,
         # therefore True is returned even though technically it is not always true
-        elif self.current_version.startswith('refs/heads/'):
+        if self.current_version.startswith(b'refs/heads/'):
             return True
         # if it is a remote branch
-        elif self.current_version.startswith('refs/remotes/'):
+        if self.current_version.startswith(b'refs/remotes/'):
             try: # look for the local branches that track the remote ones
                 local_branch = re.sub('refs/remotes/(\w+)/', 'refs/heads/', self.current_version)
                 local_head_at = self.repo[bytes(local_branch)]
@@ -89,16 +92,16 @@ class AppBase():
             remote_head_at = self.repo[bytes(self.current_version)]
             if remote_head_at.id == local_head_at.id:
                 return False
-            else:
-                # maybe remote head has some updates.
-                # go back in the history and check if the current commit is in the remote branch history.
-                for c in self.repo.get_walker(remote_head_at.id):
-                    if local_head_at.id == c.commit.id: # if yes - then local branch is just outdated
-                        return False
+            # else
+            # maybe remote head has some updates.
+            # go back in the history and check if the current commit is in the remote branch history.
+            for c in self.repo.get_walker(remote_head_at.id):
+                if local_head_at.id == c.commit.id: # if yes - then local branch is just outdated
+                    return False
             return True
         # something else - raise exception
-        else:
-            raise Exception("Unknown git reference type (should be either branch or tag), found: {}".format(self.current_version))
+        # else
+        raise Exception("Unknown git reference type (should be either branch or tag), found: {}".format(self.current_version))
 
     def found_local_versions(self):
         """Find if local git branches are present"""
@@ -121,18 +124,18 @@ class AppBase():
 
     def git_update_available(self):
         """Check whether there are updates available for the current branch in the remote repository"""
-        update_available = False
+        # update_available = False
         if self.current_version is None:
             return False
-        elif not self._git_url:
+        if not self._git_url:
             return False
-        elif self.current_version.startswith('refs/tags/'):
+        if self.current_version.startswith(b'refs/tags/'):
             # TODO: if it is a tag check for the newer tags
             return False
         # if it is a branch
-        elif self.current_version.startswith('refs/remotes/'):
+        if self.current_version.startswith(b'refs/remotes/'):
             # learn about local repository
-            local_branch = re.sub('refs/remotes/(\w+)/', 'refs/heads/', self.current_version)
+            local_branch = re.sub(b'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)
             local_head_at = self.repo[bytes(local_branch)]
             remote_head_at = self.repo[bytes(self.current_version)]
             # learn about remote repository
@@ -140,28 +143,27 @@ class AppBase():
                 on_server_head_at = self._git_remote_refs[local_branch]
             except KeyError:
                 return False
-            if remote_head_at.id != on_server_head_at: # maybe remote reference on the server is outdated.
-                                                       # I check if the remote commit is present in my remote commit history
+            if remote_head_at.id != on_server_head_at:  # maybe remote reference on the server is outdated.
+                                                        # I check if the remote commit is present in my remote commit history
                 for c in self.repo.get_walker(remote_head_at.id):
                     if c.commit.id == on_server_head_at:
                         return False
-                else:
-                    return True
-            elif local_head_at != remote_head_at:
-                for c in self.repo.get_walker(local_head_at.id): # go back in the current branch commit history and
+                # else
+                return True
+            if local_head_at != remote_head_at:
+                for c in self.repo.get_walker(local_head_at.id):  # go back in the current branch commit history and
                                                                   # see if I can find the remote commit there
                     if c.commit.id == remote_head_at.id: # Found, so the remote branch is outdated - no update
                         return False
-                else: # Not found, so the remote branch has additional commit(s)
-                    return True
-            else:
-                return False
+                # Not found, so the remote branch has additional commit(s)
+                return True
+            # else
+            return False
         # local branches can't have an update
-        elif self.current_version.startswith('refs/heads'):
+        if self.current_version.startswith(b'refs/heads'):
             return False
         # something else
-        else:
-            return False
+        return False
 
     @property
     def install_button(self):
@@ -263,13 +265,13 @@ class AppBase():
             # look for the local commited modifications all the available branches
             initial_value = self.current_version
             for key, value in self.available_versions.items():
-                    self.version.selected.value = value # switching to the branch in value
+                self.version.selected.value = value # switching to the branch in value
+                self._change_version(sleep_time=0) # actually switching the branch
+                if self.found_local_commits():
+                    cannot_modify = "you have local commits ({} branch)".format(key)
+                    self.version.selected.value = initial_value # switch back to the initial version
                     self._change_version(sleep_time=0) # actually switching the branch
-                    if self.found_local_commits():
-                        cannot_modify = "you have local commits ({} branch)".format(key)
-                        self.version.selected.value = initial_value # switch back to the initial version
-                        self._change_version(sleep_time=0) # actually switching the branch
-                        break
+                    break
         # and finally: uninstall or not?
         if cannot_modify:
             self.install_info.value = """"<i class="fa fa-times" style="color:red;font-size:4em;" ></i>
@@ -315,14 +317,14 @@ class AppBase():
             from dulwich.objects import Commit, Tag
             self._refs_dict = {}
             for key, value in self.repo.get_refs().items():
-                if key.endswith('HEAD'):
+                if key.endswith(b'HEAD'):
                     continue
-                elif key.startswith('refs/heads/'):
+                elif key.startswith(b'refs/heads/'):
                     continue
                 obj = self.repo.get_object(value)
-                if type(obj) == Tag:
+                if isinstance(obj, Tag):
                     self._refs_dict[key] = obj.object[1]
-                elif type(obj) == Commit:
+                elif isinstance(obj, Commit):
                     self._refs_dict[key] = value
         return self._refs_dict
 
@@ -341,23 +343,23 @@ class AppBase():
                 return {}
 
             # add remote branches
-            available = OrderedDict({name.split('/')[-1]:name
+            available = OrderedDict({name.split(b'/')[-1].decode("utf-8"):name
                                      for name, _ in self.refs_dict.items()
-                                     if name.startswith('refs/remotes/')})
+                                     if name.startswith(b'refs/remotes/')})
 
             # add local branches that do not have tracked remotes
             for name in self.refs_dict:
-                if name.startswith('refs/heads/'):
-                    branch_label = name.replace('refs/heads/', '')
+                if name.startswith(b'refs/heads/'):
+                    branch_label = name.replace(b'refs/heads/', b'').decode("utf-8")
                     pattern = re.compile("refs/remotes/.*/{}".format(branch_label))
                     # check if no tracked remotes that correspond to the current local branch
                     if not any(pattern.match(value) for value in available.values()):
                         available[branch_label] = name
 
             # add tags
-            available.update(sorted({name.split('/')[-1]:name
+            available.update(sorted({name.split(b'/')[-1].decode("utf-8"):name
                                      for name, _ in self.refs_dict.items()
-                                     if name.startswith('refs/tags/')}.items(),reverse=True))
+                                     if name.startswith(b'refs/tags/')}.items(),reverse=True))
             self._available_versions = available
         return self._available_versions
 
@@ -374,21 +376,21 @@ class AppBase():
             try:
                 # get local branch name, except if not yet exists
 
-                current = self.repo.refs.follow('HEAD')[0][1] # returns 'refs/heads/master'
-                                                              # if it is a tag it will except here
-                branch_label = current.replace('refs/heads/', '') # becomes 'master'
+                current = self.repo.refs.follow(b'HEAD')[0][1]  # returns 'refs/heads/master'
+                                                               # if it is a tag it will except here
+                branch_label = current.replace(b'refs/heads/', b'') # becomes 'master'
                 # find the corresponding (remote or local) branch among the ones that were
                 # found before
-                pattern = re.compile("refs/.*/{}".format(branch_label))
+                pattern = re.compile(b"refs/.*/%s" % branch_label)
                 for key in {value for value in available.values()}:
                     if pattern.match(key):
                         current = key
             except IndexError: # In case this is not a branch, but a tag for example
                 reverted_refs_dict = {value: key for key, value in self.refs_dict.items()}
                 try:
-                    current = reverted_refs_dict[self.repo.refs.follow('HEAD')[1]] # knowing the hash I can access the tag
+                    current = reverted_refs_dict[self.repo.refs.follow(b'HEAD')[1]] # knowing the hash I can access the tag
                 except KeyError:
-                    print "Detached HEAD state ({} app)?".format(self.name)
+                    print("Detached HEAD state ({} app)?".format(self.name))
                     return None
             self._current_version = current
         return self._current_version
@@ -460,8 +462,8 @@ class AppBase():
         except KeyError:
             if not path.isfile(path.join(self._get_appdir(),'metadata.json')):
                 return '({}) metadata.json file is not present'.format(what)
-            else:
-                return 'the field "{}" is not present in metadata.json file'.format(what)
+            # else
+            return 'the field "{}" is not present in metadata.json file'.format(what)
 
     @property
     def authors(self):
@@ -479,15 +481,15 @@ class AppBase():
     def git_url(self):
         if self._git_url is None:
             return '-'
-        else:
-            return '<a href="{}">{}</a>'.format(self._git_url, self._git_url)
+        # else
+        return '<a href="{}">{}</a>'.format(self._git_url, self._git_url)
 
     @property
     def git_hidden_url(self):
         if self._git_url is None:
             return 'No Git url'
-        else:
-            return '<a href="{}"><button>Git URL</button></a>'.format(self._git_url)
+        # else
+        return '<a href="{}"><button>Git URL</button></a>'.format(self._git_url)
 
     @property
     def more(self):
@@ -508,7 +510,7 @@ class AppBase():
                     if html_link.endswith('.svg'):
                         html_link += '?sanitize=true'
                 res.value = '<img src="{}">'.format(html_link)
-        except:
+        except Exception:
             res.value = '<img src="./aiidalab_logo_v4.svg">'
             # for some reason standard ipw.Image() app does not work properly
         return res
@@ -530,5 +532,4 @@ class AppBase():
             return """<font color="#D8000C"><i class='fa fa-times-circle'></i> No remote URL</font>"""
         elif self.git_update_available():
             return """<font color="#9F6000"><i class='fa fa-warning'></i> Update Available</font>"""
-        else:
-            return """<font color="#270"><i class='fa fa-check'></i> Latest Version</font>"""
+        return """<font color="#270"><i class='fa fa-check'></i> Latest Version</font>"""
