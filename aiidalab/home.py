@@ -1,10 +1,14 @@
-from os import path, getenv
+"""Module to generate AiiDA lab home page."""
+
+from os import path
 from glob import glob
+from importlib import import_module
 
 import json
 import requests
-
-from importlib import import_module
+import ipywidgets as ipw
+from IPython.display import display
+from IPython.lib import backgroundjobs as bg
 from markdown import markdown
 
 # try-except is a fix for Quantum Mobile release v19.03.0 that does not have requests_cache installed
@@ -13,69 +17,52 @@ try:
 except ImportError:
     pass
 
-import ipywidgets as ipw
-from IPython.lib import backgroundjobs as bg
-
+# AiiDA lab imports.
 from .app import AiidalabApp
-from .config import aiidalab_home, aiidalab_apps, aiidalab_registry
+from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 
-CONFIG_FN = ".launcher.json"
-
-def read_config():
-    if path.exists(CONFIG_FN):
-        return json.load(open(CONFIG_FN,'r'))
-    else:
-        return {'order':[], 'hidden':[]} #default config
-
-def write_config(config):
-    json.dump(config, open(CONFIG_FN,'w'), indent=2)
 
 def mk_buttons(name):
+    """Make buttons to move the app up or down."""
     layout = ipw.Layout(width="40px")
     btn_box = ipw.HTML("""
-    <a href=./start.ipynb?move_up={} title="Move it up"><i class='fa fa-arrow-up' style='color:#337ab7;font-size:2em;' ></i></a>
-    <a href=./start.ipynb?move_down={} title="Move it down"><i class='fa fa-arrow-down' style='color:#337ab7;font-size:2em;' ></i></a>
-    """.format(name, name), layout=layout)
+    <a href=./start.ipynb?move_up={name} title="Move it up"><i class='fa fa-arrow-up' style='color:#337ab7;font-size:2em;' ></i></a>
+    <a href=./start.ipynb?move_down={name} title="Move it down"><i class='fa fa-arrow-down' style='color:#337ab7;font-size:2em;' ></i></a>
+    """.format(name=name),
+                       layout=layout)
     btn_box.layout.margin = "50px 0px 0px 0px"
 
-    return(btn_box)
+    return btn_box
+
 
 def load_widget(name):
-    if path.exists(path.join(aiidalab_apps, name, 'start.py')):
+    if path.exists(path.join(AIIDALAB_APPS, name, 'start.py')):
         return load_start_py(name)
-    else:  # fall back
-        return load_start_md(name)
+    return load_start_md(name)
+
 
 def load_start_py(name):
+    """Load app appearance from a Python file."""
     try:
         mod = import_module('apps.%s.start' % name)
         appbase = "../" + name
         jupbase = "../../.."
-        notebase = jupbase+"/notebooks/apps/"+name
+        notebase = jupbase + "/notebooks/apps/" + name
         try:
             return mod.get_start_widget(appbase=appbase, jupbase=jupbase, notebase=notebase)
-        except:
+        except Exception:
             return mod.get_start_widget(appbase=appbase, jupbase=jupbase)
-    except Exception as e:
-        return ipw.HTML("<pre>%s</pre>" % str(e))
+    except Exception as exc:
+        return ipw.HTML("<pre>{}</pre>".format(str(exc)))
 
-def record_showhide(name, visible):
-    config = read_config()
-    hidden = set(config['hidden'])
-    if visible:
-        hidden.discard(name)
-    else:
-        hidden.add(name)
-    config['hidden'] = list(hidden)
-    write_config(config)
-    
-    
+
 def load_start_md(name):
-    fn = path.join(aiidalab_apps, name, 'start.md')
+    """Load app appearance from a Markdown file."""
+    fname = path.join(AIIDALAB_APPS, name, 'start.md')
     try:
 
-        md_src = open(fn).read()
-        md_src = md_src.replace("](./", "](../%s/"%name)
+        md_src = open(fname).read()
+        md_src = md_src.replace("](./", "](../%s/" % name)
         html = markdown(md_src)
 
         # open links in new window/tab
@@ -85,27 +72,36 @@ def load_start_md(name):
         html = html.replace("<h3", "<h4")
         return ipw.HTML(html)
 
-    except Exception as e:
+    except Exception:
         return ipw.HTML("Could not load start.md")
 
-class AiidalabHome(ipw.HBox):
+
+class AiidalabHome:
+    """Class that mananges the appearance of the AiiDA lab home page."""
+
     def __init__(self):
+
+        self.config_fn = ".launcher.json"
+
         def update_cache():
             """Run this process asynchronously."""
-            requests_cache.install_cache(cache_name='apps_meta', backend='sqlite', expire_after=3600, old_data_on_error=True)
-            requests.get(aiidalab_registry)
+            requests_cache.install_cache(cache_name='apps_meta',
+                                         backend='sqlite',
+                                         expire_after=3600,
+                                         old_data_on_error=True)
+            requests.get(AIIDALAB_REGISTRY)
             requests_cache.install_cache(cache_name='apps_meta', backend='sqlite')
 
         # try-except is a fix for Quantum Mobile release v19.03.0 that does not have requests_cache installed
         try:
-            requests_cache.install_cache(cache_name='apps_meta', backend='sqlite') # at start getting data from cache
-            update_cache_background = bg.BackgroundJobFunc(update_cache) # if requests_cache is installed, the
-                                                                     # update_cache_background variable will be present
+            requests_cache.install_cache(cache_name='apps_meta', backend='sqlite')  # at start getting data from cache
+            update_cache_background = bg.BackgroundJobFunc(update_cache)  # if requests_cache is installed, the
+            # update_cache_background variable will be present
         except NameError:
             pass
 
         try:
-            self.app_registry = requests.get(aiidalab_registry).json()['apps']
+            self.app_registry = requests.get(AIIDALAB_REGISTRY).json()['apps']
             if 'update_cache_background' in globals():
                 update_cache_background.start()
         except ValueError:
@@ -113,12 +109,21 @@ class AiidalabHome(ipw.HBox):
             self.app_registry = {}
 
         self.output = ipw.Output()
-    
+
+    def write_config(self, config):
+        json.dump(config, open(self.config_fn, 'w'), indent=2)
+
+    def read_config(self):
+        if path.exists(self.config_fn):
+            return json.load(open(self.config_fn, 'r'))
+        return {'order': [], 'hidden': []}  #default config
+
     def render(self):
+        """Rendering all apps."""
         self.output.clear_output()
         self.render_home()
         apps = self.load_apps()
-        config = read_config()
+        config = self.read_config()
         with self.output:
             for name in apps:
                 accordion = self.mk_accordion(name)
@@ -126,68 +131,72 @@ class AiidalabHome(ipw.HBox):
                 display(accordion)
 
         return self.output
-    
+
+    def record_showhide(self, name, visible):
+        """Store the information about displayed/hidden status of an app."""
+        config = self.read_config()
+        hidden = set(config['hidden'])
+        if visible:
+            hidden.discard(name)
+        else:
+            hidden.add(name)
+        config['hidden'] = list(hidden)
+        self.write_config(config)
+
     def render_home(self):
+        """Rendering home app."""
         launcher = load_widget('home')
         launcher.layout = ipw.Layout(width="900px", padding="20px", color='gray')
-        app = AiidalabApp('home', self.app_registry.get('home', None), aiidalab_apps)
+        app = AiidalabApp('home', self.app_registry.get('home', None), AIIDALAB_APPS)
         update_info = ipw.HTML("{}".format(app.update_info))
         update_info.layout.margin = "0px 0px 0px 800px"
         description_box = ipw.HTML("<a href=./single_app.ipynb?app=home><button>Manage App</button></a> {}".format(
-            app.git_hidden_url), layout={'width': 'initial'})
+            app.git_hidden_url),
+                                   layout={'width': 'initial'})
         description_box.layout.margin = "0px 0px 0px 700px"
-        info_line = app.install_info
-        display(update_info, launcher, description_box, info_line)
+        display(update_info, launcher, description_box, app.install_info)
 
-
-
-    def load_title(self, name):
-        try:
-            fn = path.join(aiidalab_apps, name, 'metadata.json')
-            metadata = json.load(open(fn))
-            title = metadata['title']
-        except:
-            title = "%s (couldn't load title)"%name
-        return title
-    
     def load_apps(self):
-        apps = [path.basename(fn) for fn in glob(path.join(aiidalab_apps, '*')) if path.isdir(fn) and not fn.endswith('home') and
-               not fn.endswith('__pycache__')]
-        config = read_config()
+        """Load apps according to the order defined in the config file."""
+        apps = [
+            path.basename(fn)
+            for fn in glob(path.join(AIIDALAB_APPS, '*'))
+            if path.isdir(fn) and not fn.endswith('home') and not fn.endswith('__pycache__')
+        ]
+        config = self.read_config()
         order = config['order']
         apps.sort(key=lambda x: order.index(x) if x in order else -1)
         config['order'] = apps
-        write_config(config)
+        self.write_config(config)
         return apps
 
     def mk_accordion(self, name):
+        """Make per-app accordion widget to put on the home page."""
         launcher = load_widget(name)
         launcher.layout = ipw.Layout(width="900px")
         btn_box = mk_buttons(name)
         app_data = self.app_registry.get(name, None)
-        app = AiidalabApp(name, app_data, aiidalab_apps)
+        app = AiidalabApp(name, app_data, AIIDALAB_APPS)
         update_info = ipw.HTML("{}".format(app.update_info))
         update_info.layout.margin = "0px 0px 0px 800px"
         run_line = ipw.HBox([launcher, btn_box])
-        description_box = ipw.HTML("<a href=./single_app.ipynb?app={}><button>Manage App</button></a> {}".format(name, app.git_hidden_url),
+        description_box = ipw.HTML("<a href=./single_app.ipynb?app={}><button>Manage App</button></a> {}".format(
+            name, app.git_hidden_url),
                                    layout={'width': 'initial'})
-        info_line = app.install_info
         description_box.layout.margin = "0px 0px 0px 700px"
         box = ipw.VBox([update_info, run_line, description_box])
         accordion = ipw.Accordion(children=[box])
-        title = self.load_title(name)
-        accordion.set_title(0, title)
-        on_change = lambda c: record_showhide(name, accordion.selected_index==0)
-        accordion.observe(on_change, names="selected_index")
+        accordion.set_title(0, app.title)
+        accordion.observe(lambda c: self.record_showhide(name, accordion.selected_index == 0), names="selected_index")
         return accordion
 
     def move_updown(self, name, delta):
-        config = read_config()
+        """Move the app up/down on the start page."""
+        config = self.read_config()
         order = config['order']
-        n = len(order)
         i = order.index(name)
-        del(order[i])
-        j = min(n-1, max(0, i + delta))
+        del order[i]
+        j = min(len(order) - 1, max(0, i + delta))
         order.insert(j, name)
         config['order'] = order
-        write_config(config)   
+        self.write_config(config)
