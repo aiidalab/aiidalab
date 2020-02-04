@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """AiiDA lab app store."""
-
-from collections import Counter
 import requests
 
 # Info: try-except is a fix for Quantum Mobile release v19.03.0
@@ -42,19 +40,20 @@ class AiidalabAppStore(ipw.HBox):
         except NameError:
             pass
 
-        self.app_corresponding_categories = []
-
         try:
             requested_dict = requests.get(AIIDALAB_REGISTRY).json()
             if 'update_cache_background' in locals():
                 update_cache_background.start()
             self.registry_sorted_list = sorted(requested_dict['apps'].items())
-            self.categories_dict = requested_dict['categories']
+            categories_dict = requested_dict['categories']
         except ValueError:
             print("Registry server is unavailable! Can't load the apps")
             self.registry_sorted_list = []
 
+        self.app_corresponding_categories = []
         self.output = ipw.Output()
+
+        # Apps per page.
         self.items_per_page = ipw.BoundedIntText(
             value=10,
             min=5,
@@ -65,18 +64,9 @@ class AiidalabAppStore(ipw.HBox):
             style={'description_width': 'initial'},
             layout={'width': '150px'},
         )
-        self.category_filter = ipw.SelectMultiple(
-            options=[],
-            value=[],
-            #rows=10,
-            description='Filter categories',
-            style={'description_width': 'initial'},
-            disabled=False)
-        self.apply_category_filter = ipw.Button(description="apply filter")
-        self.apply_category_filter.on_click(self.change_vis_list)
-        self.clear_category_filter = ipw.Button(description='clear selection')
-        self.clear_category_filter.on_click(self._clear_category_filter)
         self.items_per_page.observe(self.update_page_selector, names='value')
+
+        # Page selector
         self.page_selector = ipw.ToggleButtons(
             options=[],
             description='Page:',
@@ -85,21 +75,35 @@ class AiidalabAppStore(ipw.HBox):
         )
         self.page_selector.observe(self.render, names='value')
 
+        # Only installed filter.
         self.only_installed = ipw.Checkbox(value=False, description='Show only installed', disabled=False)
         self.only_installed.observe(self.change_vis_list, names='value')
-        self.apps_to_display = [AiidalabApp(name, app, AIIDALAB_APPS) for name, app in self.registry_sorted_list]
 
-        self.categorys_counter = Counter([category for app in self.apps_to_display for category in app.categories])
+        # Category filter.
+        self.category_filter = ipw.SelectMultiple(
+            options=[],
+            value=[],
+            #rows=10,
+            description='Filter categories',
+            style={'description_width': 'initial'},
+            disabled=False)
+        apply_category_filter = ipw.Button(description="apply filter")
+        apply_category_filter.on_click(self.change_vis_list)
+        clear_category_filter = ipw.Button(description='clear selection')
+        clear_category_filter.on_click(self._clear_category_filter)
         self.category_title_key_mapping = {
-            self.categories_dict[key]['title'] if key in self.categories_dict else key: key
-            for key in self.categories_dict
+            categories_dict[key]['title'] if key in categories_dict else key: key for key in categories_dict
         }
         self.category_filter.options = [key for key in self.category_title_key_mapping]
+
+        # Define the apps that are going to be displayed.
+        self.apps_to_display = [AiidalabApp(name, app, AIIDALAB_APPS) for name, app in self.registry_sorted_list]
+
         self.update_page_selector()
         super().__init__([
             self.only_installed,
             ipw.VBox([self.category_filter,
-                      ipw.HBox([self.apply_category_filter, self.clear_category_filter])])
+                      ipw.HBox([apply_category_filter, clear_category_filter])])
         ])
 
     def _clear_category_filter(self, _):

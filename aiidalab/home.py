@@ -1,5 +1,6 @@
 """Module to generate AiiDA lab home page."""
 
+import sys
 from os import path
 from glob import glob
 from importlib import import_module
@@ -50,10 +51,10 @@ def load_start_py(name):
         notebase = jupbase + "/notebooks/apps/" + name
         try:
             return mod.get_start_widget(appbase=appbase, jupbase=jupbase, notebase=notebase)
-        except Exception:
+        except TypeError:
             return mod.get_start_widget(appbase=appbase, jupbase=jupbase)
-    except Exception as exc:
-        return ipw.HTML("<pre>{}</pre>".format(str(exc)))
+    except Exception:  # pylint: disable=broad-except
+        return ipw.HTML("<pre>{}</pre>".format(sys.exc_info()))
 
 
 def load_start_md(name):
@@ -62,7 +63,7 @@ def load_start_md(name):
     try:
 
         md_src = open(fname).read()
-        md_src = md_src.replace("](./", "](../%s/" % name)
+        md_src = md_src.replace("](./", "](../{}/".format(name))
         html = markdown(md_src)
 
         # open links in new window/tab
@@ -72,8 +73,8 @@ def load_start_md(name):
         html = html.replace("<h3", "<h4")
         return ipw.HTML(html)
 
-    except Exception:
-        return ipw.HTML("Could not load start.md")
+    except Exception as exc:  # pylint: disable=broad-except
+        return ipw.HTML("Could not load start.md: {}".format(str(exc)))
 
 
 class AiidalabHome:

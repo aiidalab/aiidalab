@@ -101,7 +101,7 @@ class AiidalabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
             # Look for the local branches that track the remote ones.
             try:
-                local_branch = re.sub(r'refs/remotes/(\w+)/', 'refs/heads/', self.current_version)
+                local_branch = re.sub(b'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)  # pylint:disable=anomalous-backslash-in-string
                 local_head_at = self.repo[bytes(local_branch)]
 
             # Current branch is not tracking any remote one.
@@ -124,7 +124,7 @@ class AiidalabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
     def found_local_versions(self):
         """Find if local git branches are present."""
-        pattern = re.compile(r'refs/heads/(\w+)')
+        pattern = re.compile(b'refs/heads/(\w+)')  # pylint:disable=anomalous-backslash-in-string
         return any(pattern.match(value) for value in self.available_versions.values())
 
     def cannot_modify_app(self):
@@ -163,7 +163,7 @@ class AiidalabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
         elif self.current_version.startswith(b'refs/remotes/'):
 
             # Learn about local repository.
-            local_branch = re.sub(r'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)
+            local_branch = re.sub(b'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)  # pylint:disable=anomalous-backslash-in-string
             local_head_at = self.repo[bytes(local_branch)]
             remote_head_at = self.repo[bytes(self.current_version)]
 
@@ -258,8 +258,8 @@ class AiidalabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
         from dulwich.porcelain import pull, fetch
         cannot_modify = self.cannot_modify_app()
         if cannot_modify:
-            self.install_info.value = """"<i class="fa fa-times" style="color:red;font-size:4em;" ></i>
-                    Can not update the repository: {}""".format(cannot_modify)
+            self.install_info.value = """<i class="fa fa-times" style="color:red;font-size:4em;" >
+            </i>Can not update the repository: {}""".format(cannot_modify)
             sleep(3)
             self.install_info.value = ''
             return
@@ -325,8 +325,8 @@ class AiidalabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
         # And finally: uninstall or not?
         if cannot_modify:
-            self.install_info.value = """"<i class="fa fa-times" style="color:red;font-size:4em;" ></i>
-                Can not delete the repository: {}""".format(cannot_modify)
+            self.install_info.value = """<i class="fa fa-times" style="color:red;font-size:4em;" >
+            </i>Can not delete the repository: {}""".format(cannot_modify)
             sleep(3)
 
         # Perform uninstall process.
@@ -575,21 +575,31 @@ class AiidalabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
     @property
     def logo(self):
         """Return logo object. Give the priority to the local version"""
+
+        # For some reason standard ipw.Image() app does not work properly.
         res = ipw.HTML('<img src="./aiidalab_logo_v4.svg">', layout={'width': '100px', 'height': '100px'})
-        try:
-            if self.is_installed():
-                res.value = '<img src="{}">'.format(path.join('..', self.name, self.metadata['logo']))
-            else:
-                html_link = os.path.splitext(self._git_url)[0]  # remove .git if present
-                html_link += '/master/' + self.metadata['logo']  # we expect it to always be a git repository
-                if 'github.com' in html_link:
-                    html_link = html_link.replace('github.com', 'raw.githubusercontent.com')
-                    if html_link.endswith('.svg'):
-                        html_link += '?sanitize=true'
-                res.value = '<img src="{}">'.format(html_link)
-        except Exception:
+
+        # Checking whether the 'logo' key is present in metadata dictionary.
+        if 'logo' not in self.metadata:
             res.value = '<img src="./aiidalab_logo_v4.svg">'
-            # for some reason standard ipw.Image() app does not work properly
+
+        # If 'logo' key is present and the app is installed.
+        elif self.is_installed():
+            res.value = '<img src="{}">'.format(path.join('..', self.name, self.metadata['logo']))
+
+        # If not installed, getting file from the remote git repository.
+        else:
+            # Remove .git if present.
+            html_link = os.path.splitext(self._git_url)[0]
+
+            # We expect it to always be a git repository
+            html_link += '/master/' + self.metadata['logo']
+            if 'github.com' in html_link:
+                html_link = html_link.replace('github.com', 'raw.githubusercontent.com')
+                if html_link.endswith('.svg'):
+                    html_link += '?sanitize=true'
+            res.value = '<img src="{}">'.format(html_link)
+
         return res
 
     @property
@@ -612,3 +622,26 @@ class AiidalabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
         if self.git_update_available():
             return """<font color="#9F6000"><i class='fa fa-warning'></i> Update Available</font>"""
         return """<font color="#270"><i class='fa fa-check'></i> Latest Version</font>"""
+
+    def render(self):
+        """"Display the app."""
+        if self.has_git_repo():
+            description = ipw.HTML("""<b> <div style="font-size: 30px; text-align:center;">{}</div></b>
+            <br>
+            <b>Authors:</b> {}
+            <br>
+            <b>Description:</b> {}
+            <br>
+            <b>Git URL:</b> {}""".format(self.title, self.authors, self.description, self.git_url))
+            logo = self.logo
+            logo.layout.margin = "100px 0px 0px 0px"
+            description.layout = {'width': '800px'}
+            displayed_app = ipw.VBox([
+                ipw.HBox([self.logo, description]),
+                ipw.HBox([self.uninstall_button, self.update_button, self.install_button]),
+                ipw.HBox([self.install_info]), self.version
+            ])
+        else:
+            displayed_app = ipw.HTML("""<center><h1>Enable <i class="fa fa-git"></i> first!</h1></center>""")
+
+        return displayed_app
