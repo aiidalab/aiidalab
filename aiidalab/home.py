@@ -1,26 +1,15 @@
 """Module to generate AiiDA lab home page."""
-
-import sys
 from os import path
 from glob import glob
-from importlib import import_module
 
 import json
-import requests
 import ipywidgets as ipw
 from IPython.display import display
-from IPython.lib import backgroundjobs as bg
-from markdown import markdown
-
-# try-except is a fix for Quantum Mobile release v19.03.0 that does not have requests_cache installed
-try:
-    import requests_cache
-except ImportError:
-    pass
 
 # AiiDA lab imports.
 from .app import AiidalabApp
-from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
+from .config import AIIDALAB_APPS
+from .utils import load_widget, load_app_registry
 
 
 def mk_buttons(name):
@@ -36,80 +25,13 @@ def mk_buttons(name):
     return btn_box
 
 
-def load_widget(name):
-    if path.exists(path.join(AIIDALAB_APPS, name, 'start.py')):
-        return load_start_py(name)
-    return load_start_md(name)
-
-
-def load_start_py(name):
-    """Load app appearance from a Python file."""
-    try:
-        mod = import_module('apps.%s.start' % name)
-        appbase = "../" + name
-        jupbase = "../../.."
-        notebase = jupbase + "/notebooks/apps/" + name
-        try:
-            return mod.get_start_widget(appbase=appbase, jupbase=jupbase, notebase=notebase)
-        except TypeError:
-            return mod.get_start_widget(appbase=appbase, jupbase=jupbase)
-    except Exception:  # pylint: disable=broad-except
-        return ipw.HTML("<pre>{}</pre>".format(sys.exc_info()))
-
-
-def load_start_md(name):
-    """Load app appearance from a Markdown file."""
-    fname = path.join(AIIDALAB_APPS, name, 'start.md')
-    try:
-
-        md_src = open(fname).read()
-        md_src = md_src.replace("](./", "](../{}/".format(name))
-        html = markdown(md_src)
-
-        # open links in new window/tab
-        html = html.replace('<a ', '<a target="_blank" ')
-
-        # downsize headings
-        html = html.replace("<h3", "<h4")
-        return ipw.HTML(html)
-
-    except Exception as exc:  # pylint: disable=broad-except
-        return ipw.HTML("Could not load start.md: {}".format(str(exc)))
-
-
 class AiidalabHome:
     """Class that mananges the appearance of the AiiDA lab home page."""
 
     def __init__(self):
-
         self.config_fn = ".launcher.json"
-
-        def update_cache():
-            """Run this process asynchronously."""
-            requests_cache.install_cache(cache_name='apps_meta',
-                                         backend='sqlite',
-                                         expire_after=3600,
-                                         old_data_on_error=True)
-            requests.get(AIIDALAB_REGISTRY)
-            requests_cache.install_cache(cache_name='apps_meta', backend='sqlite')
-
-        # try-except is a fix for Quantum Mobile release v19.03.0 that does not have requests_cache installed
-        try:
-            requests_cache.install_cache(cache_name='apps_meta', backend='sqlite')  # at start getting data from cache
-            update_cache_background = bg.BackgroundJobFunc(update_cache)  # if requests_cache is installed, the
-            # update_cache_background variable will be present
-        except NameError:
-            pass
-
-        try:
-            self.app_registry = requests.get(AIIDALAB_REGISTRY).json()['apps']
-            if 'update_cache_background' in globals():
-                update_cache_background.start()
-        except ValueError:
-            print("Registry server is unavailable! Can't check for the updates")
-            self.app_registry = {}
-
         self.output = ipw.Output()
+        self.app_registry = load_app_registry()['apps']
 
     def write_config(self, config):
         json.dump(config, open(self.config_fn, 'w'), indent=2)

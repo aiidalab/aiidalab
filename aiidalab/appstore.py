@@ -1,55 +1,24 @@
 # -*- coding: utf-8 -*-
 """AiiDA lab app store."""
-import requests
-
-# Info: try-except is a fix for Quantum Mobile release v19.03.0
-# that does not have requests_cache installed
-try:
-    import requests_cache
-except ModuleNotFoundError:
-    pass
 
 import ipywidgets as ipw
-
 from IPython.display import display
-from IPython.lib import backgroundjobs as bg
 
 from .app import AiidalabApp
-from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
+from .config import AIIDALAB_APPS
+from .utils import load_app_registry
 
 
 class AiidalabAppStore(ipw.HBox):
     """Class to manage AiiDA lab app store."""
 
     def __init__(self):
-
-        def update_cache():
-            """Run this process asynchronously"""
-            requests_cache.install_cache(cache_name='apps_meta',
-                                         backend='sqlite',
-                                         expire_after=3600,
-                                         old_data_on_error=True)
-            requests.get(AIIDALAB_REGISTRY)
-            requests_cache.install_cache(cache_name='apps_meta', backend='sqlite')
-
-        # try-except is a fix for Quantum Mobile release v19.03.0 that does not have requests_cache installed
-        try:
-            requests_cache.install_cache(cache_name='apps_meta', backend='sqlite')
-            update_cache_background = bg.BackgroundJobFunc(update_cache)  # if requests_cache is installed, the
-            # update_cache_background variable will be present
-        except NameError:
-            pass
-
-        try:
-            requested_dict = requests.get(AIIDALAB_REGISTRY).json()
-            if 'update_cache_background' in locals():
-                update_cache_background.start()
+        requested_dict = load_app_registry()
+        if requested_dict:
             self.registry_sorted_list = sorted(requested_dict['apps'].items())
             categories_dict = requested_dict['categories']
-        except ValueError:
-            print("Registry server is unavailable! Can't load the apps")
+        else:
             self.registry_sorted_list = []
-
         self.app_corresponding_categories = []
         self.output = ipw.Output()
 
@@ -66,7 +35,7 @@ class AiidalabAppStore(ipw.HBox):
         )
         self.items_per_page.observe(self.update_page_selector, names='value')
 
-        # Page selector
+        # Page selector.
         self.page_selector = ipw.ToggleButtons(
             options=[],
             description='Page:',
