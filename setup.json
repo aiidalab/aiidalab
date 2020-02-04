@@ -9,5 +9,13 @@
     "classifiers": [
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3"
-    ]
+    ],
+    "extras_require": {
+        "pre-commit": [
+            "pre-commit==1.17.0",
+            "yapf==0.28.0",
+            "prospector==1.1.7",
+      	    "pylint==2.3.1"
+        ]
+    }
 }
