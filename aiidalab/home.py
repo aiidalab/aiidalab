@@ -7,7 +7,7 @@ import ipywidgets as ipw
 from IPython.display import display
 
 # AiiDA lab imports.
-from .app import AiidalabApp
+from .app import AiidaLabApp
 from .config import AIIDALAB_APPS
 from .utils import load_widget, load_app_registry
 
@@ -25,7 +25,7 @@ def mk_buttons(name):
     return btn_box
 
 
-class AiidalabHome:
+class AiidaLabHome:
     """Class that mananges the appearance of the AiiDA lab home page."""
 
     def __init__(self):
@@ -70,7 +70,7 @@ class AiidalabHome:
         """Rendering home app."""
         launcher = load_widget('home')
         launcher.layout = ipw.Layout(width="900px", padding="20px", color='gray')
-        app = AiidalabApp('home', self.app_registry.get('home', None), AIIDALAB_APPS)
+        app = AiidaLabApp('home', self.app_registry.get('home', None), AIIDALAB_APPS)
         update_info = ipw.HTML("{}".format(app.update_info))
         update_info.layout.margin = "0px 0px 0px 800px"
         description_box = ipw.HTML("<a href=./single_app.ipynb?app=home><button>Manage App</button></a> {}".format(
@@ -99,7 +99,7 @@ class AiidalabHome:
         launcher.layout = ipw.Layout(width="900px")
         btn_box = mk_buttons(name)
         app_data = self.app_registry.get(name, None)
-        app = AiidalabApp(name, app_data, AIIDALAB_APPS)
+        app = AiidaLabApp(name, app_data, AIIDALAB_APPS)
         update_info = ipw.HTML("{}".format(app.update_info))
         update_info.layout.margin = "0px 0px 0px 800px"
         run_line = ipw.HBox([launcher, btn_box])

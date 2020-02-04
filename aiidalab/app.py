@@ -16,7 +16,7 @@ class AppNotInstalledException(Exception):
     pass
 
 
-class Version(ipw.VBox):
+class VersionSelectorWidget(ipw.VBox):
     """Class to choose app's version."""
 
     def __init__(self):
@@ -31,7 +31,7 @@ class Version(ipw.VBox):
         super().__init__([self.selected, self.change_btn, self.info])
 
 
-class AiidalabApp():  # pylint: disable=attribute-defined-outside-init,too-many-public-methods,too-many-instance-attributes
+class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-public-methods,too-many-instance-attributes
     """Class to manage AiiDA lab app."""
 
     def __init__(self, name, app_data, aiidalab_apps):  #, custom_update=False):
@@ -361,14 +361,14 @@ class AiidalabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
     def version(self):
         """App's version."""
         if not hasattr(self, '_version'):
-            self._version = Version()
+            self._version = VersionSelectorWidget()
             self._version.change_btn.on_click(self._change_version)
             self._refresh_version()
         return self._version
 
     @property
     def refs_dict(self):
-        """Returns a dictionary of references: branch names, tags"""
+        """Returns a dictionary of references: branch names, tags."""
         if not hasattr(self, '_refs_dict'):
             from dulwich.objects import Commit, Tag
             self._refs_dict = {}
@@ -623,8 +623,8 @@ class AiidalabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
             return """<font color="#9F6000"><i class='fa fa-warning'></i> Update Available</font>"""
         return """<font color="#270"><i class='fa fa-check'></i> Latest Version</font>"""
 
-    def render(self):
-        """"Display the app."""
+    def render_app_manager_widget(self):
+        """"Display widget to manage the app."""
         if self.has_git_repo():
             description = ipw.HTML("""<b> <div style="font-size: 30px; text-align:center;">{}</div></b>
             <br>

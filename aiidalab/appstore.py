@@ -4,12 +4,12 @@
 import ipywidgets as ipw
 from IPython.display import display
 
-from .app import AiidalabApp
+from .app import AiidaLabApp
 from .config import AIIDALAB_APPS
 from .utils import load_app_registry
 
 
-class AiidalabAppStore(ipw.HBox):
+class AiidaLabAppStore(ipw.HBox):
     """Class to manage AiiDA lab app store."""
 
     def __init__(self):
@@ -66,7 +66,7 @@ class AiidalabAppStore(ipw.HBox):
         self.category_filter.options = [key for key in self.category_title_key_mapping]
 
         # Define the apps that are going to be displayed.
-        self.apps_to_display = [AiidalabApp(name, app, AIIDALAB_APPS) for name, app in self.registry_sorted_list]
+        self.apps_to_display = [AiidaLabApp(name, app, AIIDALAB_APPS) for name, app in self.registry_sorted_list]
 
         self.update_page_selector()
         super().__init__([
@@ -93,7 +93,7 @@ class AiidalabAppStore(ipw.HBox):
     def change_vis_list(self, _=None):
         """This function creates a list of apps to be displayed. Moreover, it creates a parallel list of categories.
         After this the page selector update is called."""
-        self.apps_to_display = [AiidalabApp(name, app, AIIDALAB_APPS) for name, app in self.registry_sorted_list]
+        self.apps_to_display = [AiidaLabApp(name, app, AIIDALAB_APPS) for name, app in self.registry_sorted_list]
 
         if self.only_installed.value:
             self.apps_to_display = [app for app in self.apps_to_display if app.is_installed()]
