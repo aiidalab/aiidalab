@@ -104,7 +104,7 @@ nose==1.3.7
 notebook==5.7.8
 numpy==1.18.1
 orderedmultidict==1.0.1
-packaging==20.1
+packaging==19.2
 palettable==3.3.0
 pandas==1.0.0
 pandocfilters==1.4.2
@@ -115,7 +115,7 @@ pexpect==4.8.0 ; sys_platform != 'win32'
 pg8000==1.13.2
 pgtest==1.3.2
 pickleshare==0.7.5
-pika==1.1.0 ; extra == 'rmq'
+pika==1.1.0
 pillow==7.0.0
 pluggy==0.13.1
 plumpy==0.14.3
@@ -170,7 +170,7 @@ tabulate==0.8.5
 tempita==0.5.3.dev0
 terminado==0.8.3
 testpath==0.4.4
-topika==0.2.1 ; extra == 'rmq'
+topika==0.2.1
 tornado==4.5.3
 traitlets==4.3.3
 traittypes==0.2.1
