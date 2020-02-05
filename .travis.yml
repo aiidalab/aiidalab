@@ -9,8 +9,9 @@ before_install:
 - pip install -U pip wheel setuptools
 
 install:
-- pip install -e .
+- pip install -e .[pre-commit]
 - reentry scan -r aiida
 
 script:
-- python -c "import aiida"
+- pre-commit install; pre-commit run --all-files || ( git status --short; git diff ; exit 1 );
+- python -c "import aiidalab"
