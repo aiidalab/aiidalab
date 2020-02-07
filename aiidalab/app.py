@@ -3,13 +3,18 @@
 
 import re
 import os
-from os import path
+import shutil
+import json
 from time import sleep
 from collections import OrderedDict
+from subprocess import check_output, STDOUT
 
 import requests
 import ipywidgets as ipw
 from dulwich.repo import Repo
+from dulwich.objects import Commit, Tag
+from dulwich.porcelain import status, clone, pull, fetch
+from dulwich.errors import NotGitRepository
 
 
 class AppNotInstalledException(Exception):
@@ -52,15 +57,14 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
         return category in self.categories
 
     def _get_appdir(self):
-        return path.join(self.aiidalab_apps, self.name)
+        return os.path.join(self.aiidalab_apps, self.name)
 
     def is_installed(self):
         """The app is installed if the corresponding folder is present."""
-        return path.isdir(self._get_appdir())
+        return os.path.isdir(self._get_appdir())
 
     def has_git_repo(self):
         """Check if the app has a .git folder in it."""
-        from dulwich.errors import NotGitRepository
         try:
             Repo(self._get_appdir())
             return True
@@ -69,7 +73,6 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
     def found_uncommited_modifications(self):
         """Check whether the git-supervised files were modified."""
-        from dulwich.porcelain import status
         stts = status(self.repo)
         if stts.unstaged:
             return True
@@ -216,7 +219,6 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
     def _install_app(self, _):
         """Installing the app."""
-        from dulwich.porcelain import clone
         self.install_info.value = """<i class="fa fa-spinner fa-pulse" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1"><blink>Installing the app...</blink></font>"""
         clone(source=self._git_url, target=self._get_appdir())
@@ -255,7 +257,6 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
     def _update_app(self, _):
         """Perform app update."""
-        from dulwich.porcelain import pull, fetch
         cannot_modify = self.cannot_modify_app()
         if cannot_modify:
             self.install_info.value = """<i class="fa fa-times" style="color:red;font-size:4em;" >
@@ -301,7 +302,6 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
     def _uninstall_app(self, _):
         """Perfrom app uninstall."""
-        from shutil import rmtree
         cannot_modify = self.cannot_modify_app()
 
         # Check if one cannot install the app.
@@ -334,7 +334,7 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
             self.install_info.value = """<i class="fa fa-spinner fa-pulse" style="color:#337ab7;font-size:4em;" ></i>
             <font size="1"><blink>Unistalling the app...</blink></font>"""
             sleep(1)
-            rmtree(self._get_appdir())
+            shutil.rmtree(self._get_appdir())
             if hasattr(self, '_current_version'):
                 delattr(self, '_current_version')
             if hasattr(self, '_available_versions'):
@@ -370,12 +370,9 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
     def refs_dict(self):
         """Returns a dictionary of references: branch names, tags."""
         if not hasattr(self, '_refs_dict'):
-            from dulwich.objects import Commit, Tag
             self._refs_dict = {}
             for key, value in self.repo.get_refs().items():
-                if key.endswith(b'HEAD'):
-                    continue
-                elif key.startswith(b'refs/heads/'):
+                if key.endswith(b'HEAD') or key.startswith(b'refs/heads/'):
                     continue
                 obj = self.repo.get_object(value)
                 if isinstance(obj, Tag):
@@ -447,7 +444,7 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
                 # Find the corresponding (remote or local) branch among the ones that were found before.
                 pattern = re.compile(b"refs/.*/%s" % branch_label)
-                for key in {value for value in available.values()}:
+                for key in set(available.values()):
                     if pattern.match(key):
                         current = key
 
@@ -466,8 +463,6 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
     def _change_version(self, _=None, sleep_time=2):
         """Change app's version."""
 
-        import subprocess
-        from subprocess import check_output
         if not self.current_version == self.version.selected.value:
             if self.found_uncommited_modifications():
                 self.version.info.value = """"<i class="fa fa-times" style="color:red;font-size:4em;" ></i>
@@ -479,7 +474,7 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
             check_output(['git checkout {}'.format(self.version.selected.label)],
                          cwd=self._get_appdir(),
-                         stderr=subprocess.STDOUT,
+                         stderr=STDOUT,
                          shell=True)
             if hasattr(self, '_current_version'):
                 delattr(self, '_current_version')
@@ -521,8 +516,7 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
         except AttributeError:
             if self.is_installed():
                 try:
-                    with open(path.join(self._get_appdir(), 'metadata.json')) as json_file:
-                        import json
+                    with open(os.path.join(self._get_appdir(), 'metadata.json')) as json_file:
                         self._metadata = json.load(json_file)
                 except IOError:
                     self._metadata = {}
@@ -536,7 +530,7 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
         try:
             return "{}".format(self.metadata[what])
         except KeyError:
-            if not path.isfile(path.join(self._get_appdir(), 'metadata.json')):
+            if not os.path.isfile(os.path.join(self._get_appdir(), 'metadata.json')):
                 return '({}) metadata.json file is not present'.format(what)
             return 'the field "{}" is not present in metadata.json file'.format(what)
 
@@ -585,7 +579,7 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
         # If 'logo' key is present and the app is installed.
         elif self.is_installed():
-            res.value = '<img src="{}">'.format(path.join('..', self.name, self.metadata['logo']))
+            res.value = '<img src="{}">'.format(os.path.join('..', self.name, self.metadata['logo']))
 
         # If not installed, getting file from the remote git repository.
         else:
