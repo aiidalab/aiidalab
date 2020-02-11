@@ -158,9 +158,11 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
     def git_update_available(self):
         """Check whether there are updates available for the current branch in the remote repository."""
 
+        to_return = False
+
         if self.current_version is None or not self._git_url or self.current_version.startswith(b'refs/tags/'):
             # For later: if it is a tag check for the newer tags
-            to_return = False
+            return False
 
         # If it is a branch.
         elif self.current_version.startswith(b'refs/remotes/'):
