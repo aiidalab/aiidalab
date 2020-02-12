@@ -5,7 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 #aiida-ase = "~=1.0.1"
-aiida-castep = "~=1.0.0"
+#aiida-castep = "~=1.0.0"
 aiida-codtools = "~=2.0.0"
 aiida-core = {extras = ['rest', 'atomic_tools'],version = "~=1.0"}
 aiida-cp2k = "~=1.0.0b4"
@@ -25,7 +25,7 @@ aiida-siesta = "~=1.0.1"
 aiida-tbmodels = "~=0.2.0"
 #aiida-vasp = "~=0.2.4"
 #aiida-wannier90 = "~=1.0.0"
-aiida-zeopp = "~=1.0.3"
+aiida-zeopp = "~=1.1.1"
 #aiida-yambo = "~=0.2.5"
 
 [packages]
@@ -48,6 +48,7 @@ Markdown = "~=3.1.1"
 #specified in aiida-core but somehow not respected...
 ipython = "<6"
 tornado = "<5"
+voila = "~=0.1.20"
 
 [requires]
 python_version = "3.7"
