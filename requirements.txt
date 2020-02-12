@@ -47,7 +47,7 @@ cycler==0.10.0
 decorator==4.4.1
 deepdiff==3.3.0
 defusedxml==0.6.0
-django==1.11.28
+django==1.11.25
 dulwich==0.19.15
 elementpath==1.1.8
 entrypoints==0.3
