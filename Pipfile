@@ -25,7 +25,7 @@ aiida-siesta = "~=1.0.1"
 aiida-tbmodels = "~=0.2.0"
 #aiida-vasp = "~=0.2.4"
 #aiida-wannier90 = "~=1.0.0"
-#aiida-zeopp = "~=1.1.0"
+aiida-zeopp = "~=1.1.1"
 #aiida-yambo = "~=0.2.5"
 
 [packages]
