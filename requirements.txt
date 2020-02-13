@@ -2,24 +2,24 @@
 aiida-bands-inspect==0.3.0
 aiida-codtools==2.0.0
 aiida-core[atomic_tools,rest]==1.1.0
-aiida-cp2k==1.0.0b4
+aiida-cp2k==1.0.0b5
 aiida-ddec==1.0.0a1
 aiida-diff==1.0.0
 aiida-fleur==1.1.0
 aiida-optimize==0.3.1
 aiida-qeq==1.0.0a1
 aiida-quantumespresso==3.0.0a5
-aiida-raspa==1.0.0a3
+aiida-raspa==1.0.0
 aiida-siesta==1.0.1
 aiida-tbmodels==0.2.0
 aiida-tools==0.3.2
 aiida-zeopp==1.1.1
-aiidalab-widgets-base==1.0.0a8
+aiidalab-widgets-base==1.0.0b1
 aldjemy==0.9.1
 alembic==1.4.0
 aniso8601==8.0.0
 appmode-aiidalab==0.5.0.1
-appnope==0.1.0 ; sys_platform == 'darwin'
+appnope==0.1.0 ; platform_system == 'Darwin'
 arrow==0.15.5
 ase==3.19.0
 async-generator==1.10
@@ -54,6 +54,9 @@ ete3==3.1.1
 fileupload==0.1.5
 flask-cors==3.0.8
 flask-restful==0.3.8
+flask==1.1.1
+frozendict==1.2
+fsc.export==1.2.0
 furl==2.1.0
 future==0.18.2
 graphviz==0.13.2
