@@ -1,6 +1,6 @@
 {
     "name": "aiidalab",
-    "version": "20.02.0a1",
+    "version": "20.02.0b1",
     "author": "The AiiDA team",
     "author_email": "aiidalab@materialscloud.org",
     "description": "Meta package for the AiiDA lab python environment.",
@@ -9,7 +9,8 @@
     "classifiers": [
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Framework :: AiiDA"
+        "Framework :: AiiDA",
+        "Development Status :: 4 - Beta"
     ],
     "extras_require": {
         "pre-commit": [
