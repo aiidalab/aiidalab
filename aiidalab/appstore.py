@@ -63,7 +63,7 @@ class AiidaLabAppStore(ipw.HBox):
         self.category_title_key_mapping = {
             categories_dict[key]['title'] if key in categories_dict else key: key for key in categories_dict
         }
-        self.category_filter.options = [key for key in self.category_title_key_mapping]
+        self.category_filter.options = list(self.category_title_key_mapping)
 
         # Define the apps that are going to be displayed.
         self.apps_to_display = [AiidaLabApp(name, app, AIIDALAB_APPS) for name, app in self.registry_sorted_list]
