@@ -16,6 +16,8 @@ from dulwich.objects import Commit, Tag
 from dulwich.porcelain import status, clone, pull, fetch
 from dulwich.errors import NotGitRepository
 
+from .config import AIIDALAB_DEFAULT_GIT_BRANCH
+
 
 class AppNotInstalledException(Exception):
     pass
@@ -169,45 +171,42 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
 
             # Learn about local repository.
             local_branch = re.sub(b'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)  # pylint:disable=anomalous-backslash-in-string
-            local_head_at = self.repo[bytes(local_branch)]
-            remote_head_at = self.repo[bytes(self.current_version)]
+            local_head_id = self.repo[local_branch].id
+            remote_head_id = self.repo[self.current_version].id
 
-            # Learn about remote repository.
-            try:
-                on_server_head_at = self._git_remote_refs[local_branch]
-            except KeyError:
-                return False
-
-            # Is remote reference on the server is outdated?
-            if remote_head_at.id != on_server_head_at:
-
-                # I check if the remote commit is present in my remote commit history.
-                for cmmt in self.repo.get_walker(remote_head_at.id):
-                    if cmmt.commit.id == on_server_head_at:
-                        to_return = False
-                        break
-                else:
-                    to_return = True
-
-            elif local_head_at != remote_head_at:
+            # Check whether the current commit is not the same as remote commit.
+            if local_head_id != remote_head_id:
 
                 # Go back in the current branch commit history and see if I can find the remote commit there.
-                for cmmt in self.repo.get_walker(local_head_at.id):
+                for cmmt in self.repo.get_walker(local_head_id):
 
                     # Found, so the remote branch is outdated - no update.
-                    if cmmt.commit.id == remote_head_at.id:
+                    if cmmt.commit.id == remote_head_id:
                         to_return = False
                         break
 
                 # Not found, so the remote branch has additional commit(s).
                 else:
                     to_return = True
-            # else
-            #return False
-        # local branches can't have an update
-        #if self.current_version.startswith(b'refs/heads'):
-        #    return False
-        # something else
+
+            # Learn about remote repository, if possible
+            try:
+                on_server_head_at = bytes(self._git_remote_refs[local_branch.decode()], 'utf-8')
+            except KeyError:
+                return False
+
+            # Check whether the remote reference on the server is outdated.
+            if remote_head_id != on_server_head_at:
+
+                # Check if the commit on remote server is present in my remote commit history.
+                # It means the remote server is outdated.
+                for cmmt in self.repo.get_walker(remote_head_id):
+                    if cmmt.commit.id == on_server_head_at:
+                        to_return = False
+                        break
+                else:
+                    to_return = True
+
         return to_return
 
     @property
@@ -226,6 +225,10 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
         clone(source=self._git_url, target=self._get_appdir())
         self.install_info.value = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1">Success</font>"""
+        check_output(['git checkout {}'.format(AIIDALAB_DEFAULT_GIT_BRANCH)],
+                     cwd=self._get_appdir(),
+                     stderr=STDOUT,
+                     shell=True)
         self._refresh_version()
         self._refresh_install_button()
         self._refresh_update_button()

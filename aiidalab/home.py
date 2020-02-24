@@ -119,7 +119,7 @@ class AiidaLabHome:
         order = config['order']
         i = order.index(name)
         del order[i]
-        j = min(len(order) - 1, max(0, i + delta))
+        j = min(len(order), max(0, i + delta))
         order.insert(j, name)
         config['order'] = order
         self.write_config(config)

@@ -5,31 +5,31 @@ verify_ssl = true
 
 [dev-packages]
 #aiida-ase = "~=1.0.1"
-#aiida-castep = "~=1.0.0"
-aiida-codtools = "~=2.0.0"
-aiida-core = {extras = ['rest', 'atomic_tools'],version = "~=1.0"}
-aiida-cp2k = "~=1.0.0b5"
+aiida-castep = "~=1.0.0"
 #aiida-crystal17 = "~=0.10.0b5"
-aiida-ddec = "~=1.0.0a1"
-aiida-diff = "~=1.0.0"
-aiida-fleur = "~=1.1.0"
 #aiida-gudhi = "==0.1.0a3"
 #aiida-lammps = "~=0.4.0b3"
 #aiida-nwchem = "~=1.0.2"
-aiida-optimize = "~=0.3.1"
 #aiida-phtools = "==0.1.0a1"
+#aiida-wannier90 = "~=1.0.0"
+#aiida-yambo = "~=0.2.5"
+
+[packages]
+aiida-core = {extras = ['rest', 'atomic_tools'],version = "~=1.1"}
+aiida-codtools = "~=2.0.0"
+aiida-cp2k = "~=1.0.0b5"
+aiida-ddec = "~=1.0.0a1"
+aiida-diff = "~=1.0.0"
+aiida-fleur = "~=1.1.0"
+aiida-optimize = "~=0.3.1"
 aiida-qeq = "~=1.0.0a1"
 aiida-quantumespresso = "~=3.0.0a5"
 aiida-raspa = "~=1.0.0"
 aiida-siesta = "~=1.0.1"
 aiida-tbmodels = "~=0.2.0"
-#aiida-vasp = "~=0.2.4"
-#aiida-wannier90 = "~=1.0.0"
+aiida-vasp = "~=0.2.4"
 aiida-zeopp = "~=1.1.1"
-#aiida-yambo = "~=0.2.5"
-
-[packages]
-aiidalab-widgets-base = "~=1.0.0b1"
+aiidalab-widgets-base = "~=1.0.0b2"
 appmode-aiidalab = "~=0.5.0.1"
 arrow = "~=0.15.5"
 binaryornot = "~=0.4.4"
@@ -45,9 +45,6 @@ pythreejs = "~=2.1.1"
 pysmiles = "~=1.0.0"
 requests-cache = "~=0.5.2"
 Markdown = "~=3.1.1"
-#specified in aiida-core but somehow not respected...
-ipython = "<6"
-tornado = "<5"
 voila = "~=0.1.20"
 
 [requires]
