@@ -16,6 +16,8 @@ from dulwich.objects import Commit, Tag
 from dulwich.porcelain import status, clone, pull, fetch
 from dulwich.errors import NotGitRepository
 
+from .config import AIIDALAB_DEFAULT_GIT_BRANCH
+
 
 class AppNotInstalledException(Exception):
     pass
@@ -223,6 +225,10 @@ class AiidaLabApp():  # pylint: disable=attribute-defined-outside-init,too-many-
         clone(source=self._git_url, target=self._get_appdir())
         self.install_info.value = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1">Success</font>"""
+        check_output(['git checkout {}'.format(AIIDALAB_DEFAULT_GIT_BRANCH)],
+                     cwd=self._get_appdir(),
+                     stderr=STDOUT,
+                     shell=True)
         self._refresh_version()
         self._refresh_install_button()
         self._refresh_update_button()
