@@ -1,3 +1,3 @@
 """AiiDA lab core tools."""
 
-__version__ = "20.02.0b2"
+__version__ = "20.03.0b1"
