@@ -1,8 +1,10 @@
 """Module to generate AiiDA lab home page."""
 from os import path
 from glob import glob
+from functools import wraps
 
 import json
+import traitlets
 import ipywidgets as ipw
 from IPython.display import display
 
@@ -13,26 +15,85 @@ from .utils import load_widget, load_app_registry
 from .widgets import UpdateAvailableInfoWidget
 
 
-def mk_buttons(name):
-    """Make buttons to move the app up or down."""
+def create_app_widget_move_buttons(name):
+    """Make buttons to move the app widget up or down."""
     layout = ipw.Layout(width="40px")
-    btn_box = ipw.HTML("""
+    app_widget_move_buttons = ipw.HTML("""
     <a href=./start.ipynb?move_up={name} title="Move it up"><i class='fa fa-arrow-up' style='color:#337ab7;font-size:2em;' ></i></a>
     <a href=./start.ipynb?move_down={name} title="Move it down"><i class='fa fa-arrow-down' style='color:#337ab7;font-size:2em;' ></i></a>
     """.format(name=name),
                        layout=layout)
-    btn_box.layout.margin = "50px 0px 0px 0px"
+    app_widget_move_buttons.layout.margin = "50px 0px 0px 0px"
 
-    return btn_box
+    return app_widget_move_buttons
+
+
+def _workaround_property_lock_issue(func):
+    """Work-around for issue with the ipw.Accordion widget.
+
+    The widget does not report changes to the .selected_index trait when displayed
+    within a custom ipw.Output instance. However, the change is somewhat cryptic reported
+    by a change to the private '_property_lock' trait. We observe changes to that trait
+    and convert the change argument into a form that is more like the one expected by
+    downstream handlers.
+    """
+
+    @wraps(func)
+    def _inner(self, change):
+        if change['name'] == '_property_lock':
+            if 'selected_index' in change['new']:
+                fixed_change = change.copy()
+                fixed_change['name'] = 'selected_index'
+                fixed_change['new'] = change['new']['selected_index']
+                del fixed_change['old']
+                return func(self, fixed_change)
+
+        return func(self, change)
+
+    return _inner
 
 
 class AiidaLabHome:
     """Class that mananges the appearance of the AiiDA lab home page."""
 
+    class _AppWidgets(dict):
+        """Helper class to lazily create and register app widgets."""
+
+        def __init__(self, home):
+            self.home = home
+            super().__init__()
+
+        def __missing__(self, name):
+            return self.home._create_app_widget(name)
+
     def __init__(self):
         self.config_fn = ".launcher.json"
         self.output = ipw.Output()
         self.app_registry = load_app_registry()['apps']
+        self.app_widgets = self._AppWidgets(self)
+
+    def _create_app_widget(self, name):
+        """Create the widget representing the app on the home screen."""
+        config = self.read_config()
+        app_data = self.app_registry.get(name, None)
+        app = AiidaLabApp(name, app_data, AIIDALAB_APPS)
+
+        app_widget = AppWidget(app, allow_move=name != 'home')
+        app_widget.hidden = name in config['hidden']
+        app_widget.observe(self._on_app_widget_change_hidden, names=['hidden'])
+
+        return app_widget
+
+    def _on_app_widget_change_hidden(self, change):
+        """Record whether a app widget is hidden on the home screen in the config file."""
+        config = self.read_config()
+        hidden = set(config['hidden'])
+        if change['new']:  # hidden
+            hidden.add(change['owner'].app.name)
+        else:  # visiable
+            hidden.discard(change['owner'].app.name)
+        config['hidden'] = list(hidden)
+        self.write_config(config)
 
     def write_config(self, config):
         json.dump(config, open(self.config_fn, 'w'), indent=2)
@@ -45,41 +106,13 @@ class AiidaLabHome:
     def render(self):
         """Rendering all apps."""
         self.output.clear_output()
-        self.render_home()
         apps = self.load_apps()
-        config = self.read_config()
+
         with self.output:
             for name in apps:
-                accordion = self.mk_accordion(name)
-                accordion.selected_index = None if name in config['hidden'] else 0
-                display(accordion)
+                display(self.app_widgets[name])
 
         return self.output
-
-    def record_showhide(self, name, visible):
-        """Store the information about displayed/hidden status of an app."""
-        config = self.read_config()
-        hidden = set(config['hidden'])
-        if visible:
-            hidden.discard(name)
-        else:
-            hidden.add(name)
-        config['hidden'] = list(hidden)
-        self.write_config(config)
-
-    def render_home(self):
-        """Rendering home app."""
-        launcher = load_widget('home')
-        launcher.layout = ipw.Layout(width="900px", padding="20px", color='gray')
-        app = AiidaLabApp('home', self.app_registry.get('home', None), AIIDALAB_APPS)
-        update_info = UpdateAvailableInfoWidget()
-        ipw.dlink((app, 'updates_available'), (update_info, 'updates_available'))
-        update_info.layout.margin = "0px 0px 0px 800px"
-        description_box = ipw.HTML("<a href=./single_app.ipynb?app=home><button>Manage App</button></a> {}".format(
-            app.git_hidden_url),
-                                   layout={'width': 'initial'})
-        description_box.layout.margin = "0px 0px 0px 700px"
-        display(update_info, launcher, description_box, app.install_info)
 
     def load_apps(self):
         """Load apps according to the order defined in the config file."""
@@ -93,28 +126,7 @@ class AiidaLabHome:
         apps.sort(key=lambda x: order.index(x) if x in order else -1)
         config['order'] = apps
         self.write_config(config)
-        return apps
-
-    def mk_accordion(self, name):
-        """Make per-app accordion widget to put on the home page."""
-        launcher = load_widget(name)
-        launcher.layout = ipw.Layout(width="900px")
-        btn_box = mk_buttons(name)
-        app_data = self.app_registry.get(name, None)
-        app = AiidaLabApp(name, app_data, AIIDALAB_APPS)
-        update_info = UpdateAvailableInfoWidget()
-        ipw.dlink((app, 'updates_available'), (update_info, 'updates_available'))
-        update_info.layout.margin = "0px 0px 0px 800px"
-        run_line = ipw.HBox([launcher, btn_box])
-        description_box = ipw.HTML("<a href=./single_app.ipynb?app={}><button>Manage App</button></a> {}".format(
-            name, app.git_hidden_url),
-                                   layout={'width': 'initial'})
-        description_box.layout.margin = "0px 0px 0px 700px"
-        box = ipw.VBox([update_info, run_line, description_box])
-        accordion = ipw.Accordion(children=[box])
-        accordion.set_title(0, app.title)
-        accordion.observe(lambda c: self.record_showhide(name, accordion.selected_index == 0), names="selected_index")
-        return accordion
+        return ['home'] + apps
 
     def move_updown(self, name, delta):
         """Move the app up/down on the start page."""
@@ -126,3 +138,50 @@ class AiidaLabHome:
         order.insert(j, name)
         config['order'] = order
         self.write_config(config)
+
+
+class AppWidget(ipw.VBox):
+
+    hidden = traitlets.Bool()
+
+    def __init__(self, app, allow_move=False):
+        self.app = app
+
+        launcher = load_widget(app.name)
+        launcher.layout = ipw.Layout(width="900px")
+
+
+        update_info = UpdateAvailableInfoWidget()
+        ipw.dlink((app, 'updates_available'), (update_info, 'updates_available'))
+        update_info.layout.margin = "0px 0px 0px 800px"
+
+        if allow_move:
+            app_widget_move_buttons = create_app_widget_move_buttons(app.name)
+            body = ipw.HBox([launcher, app_widget_move_buttons])
+        else:
+            body = launcher
+
+        footer = ipw.HTML(
+            "<a href=./single_app.ipynb?app={}><button>Manage App</button></a>".format(app.name),
+            layout={'width': 'initial'})
+        if app.url:
+            footer.value += ' <a href="{}"><button>URL</button></a>'.format(app.url)
+        footer.layout.margin = "0px 0px 0px 700px"
+
+        box = ipw.VBox([update_info, body, footer])
+
+        self.accordion = ipw.Accordion(children=[box])
+        self.accordion.set_title(0, app.title)
+        # Need to observe all names here due to unidentified issue:
+        self.accordion.observe(self._observe_accordion_selected_index)  # , names=['selected_index'])
+
+        super().__init__(children=[self.accordion])
+
+    @_workaround_property_lock_issue
+    def _observe_accordion_selected_index(self, change):
+        if change['name'] == 'selected_index':  # Observing all names due to unidentified issue.
+            self.hidden = change['new'] is None
+
+    @traitlets.observe('hidden')
+    def _observe_hidden(self, change):
+        self.accordion.selected_index = None if change['new'] else 0

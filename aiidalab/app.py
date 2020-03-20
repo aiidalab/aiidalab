@@ -456,14 +456,6 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
     git_url = url  # deprecated
 
     @property
-    def git_hidden_url(self):
-        """Provide a link to Git repository."""
-        if self._git_url is None:
-            return 'No Git url'
-        # else
-        return '<a href="{}"><button>Git URL</button></a>'.format(self._git_url)
-
-    @property
     def more(self):
         return """<a href=./single_app.ipynb?app={}>Manage App</a>""".format(self.name)
 
