@@ -446,12 +446,11 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         return self._get_from_metadata('title')
 
     @property
-    def git_url(self):
+    def url(self):
         """Provide explicit link to Git repository."""
-        if self._git_url is None:
-            return '-'
-        # else
-        return '<a href="{}">{}</a>'.format(self._git_url, self._git_url)
+        return self._git_url
+
+    git_url = url  # deprecated
 
     @property
     def git_hidden_url(self):
@@ -527,18 +526,21 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
 
 class AppManagerWidget(ipw.VBox):
 
-    BODY_TEXT = """<b> <div style="font-size: 30px; text-align:center;">{title}</div></b>
+    BODY_MAIN = """<b> <div style="font-size: 30px; text-align:center;">{title}</div></b>
     <br>
     <b>Authors:</b> {authors}
     <br>
-    <b>Description:</b> {description}
-    <br>
-    <b>Git URL:</b> {git_url}"""
+    <b>Description:</b> {description}"""
+
+    BODY_URL = """<br>
+    <b>URL:</b> <a href="{url}">{url}</a>"""
 
     def __init__(self, app, with_version_selector=False):
         self.app = app
 
-        body = ipw.HTML(self.BODY_TEXT.format(title=app.title, authors=app.authors, description=app.description, git_url=app.git_url))  # TODO Remove dependency on git_url here.
+        body = ipw.HTML(self.BODY_MAIN.format(title=app.title, authors=app.authors, description=app.description))
+        if app.url is not None:
+            body.value += self.BODY_URL.format(url=app.url)
 
         # Setup install_info
         self.install_info = StatusHTML()
@@ -592,7 +594,7 @@ class AppManagerWidget(ipw.VBox):
             installed = self.app.path and os.path.exists(self.app.path)
             update_available = self.app.git_update_available() if installed else False
 
-            self.install_button.disabled = installed or self.app._git_url is None
+            self.install_button.disabled = installed or self.app.url is None
             self.install_button.button_style = '' if installed else 'info'
 
             self.uninstall_button.disabled = not installed
