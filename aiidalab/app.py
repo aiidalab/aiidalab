@@ -54,6 +54,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
     install_info = traitlets.Unicode()
     available_versions = traitlets.Dict(traitlets.Bytes)
     current_version = traitlets.Bytes(allow_none=True)
+    updates_available = traitlets.Bool(allow_none=True)  # Use None if updates cannot be determined.
 
     def __init__(self, name, app_data, aiidalab_apps):  #, custom_update=False):
         if app_data is not None:
@@ -403,9 +404,11 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
             if self.is_installed() and self.has_git_repo():
                 self.available_versions = self._available_versions()
                 self.current_version = self._current_version()
+                self.updates_available = self._updates_available()
             else:
                 self.available_versions = dict()
                 self.current_version = None
+                self.updates_available = None
 
     @property
     def metadata(self):
@@ -504,16 +507,11 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
                 raise AppNotInstalledException("The app is not installed")
         return self._repo
 
-    @property
-    def update_info(self):
-        """Update app info."""
-        if not self.has_git_repo():
-            return """<font color="#D8000C"><i class='fa fa-times-circle'></i> Not a Git Repo</font>"""
-        if not self._git_url:
-            return """<font color="#D8000C"><i class='fa fa-times-circle'></i> No remote URL</font>"""
-        if self.git_update_available():
-            return """<font color="#9F6000"><i class='fa fa-warning'></i> Update Available</font>"""
-        return """<font color="#270"><i class='fa fa-check'></i> Latest Version</font>"""
+    def _updates_available(self):
+        if self.has_git_repo() and self._git_url:
+            return self.git_update_available()
+        else:
+            return None
 
     def render_app_manager_widget(self):
         """"Display widget to manage the app."""

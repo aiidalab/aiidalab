@@ -10,6 +10,7 @@ from IPython.display import display
 from .app import AiidaLabApp
 from .config import AIIDALAB_APPS
 from .utils import load_widget, load_app_registry
+from .widgets import UpdateAvailableInfoWidget
 
 
 def mk_buttons(name):
@@ -71,7 +72,8 @@ class AiidaLabHome:
         launcher = load_widget('home')
         launcher.layout = ipw.Layout(width="900px", padding="20px", color='gray')
         app = AiidaLabApp('home', self.app_registry.get('home', None), AIIDALAB_APPS)
-        update_info = ipw.HTML("{}".format(app.update_info))
+        update_info = UpdateAvailableInfoWidget()
+        ipw.dlink((app, 'updates_available'), (update_info, 'updates_available'))
         update_info.layout.margin = "0px 0px 0px 800px"
         description_box = ipw.HTML("<a href=./single_app.ipynb?app=home><button>Manage App</button></a> {}".format(
             app.git_hidden_url),
@@ -100,7 +102,8 @@ class AiidaLabHome:
         btn_box = mk_buttons(name)
         app_data = self.app_registry.get(name, None)
         app = AiidaLabApp(name, app_data, AIIDALAB_APPS)
-        update_info = ipw.HTML("{}".format(app.update_info))
+        update_info = UpdateAvailableInfoWidget()
+        ipw.dlink((app, 'updates_available'), (update_info, 'updates_available'))
         update_info.layout.margin = "0px 0px 0px 800px"
         run_line = ipw.HBox([launcher, btn_box])
         description_box = ipw.HTML("<a href=./single_app.ipynb?app={}><button>Manage App</button></a> {}".format(
