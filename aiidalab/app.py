@@ -8,6 +8,7 @@ import json
 from time import sleep
 from collections import OrderedDict
 from subprocess import check_output, STDOUT
+from contextlib import contextmanager
 
 import requests
 import traitlets
@@ -53,7 +54,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
     path = traitlets.Unicode(allow_none=True)
     install_info = traitlets.Unicode()
     available_versions = traitlets.Dict(traitlets.Bytes)
-    current_version = traitlets.Bytes(allow_none=True)
+    current_version = traitlets.Bytes(allow_none=True, readonly=True)
     updates_available = traitlets.Bool(allow_none=True)  # Use None if updates cannot be determined.
 
     def __init__(self, name, app_data, aiidalab_apps):  #, custom_update=False):
@@ -70,6 +71,8 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         self.name = name
         self.path = os.path.join(self.aiidalab_apps, self.name)
         self._refresh_versions()
+
+        self._change_version_mode = False
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
@@ -108,8 +111,6 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         - if it is a local branch - always return True (even though it
           can be that there are no local commits in it
         - if it is a remote branch - check properly."""
-        return False  # TODO: CURRENTLY NOT IMPLEMENTED!!!
-
 
         # No local commits if it is a tag.
         if self.current_version.startswith(b'refs/tags/'):
@@ -125,7 +126,8 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
 
             # Look for the local branches that track the remote ones.
             try:
-                local_head_at = self.repo[self.current_version]
+                local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)  # pylint:disable=anomalous-backslash-in-string
+                local_head_at = self.repo[local_branch]
 
             # Current branch is not tracking any remote one.
             except KeyError:
@@ -147,8 +149,22 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
 
     def found_local_versions(self):
         """Find if local git branches are present."""
-        pattern = re.compile(b'refs/heads/(\w+)')  # pylint:disable=anomalous-backslash-in-string
+        pattern = re.compile(rb'refs/heads/(\w+)')  # pylint:disable=anomalous-backslash-in-string
         return any(pattern.match(value) for value in self.available_versions.values())
+
+    @contextmanager
+    def _for_all_versions(self):
+        original_version = self.current_version
+        with self.hold_trait_notifications():
+            try:
+                def _switch_to_all_versions():
+                    for version in self.available_versions.values():
+                        self.set_trait('current_version', version)
+                        yield
+
+                yield _switch_to_all_versions()
+            finally:
+                self.set_trait('current_version', original_version)
 
     def cannot_modify_app(self):
         """Check if there is any reason to not let modifying the app."""
@@ -161,13 +177,16 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         if not self._git_url:
             return 'no remote URL specified (risk to lose your work)'
 
-        # The repo has some uncommited modifications.
-        if self.found_uncommited_modifications():
-            return 'found uncommited modifications (risk to lose your work)'
+        with self._for_all_versions() as versions:
+            for version in versions:
 
-        # Found local commits.
-        if self.found_local_commits():
-            return 'local commits found (risk to lose your work)'
+                # The repo has some uncommited modifications.
+                if self.found_uncommited_modifications():
+                    return 'found uncommited modifications (risk to lose your work)'
+
+                # Found local commits.
+                if self.found_local_commits():
+                    return 'local commits found (risk to lose your work)'
 
         # Found no branches.
         if not self.available_versions:
@@ -188,7 +207,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         if self.current_version.startswith(b'refs/remotes/'):
 
             # Learn about local repository.
-            local_branch = re.sub(b'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)  # pylint:disable=anomalous-backslash-in-string
+            local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)  # pylint:disable=anomalous-backslash-in-string
             local_head_id = self.repo[local_branch].id
             remote_head_id = self.repo[self.current_version].id
 
@@ -263,7 +282,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         sleep(1)
         self.install_info = ''
 
-    def _uninstall_app(self, _):
+    def _uninstall_app(self, _=None):
         """Perfrom app uninstall."""
         cannot_modify = self.cannot_modify_app()
 
@@ -276,16 +295,12 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
             cannot_modify = "you have local branches"
         else:
             # look for the local commited modifications all the available branches
-            initial_value = self.current_version
-            try:
-                for key, value in self.available_versions.items():
-                    self.current_version = value  # actually switching the branch
+            with self._for_all_versions() as versions:
+                for version in versions:
                     if self.found_local_commits():
                         raise RuntimeError(
                             "Can not delete the repository, there are local commits "
-                            "on branch '{}'.".format(key))
-            finally:
-                self.current_version = initial_value  # actually switching the branch
+                            "on branch '{}'.".format(version))
 
         # Perform uninstall process.
         shutil.rmtree(self._get_appdir())
@@ -380,6 +395,23 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
 
         return current
 
+    @contextmanager
+    def request_version_change(self):
+        assert not self._change_version_mode, "Can't enter context manager more than once."
+        self._change_version_mode = True
+
+        def request_version(new_version):
+            self.set_trait('current_version', new_version)
+
+        try:
+            objection = self.cannot_modify_app()
+            if objection:
+                raise RuntimeError(objection)
+            else:
+                yield request_version
+        finally:
+            self._change_version_mode = False
+
     @traitlets.validate('current_version')
     def _valid_current_version(self, proposal):
         """Validate new version proposal."""
@@ -387,9 +419,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         if self.current_version is not None and self.current_version != proposal['value']:
             if self.found_uncommited_modifications():
                 raise traitlets.TraitError(
-                    "{}: {} -> {} failed".format(self.path, self.current_version, proposal['value']))
-                    #"Can not switch to the branch {}: you have uncommitted modifications.""".format(proposal['value']))
-
+                    "Can not switch to version {}: you have uncommitted modifications.""".format(proposal['value']))
         return proposal['value']
 
     @traitlets.observe('current_version')
@@ -403,11 +433,11 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         with self.hold_trait_notifications():
             if self.is_installed() and self.has_git_repo():
                 self.available_versions = self._available_versions()
-                self.current_version = self._current_version()
+                self.set_trait('current_version', self._current_version())
                 self.updates_available = self._updates_available()
             else:
                 self.available_versions = dict()
-                self.current_version = None
+                self.set_trait('current_version', None)
                 self.updates_available = None
 
     @property
@@ -569,9 +599,14 @@ class AppManagerWidget(ipw.VBox):
 
     def _change_version(self, change):
         assert hasattr(self, 'version_selector')
+        if change['new'] == self.app.current_version:
+            return
+
         try:
-            self.app.current_version = change['new']
-        except traitlets.TraitError as error:
+            with self.app.request_version_change() as request:
+                request(change['new'])
+
+        except RuntimeError as error:
             self.version_selector.info.show_temporary_message(
                 HTML_MSG_FAIL.format("Failed to switch version, error: '{}'".format(error)))
         else:
@@ -600,3 +635,4 @@ class AppManagerWidget(ipw.VBox):
             self.install_info.show_temporary_message(HTML_MSG_FAIL.format(error))
         else:
             self.install_info.show_temporary_message(HTML_MSG_SUCCESS.format("Uninstalled app."))
+            self.uninstall_button.disabled = True
