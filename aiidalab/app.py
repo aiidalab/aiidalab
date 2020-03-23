@@ -22,10 +22,8 @@ from cachetools.func import ttl_cache
 from .config import AIIDALAB_DEFAULT_GIT_BRANCH
 from .widgets import StatusHTML
 
-
 HTML_MSG_SUCCESS = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
 {}"""
-
 
 HTML_MSG_FAIL = """"<i class="fa fa-times" style="color:red;font-size:4em;" ></i>
 {}"""
@@ -163,6 +161,7 @@ class AiidaLabApp(traitlets.HasTraits):
         original_version = self.current_version
         with self.hold_trait_notifications():
             try:
+
                 def _iterate_all_versions():
                     for branch in self.available_versions.values():
                         self.set_trait('current_version', branch)
@@ -302,9 +301,8 @@ class AiidaLabApp(traitlets.HasTraits):
             with self._for_all_versions() as branches:
                 for branch in branches:
                     if self.found_local_commits():
-                        raise RuntimeError(
-                            "Can not delete the repository, there are local commits "
-                            "on branch '{}'.".format(branch))
+                        raise RuntimeError("Can not delete the repository, there are local commits "
+                                           "on branch '{}'.".format(branch))
 
         # Perform uninstall process.
         shutil.rmtree(self._get_appdir())
@@ -390,8 +388,7 @@ class AiidaLabApp(traitlets.HasTraits):
         except IndexError:
             reverted_refs_dict = {value: key for key, value in self.refs_dict.items()}
             try:
-                current = reverted_refs_dict[self.repo.refs.follow(b'HEAD')
-                                             [1]]  # knowing the hash I can access the tag
+                current = reverted_refs_dict[self.repo.refs.follow(b'HEAD')[1]]  # knowing the hash I can access the tag
             except KeyError:
                 print(("Detached HEAD state ({} app)?".format(self.name)))
                 return None
@@ -425,8 +422,8 @@ class AiidaLabApp(traitlets.HasTraits):
 
         if self.current_version is not None and self.current_version != proposal['value']:
             if self.found_uncommited_modifications():
-                raise traitlets.TraitError(
-                    "Can not switch to version {}: you have uncommitted modifications.""".format(proposal['value']))
+                raise traitlets.TraitError("Can not switch to version {}: you have uncommitted modifications."
+                                           "".format(proposal['value']))
         return proposal['value']
 
     @traitlets.observe('current_version')
@@ -590,16 +587,13 @@ class AppManagerWidget(ipw.VBox):
         children = [
             ipw.HBox([app.logo, body]),
             ipw.HBox([self.uninstall_button, self.update_button, self.install_button]),
-            ipw.HBox([self.install_info])]
+            ipw.HBox([self.install_info])
+        ]
 
         if with_version_selector:
             self.version_selector = VersionSelectorWidget()
-            ipw.dlink(
-                (self.app, 'available_versions'),
-                (self.version_selector.selected, 'options'))
-            ipw.dlink(
-                (self.app, 'current_version'),
-                (self.version_selector.selected, 'value'))
+            ipw.dlink((self.app, 'available_versions'), (self.version_selector.selected, 'options'))
+            ipw.dlink((self.app, 'current_version'), (self.version_selector.selected, 'value'))
             self.version_selector.selected.observe(self._change_version, names=['value'])
             children.append(self.version_selector)
 

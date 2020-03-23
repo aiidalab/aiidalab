@@ -22,7 +22,7 @@ def create_app_widget_move_buttons(name):
     <a href=./start.ipynb?move_up={name} title="Move it up"><i class='fa fa-arrow-up' style='color:#337ab7;font-size:2em;' ></i></a>
     <a href=./start.ipynb?move_down={name} title="Move it down"><i class='fa fa-arrow-down' style='color:#337ab7;font-size:2em;' ></i></a>
     """.format(name=name),
-                       layout=layout)
+                                       layout=layout)
     app_widget_move_buttons.layout.margin = "50px 0px 0px 0px"
 
     return app_widget_move_buttons
@@ -151,7 +151,6 @@ class AppWidget(ipw.VBox):
         launcher = load_widget(app.name)
         launcher.layout = ipw.Layout(width="900px")
 
-
         update_info = UpdateAvailableInfoWidget()
         ipw.dlink((app, 'updates_available'), (update_info, 'updates_available'))
         update_info.layout.margin = "0px 0px 0px 800px"
@@ -162,9 +161,8 @@ class AppWidget(ipw.VBox):
         else:
             body = launcher
 
-        footer = ipw.HTML(
-            "<a href=./single_app.ipynb?app={}><button>Manage App</button></a>".format(app.name),
-            layout={'width': 'initial'})
+        footer = ipw.HTML("<a href=./single_app.ipynb?app={}><button>Manage App</button></a>".format(app.name),
+                          layout={'width': 'initial'})
         if app.url:
             footer.value += ' <a href="{}"><button>URL</button></a>'.format(app.url)
         footer.layout.margin = "0px 0px 0px 700px"
