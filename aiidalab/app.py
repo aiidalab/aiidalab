@@ -288,7 +288,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         sleep(1)
         self.install_info = ''
 
-    def _uninstall_app(self, _=None):
+    def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
         cannot_modify = self.cannot_modify_app()
 
@@ -646,7 +646,7 @@ class AppManagerWidget(ipw.VBox):
     def _uninstall_app(self, _):
         """Attempt to uninstall the app."""
         try:
-            self.app._uninstall_app()
+            self.app.uninstall_app()
         except RuntimeError as error:
             self.install_info.show_temporary_message(HTML_MSG_FAIL.format(error))
         else:
