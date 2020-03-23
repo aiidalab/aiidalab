@@ -49,7 +49,7 @@ class VersionSelectorWidget(ipw.VBox):
         super().__init__([self.selected, self.info])
 
 
-class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-outside-init,too-many-public-methods,too-many-instance-attributes
+class AiidaLabApp(traitlets.HasTraits):
     """Class to manage AiiDA lab app."""
 
     path = traitlets.Unicode(allow_none=True)
@@ -131,7 +131,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
 
             # Look for the local branches that track the remote ones.
             try:
-                local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)  # pylint:disable=anomalous-backslash-in-string
+                local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)
                 local_head_at = self.repo[local_branch]
 
             # Current branch is not tracking any remote one.
@@ -154,7 +154,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
 
     def found_local_versions(self):
         """Find if local git branches are present."""
-        pattern = re.compile(rb'refs/heads/(\w+)')  # pylint:disable=anomalous-backslash-in-string
+        pattern = re.compile(rb'refs/heads/(\w+)')
         return any(pattern.match(value) for value in self.available_versions.values())
 
     @contextmanager
@@ -213,7 +213,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         if self.current_version.startswith(b'refs/remotes/'):
 
             # Learn about local repository.
-            local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)  # pylint:disable=anomalous-backslash-in-string
+            local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)
             local_head_id = self.repo[local_branch].id
             remote_head_id = self.repo[self.current_version].id
 
