@@ -200,8 +200,8 @@ class AiidaLabApp(traitlets.HasTraits):
 
         return ''
 
-    def git_update_available(self):
-        """Check whether there are updates available for the current branch in the remote repository."""
+    def update_available(self):
+        """Check whether there are updates available."""
 
         if self.current_version is None or not self._git_url or self.current_version.startswith(b'refs/tags/'):
             # For later: if it is a tag check for the newer tags
@@ -251,8 +251,6 @@ class AiidaLabApp(traitlets.HasTraits):
                     to_return = True
 
         return to_return
-
-    update_available = git_update_available  # TODO: deprecate git-specific variant
 
     def _install_app(self, _):
         """Installing the app."""
@@ -537,7 +535,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def _updates_available(self):
         if self.has_git_repo() and self._git_url:
-            return self.git_update_available()
+            return self.update_available()
 
         return None
 
@@ -630,7 +628,7 @@ class AppManagerWidget(ipw.VBox):
         """Refresh interface based on potentially changed app install and version state."""
         with self.hold_trait_notifications():
             installed = self.app.path and os.path.exists(self.app.path)
-            update_available = self.app.git_update_available() if installed else False
+            update_available = self.app.update_available() if installed else False
 
             self.install_button.disabled = installed or self.app.url is None
             self.install_button.button_style = '' if installed else 'info'
