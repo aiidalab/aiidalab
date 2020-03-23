@@ -159,6 +159,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
 
     @contextmanager
     def _for_all_versions(self):
+        """Iterate through all versions to perform internal checks."""
         original_version = self.current_version
         with self.hold_trait_notifications():
             try:
@@ -402,6 +403,11 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
 
     @contextmanager
     def request_version_change(self):
+        """Use this context manager to safely request a version change.
+
+        In case that the version cannot be changed, all changes are automatically
+        rolled back.
+        """
         assert not self._change_version_mode, "Can't enter context manager more than once."
         self._change_version_mode = True
 
@@ -547,6 +553,12 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
 
 
 class AppManagerWidget(ipw.VBox):
+    """Widget for management of apps.
+
+    Shows basic information about the app (description, authors, etc.) and provides
+    an interface to install, uninstall, and update the application, as well as change
+    versions if possible.
+    """
 
     BODY_MAIN = """<b> <div style="font-size: 30px; text-align:center;">{title}</div></b>
     <br>
@@ -600,6 +612,7 @@ class AppManagerWidget(ipw.VBox):
         super().__init__(children=children)
 
     def _change_version(self, change):
+        """Attempt to change the app version."""
         assert hasattr(self, 'version_selector')
         if change['new'] == self.app.current_version:
             return
@@ -631,6 +644,7 @@ class AppManagerWidget(ipw.VBox):
             self.update_button.button_style = 'warning' if update_available else ''
 
     def _uninstall_app(self, _):
+        """Attempt to uninstall the app."""
         try:
             self.app._uninstall_app()
         except RuntimeError as error:
