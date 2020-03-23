@@ -17,6 +17,7 @@ from dulwich.repo import Repo
 from dulwich.objects import Commit, Tag
 from dulwich.porcelain import status, clone, pull, fetch
 from dulwich.errors import NotGitRepository
+from cachetools.func import ttl_cache
 
 from .config import AIIDALAB_DEFAULT_GIT_BRANCH
 from .widgets import StatusHTML
@@ -445,20 +446,17 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
                 self.updates_available = None
 
     @property
+    @ttl_cache()
     def metadata(self):
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
-        try:
-            return self._metadata
-        except AttributeError:
-            if self.is_installed():
-                try:
-                    with open(os.path.join(self._get_appdir(), 'metadata.json')) as json_file:
-                        self._metadata = json.load(json_file)
-                except IOError:
-                    self._metadata = {}
-            else:
-                self._metadata = requests.get(self._meta_url).json()
-            return self._metadata
+        if self.is_installed():
+            try:
+                with open(os.path.join(self._get_appdir(), 'metadata.json')) as json_file:
+                    return json.load(json_file)
+            except IOError:
+                return dict()
+        else:
+            return requests.get(self._meta_url).json()
 
     def _get_from_metadata(self, what):
         """Get information from metadata."""
