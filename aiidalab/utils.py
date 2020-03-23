@@ -6,12 +6,12 @@ from os import path
 from importlib import import_module
 from urllib.parse import urlparse
 
-from markdown import markdown
 import requests
-from cachetools.func import ttl_cache
-
+from markdown import markdown
 import ipywidgets as ipw
 from IPython.lib import backgroundjobs as bg
+from cachetools.func import ttl_cache
+
 from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 
 
