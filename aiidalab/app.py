@@ -315,17 +315,16 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
     @property
     def refs_dict(self):
         """Returns a dictionary of references: branch names, tags."""
-        if not hasattr(self, '_refs_dict'):
-            self._refs_dict = {}
-            for key, value in self.repo.get_refs().items():
-                if key.endswith(b'HEAD') or key.startswith(b'refs/heads/'):
-                    continue
-                obj = self.repo.get_object(value)
-                if isinstance(obj, Tag):
-                    self._refs_dict[key] = obj.object[1]
-                elif isinstance(obj, Commit):
-                    self._refs_dict[key] = value
-        return self._refs_dict
+        refs_dict = {}
+        for key, value in self.repo.get_refs().items():
+            if key.endswith(b'HEAD') or key.startswith(b'refs/heads/'):
+                continue
+            obj = self.repo.get_object(value)
+            if isinstance(obj, Tag):
+                refs_dict[key] = obj.object[1]
+            elif isinstance(obj, Commit):
+                refs_dict[key] = value
+        return refs_dict
 
     def _available_versions(self):
         """Function that looks for all the available branches. The branches can be both
