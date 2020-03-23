@@ -417,8 +417,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
             objection = self.cannot_modify_app()
             if objection:
                 raise RuntimeError(objection)
-            else:
-                yield request_version
+            yield request_version
         finally:
             self._change_version_mode = False
 
@@ -539,8 +538,8 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
     def _updates_available(self):
         if self.has_git_repo() and self._git_url:
             return self.git_update_available()
-        else:
-            return None
+
+        return None
 
     def render_app_manager_widget(self):
         """"Display widget to manage the app."""
