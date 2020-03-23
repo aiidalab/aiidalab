@@ -58,6 +58,8 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
     updates_available = traitlets.Bool(allow_none=True)  # Use None if updates cannot be determined.
 
     def __init__(self, name, app_data, aiidalab_apps):  #, custom_update=False):
+        super().__init__()
+
         if app_data is not None:
             self._git_url = app_data['git_url']
             self._meta_url = app_data['meta_url']
