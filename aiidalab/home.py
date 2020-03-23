@@ -64,7 +64,7 @@ class AiidaLabHome:
             super().__init__()
 
         def __missing__(self, name):
-            return self.home._create_app_widget(name)
+            return self.home._create_app_widget(name)  # pylint: disable=protected-access
 
     def __init__(self):
         self.config_fn = ".launcher.json"

@@ -88,7 +88,7 @@ class AiidaLabApp(traitlets.HasTraits):
         """The app is installed if the corresponding folder is present."""
         return os.path.isdir(self._get_appdir())
 
-    def has_git_repo(self):
+    def _has_git_repo(self):
         """Check if the app has a .git folder in it."""
         try:
             Repo(self._get_appdir())
@@ -96,7 +96,7 @@ class AiidaLabApp(traitlets.HasTraits):
         except NotGitRepository:
             return False
 
-    def found_uncommited_modifications(self):
+    def _found_uncommited_modifications(self):
         """Check whether the git-supervised files were modified."""
         stts = status(self.repo)
         if stts.unstaged:
@@ -106,7 +106,7 @@ class AiidaLabApp(traitlets.HasTraits):
                 return True
         return False
 
-    def found_local_commits(self):
+    def _found_local_commits(self):
         """Check whether user did some work in the current branch.
 
         Here is the logic:
@@ -175,7 +175,7 @@ class AiidaLabApp(traitlets.HasTraits):
         """Check if there is any reason to not let modifying the app."""
 
         # It is not a git repo.
-        if not self.has_git_repo():
+        if not self._has_git_repo():
             return 'not a git repo'
 
         # There is no remote URL specified.
@@ -186,11 +186,11 @@ class AiidaLabApp(traitlets.HasTraits):
             for branch in branches:
 
                 # The repo has some uncommited modifications.
-                if self.found_uncommited_modifications():
+                if self._found_uncommited_modifications():
                     return "found uncommited modifications for branch '{}' (risk to lose your work)".format(branch)
 
                 # Found local commits.
-                if self.found_local_commits():
+                if self._found_local_commits():
                     return "local commits found for branch '{}' (risk to lose your work)".format(branch)
 
         # Found no branches.
@@ -251,7 +251,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
         return to_return
 
-    def _install_app(self, _):
+    def install_app(self, _=None):
         """Installing the app."""
         self.install_info = """<i class="fa fa-spinner fa-pulse" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1"><blink>Installing the app...</blink></font>"""
@@ -266,7 +266,7 @@ class AiidaLabApp(traitlets.HasTraits):
         sleep(1)
         self.install_info = ''
 
-    def _update_app(self, _):
+    def update_app(self, _=None):
         """Perform app update."""
         cannot_modify = self.cannot_modify_app()
         if cannot_modify:
@@ -300,7 +300,7 @@ class AiidaLabApp(traitlets.HasTraits):
             # look for the local commited modifications all the available branches
             with self._for_all_versions() as branches:
                 for branch in branches:
-                    if self.found_local_commits():
+                    if self._found_local_commits():
                         raise RuntimeError("Can not delete the repository, there are local commits "
                                            "on branch '{}'.".format(branch))
 
@@ -309,18 +309,18 @@ class AiidaLabApp(traitlets.HasTraits):
         self._refresh_versions()
 
     @property
-    def refs_dict(self):
+    def _refs_dict(self):
         """Returns a dictionary of references: branch names, tags."""
-        refs_dict = {}
+        refs = dict()
         for key, value in self.repo.get_refs().items():
             if key.endswith(b'HEAD') or key.startswith(b'refs/heads/'):
                 continue
             obj = self.repo.get_object(value)
             if isinstance(obj, Tag):
-                refs_dict[key] = obj.object[1]
+                refs[key] = obj.object[1]
             elif isinstance(obj, Commit):
-                refs_dict[key] = value
-        return refs_dict
+                refs[key] = value
+        return refs
 
     def _available_versions(self):
         """Function that looks for all the available branches. The branches can be both
@@ -330,18 +330,18 @@ class AiidaLabApp(traitlets.HasTraits):
                    OrderedDict([('master', 'refs/remotes/origin/master')])."""
 
         # HEAD branch won't be included
-        if not self.refs_dict:  # if no branches were found - return None
+        if not self._refs_dict:  # if no branches were found - return None
             return {}
 
         # Add remote branches.
         available = OrderedDict({
             name.split(b'/')[-1].decode("utf-8"): name
-            for name, _ in self.refs_dict.items()
+            for name, _ in self._refs_dict.items()
             if name.startswith(b'refs/remotes/')
         })
 
         # Add local branches that do not have tracked remotes.
-        for name in self.refs_dict:
+        for name in self._refs_dict:
             if name.startswith(b'refs/heads/'):
                 branch_label = name.replace(b'refs/heads/', b'').decode("utf-8")
                 pattern = re.compile("refs/remotes/.*/{}".format(branch_label))
@@ -353,7 +353,7 @@ class AiidaLabApp(traitlets.HasTraits):
         available.update(
             sorted({
                 name.split(b'/')[-1].decode("utf-8"): name
-                for name, _ in self.refs_dict.items()
+                for name, _ in self._refs_dict.items()
                 if name.startswith(b'refs/tags/')
             }.items(),
                    reverse=True))
@@ -365,7 +365,7 @@ class AiidaLabApp(traitlets.HasTraits):
         for example 'refs/remotes/origin/master'."""
 
         # If no branches were found - return None
-        if not self.refs_dict:
+        if not self._refs_dict:
             return None
 
         # Get the current version
@@ -386,7 +386,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
         # In case this is not a branch, but a tag for example.
         except IndexError:
-            reverted_refs_dict = {value: key for key, value in self.refs_dict.items()}
+            reverted_refs_dict = {value: key for key, value in self._refs_dict.items()}
             try:
                 current = reverted_refs_dict[self.repo.refs.follow(b'HEAD')[1]]  # knowing the hash I can access the tag
             except KeyError:
@@ -421,7 +421,7 @@ class AiidaLabApp(traitlets.HasTraits):
         """Validate new version proposal."""
 
         if self.current_version is not None and self.current_version != proposal['value']:
-            if self.found_uncommited_modifications():
+            if self._found_uncommited_modifications():
                 raise traitlets.TraitError("Can not switch to version {}: you have uncommitted modifications."
                                            "".format(proposal['value']))
         return proposal['value']
@@ -435,7 +435,7 @@ class AiidaLabApp(traitlets.HasTraits):
     def _refresh_versions(self):
         """Refresh version."""
         with self.hold_trait_notifications():
-            if self.is_installed() and self.has_git_repo():
+            if self.is_installed() and self._has_git_repo():
                 self.available_versions = self._available_versions()
                 self.set_trait('current_version', self._current_version())
                 self.updates_available = self._updates_available()
@@ -531,14 +531,14 @@ class AiidaLabApp(traitlets.HasTraits):
         return self._repo
 
     def _updates_available(self):
-        if self.has_git_repo() and self._git_url:
+        if self._has_git_repo() and self._git_url:
             return self.update_available()
 
         return None
 
     def render_app_manager_widget(self):
         """"Display widget to manage the app."""
-        if self.has_git_repo():
+        if self._has_git_repo():
             widget = AppManagerWidget(self, with_version_selector=True)
         else:
             widget = ipw.HTML("""<center><h1>Enable <i class="fa fa-git"></i> first!</h1></center>""")
@@ -574,13 +574,13 @@ class AppManagerWidget(ipw.VBox):
 
         # Setup buttons
         self.install_button = ipw.Button(description='install')
-        self.install_button.on_click(app._install_app)
+        self.install_button.on_click(app.install_app)
 
         self.uninstall_button = ipw.Button(description='uninstall')
         self.uninstall_button.on_click(self._uninstall_app)
 
         self.update_button = ipw.Button(description='update')
-        self.update_button.on_click(app._update_app)
+        self.update_button.on_click(app.update_app)
 
         self.app.observe(self._refresh, names=['path', 'install_info'])
 
