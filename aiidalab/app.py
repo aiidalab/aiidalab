@@ -163,12 +163,12 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         original_version = self.current_version
         with self.hold_trait_notifications():
             try:
-                def _switch_to_all_versions():
-                    for version in self.available_versions.values():
-                        self.set_trait('current_version', version)
+                def _iterate_all_versions():
+                    for branch in self.available_versions.values():
+                        self.set_trait('current_version', branch)
                         yield
 
-                yield _switch_to_all_versions()
+                yield _iterate_all_versions()
             finally:
                 self.set_trait('current_version', original_version)
 
@@ -183,16 +183,16 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
         if not self._git_url:
             return 'no remote URL specified (risk to lose your work)'
 
-        with self._for_all_versions() as versions:
-            for version in versions:
+        with self._for_all_versions() as branches:
+            for branch in branches:
 
                 # The repo has some uncommited modifications.
                 if self.found_uncommited_modifications():
-                    return 'found uncommited modifications (risk to lose your work)'
+                    return "found uncommited modifications for branch '{}' (risk to lose your work)".format(branch)
 
                 # Found local commits.
                 if self.found_local_commits():
-                    return 'local commits found (risk to lose your work)'
+                    return "local commits found for branch '{}' (risk to lose your work)".format(branch)
 
         # Found no branches.
         if not self.available_versions:
@@ -301,12 +301,12 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
             cannot_modify = "you have local branches"
         else:
             # look for the local commited modifications all the available branches
-            with self._for_all_versions() as versions:
-                for version in versions:
+            with self._for_all_versions() as branches:
+                for branch in branches:
                     if self.found_local_commits():
                         raise RuntimeError(
                             "Can not delete the repository, there are local commits "
-                            "on branch '{}'.".format(version))
+                            "on branch '{}'.".format(branch))
 
         # Perform uninstall process.
         shutil.rmtree(self._get_appdir())
