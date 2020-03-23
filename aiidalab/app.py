@@ -69,6 +69,8 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
             self._git_url = None
             self._git_remote_refs = {}
 
+        self._repo = None  # cached property
+
         self.aiidalab_apps = aiidalab_apps
         self.name = name
         self.path = os.path.join(self.aiidalab_apps, self.name)
@@ -524,7 +526,7 @@ class AiidaLabApp(traitlets.HasTraits):  # pylint: disable=attribute-defined-out
     @property
     def repo(self):
         """Returns Git repository."""
-        if not hasattr(self, '_repo'):
+        if self._repo is None:
             if self.is_installed():
                 self._repo = Repo(self._get_appdir())
             else:
