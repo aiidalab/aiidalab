@@ -141,6 +141,7 @@ class AiidaLabHome:
 
 
 class AppWidget(ipw.VBox):
+    """Widget that represents an app as part of the home page."""
 
     hidden = traitlets.Bool()
 
