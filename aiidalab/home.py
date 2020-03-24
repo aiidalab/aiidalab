@@ -56,21 +56,11 @@ def _workaround_property_lock_issue(func):
 class AiidaLabHome:
     """Class that mananges the appearance of the AiiDA lab home page."""
 
-    class _AppWidgets(dict):
-        """Helper class to lazily create and register app widgets."""
-
-        def __init__(self, home):
-            self.home = home
-            super().__init__()
-
-        def __missing__(self, name):
-            return self.home._create_app_widget(name)  # pylint: disable=protected-access
-
     def __init__(self):
         self.config_fn = ".launcher.json"
         self.output = ipw.Output()
         self.app_registry = load_app_registry()['apps']
-        self.app_widgets = self._AppWidgets(self)
+        self._app_widgets = dict()
 
     def _create_app_widget(self, name):
         """Create the widget representing the app on the home screen."""
@@ -110,7 +100,12 @@ class AiidaLabHome:
 
         with self.output:
             for name in apps:
-                display(self.app_widgets[name])
+
+                # Create app widget if it has not been created yet.
+                if name not in self._app_widgets:
+                    self._app_widgets[name] = self._create_app_widget(name)
+
+                display(self._app_widgets[name])
 
         return self.output
 
