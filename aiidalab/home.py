@@ -68,9 +68,12 @@ class AiidaLabHome:
         app_data = self.app_registry.get(name, None)
         app = AiidaLabApp(name, app_data, AIIDALAB_APPS)
 
-        app_widget = AppWidget(app, allow_move=name != 'home')
-        app_widget.hidden = name in config['hidden']
-        app_widget.observe(self._on_app_widget_change_hidden, names=['hidden'])
+        if name == 'home':
+            app_widget = AppWidget(app, allow_move=False)
+        else:
+            app_widget = CollapsableAppWidget(app)
+            app_widget.hidden = name in config['hidden']
+            app_widget.observe(self._on_app_widget_change_hidden, names=['hidden'])
 
         return app_widget
 
@@ -138,8 +141,6 @@ class AiidaLabHome:
 class AppWidget(ipw.VBox):
     """Widget that represents an app as part of the home page."""
 
-    hidden = traitlets.Bool()
-
     def __init__(self, app, allow_move=False):
         self.app = app
 
@@ -162,14 +163,20 @@ class AppWidget(ipw.VBox):
             footer.value += ' <a href="{}"><button>URL</button></a>'.format(app.url)
         footer.layout.margin = "0px 0px 0px 700px"
 
-        box = ipw.VBox([update_info, body, footer])
+        super().__init__(children=[update_info, body, footer])
 
-        self.accordion = ipw.Accordion(children=[box])
-        self.accordion.set_title(0, app.title)
+
+class CollapsableAppWidget(ipw.Accordion):
+    """Widget that represents a collapsable app as part of the home page."""
+
+    def __init__(self, app, **kwargs):
+        app_widget = AppWidget(app, **kwargs)
+        super().__init__(children=[app_widget])
+        self.set_title(0, app.title)
         # Need to observe all names here due to unidentified issue:
-        self.accordion.observe(self._observe_accordion_selected_index)  # , names=['selected_index'])
+        self.observe(self._observe_accordion_selected_index)  # , names=['selected_index'])
 
-        super().__init__(children=[self.accordion])
+    hidden = traitlets.Bool()
 
     @_workaround_property_lock_issue
     def _observe_accordion_selected_index(self, change):
@@ -178,4 +185,4 @@ class AppWidget(ipw.VBox):
 
     @traitlets.observe('hidden')
     def _observe_hidden(self, change):
-        self.accordion.selected_index = None if change['new'] else 0
+        self.selected_index = None if change['new'] else 0
