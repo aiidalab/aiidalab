@@ -165,7 +165,7 @@ class AiidaLabApp(traitlets.HasTraits):
                 def _iterate_all_versions():
                     for branch in self.available_versions.values():
                         self.set_trait('current_version', branch)
-                        yield
+                        yield branch
 
                 yield _iterate_all_versions()
             finally:
