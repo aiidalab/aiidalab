@@ -17,7 +17,6 @@ from dulwich.repo import Repo
 from dulwich.objects import Commit, Tag
 from dulwich.porcelain import status, clone, pull, fetch
 from dulwich.errors import NotGitRepository
-from cachetools.func import ttl_cache
 from jinja2 import Template
 
 from .config import AIIDALAB_DEFAULT_GIT_BRANCH
@@ -68,8 +67,6 @@ class AiidaLabApp(traitlets.HasTraits):
         else:
             self._git_url = None
             self._git_remote_refs = {}
-
-        self._repo = None  # cached property
 
         self.aiidalab_apps = aiidalab_apps
         self.name = name
@@ -446,7 +443,6 @@ class AiidaLabApp(traitlets.HasTraits):
                 self.updates_available = None
 
     @property
-    @ttl_cache()
     def metadata(self):
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
         if self.is_installed():
@@ -524,12 +520,9 @@ class AiidaLabApp(traitlets.HasTraits):
     @property
     def repo(self):
         """Returns Git repository."""
-        if self._repo is None:
-            if self.is_installed():
-                self._repo = Repo(self._get_appdir())
-            else:
-                raise AppNotInstalledException("The app is not installed")
-        return self._repo
+        if not self.is_installed():
+            raise AppNotInstalledException("The app is not installed")
+        return Repo(self._get_appdir())
 
     def _updates_available(self):
         if self._has_git_repo() and self._git_url:

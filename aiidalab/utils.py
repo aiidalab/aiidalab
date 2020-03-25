@@ -10,7 +10,6 @@ import requests
 from markdown import markdown
 import ipywidgets as ipw
 from IPython.lib import backgroundjobs as bg
-from cachetools.func import ttl_cache
 
 from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 
@@ -35,7 +34,6 @@ except ImportError:
     pass
 
 
-@ttl_cache()
 def load_app_registry():
     """Load apps' information from the AiiDA lab registry."""
     parsed_url = urlparse(AIIDALAB_REGISTRY)
