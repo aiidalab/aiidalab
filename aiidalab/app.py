@@ -50,7 +50,7 @@ class VersionSelectorWidget(ipw.VBox):
 class AiidaLabApp(traitlets.HasTraits):
     """Class to manage AiiDA lab app."""
 
-    path = traitlets.Unicode(allow_none=True)
+    path = traitlets.Unicode(allow_none=True, readonly=True)
     install_info = traitlets.Unicode()
     available_versions = traitlets.Dict(traitlets.Bytes)
     current_version = traitlets.Bytes(allow_none=True, readonly=True)
