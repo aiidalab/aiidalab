@@ -79,17 +79,14 @@ class AiidaLabApp(traitlets.HasTraits):
         # One should test what happens if the category won't be defined.
         return category in self.categories
 
-    def _get_appdir(self):  # deprecated
-        return self.path
-
     def is_installed(self):
         """The app is installed if the corresponding folder is present."""
-        return os.path.isdir(self._get_appdir())
+        return os.path.isdir(self.path)
 
     def _has_git_repo(self):
         """Check if the app has a .git folder in it."""
         try:
-            Repo(self._get_appdir())
+            Repo(self.path)
             return True
         except NotGitRepository:
             return False
@@ -253,13 +250,10 @@ class AiidaLabApp(traitlets.HasTraits):
         """Installing the app."""
         self.install_info = """<i class="fa fa-spinner fa-pulse" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1"><blink>Installing the app...</blink></font>"""
-        clone(source=self._git_url, target=self._get_appdir())
+        clone(source=self._git_url, target=self.path)
         self.install_info = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1">Success</font>"""
-        check_output(['git checkout {}'.format(AIIDALAB_DEFAULT_GIT_BRANCH)],
-                     cwd=self._get_appdir(),
-                     stderr=STDOUT,
-                     shell=True)
+        check_output(['git checkout {}'.format(AIIDALAB_DEFAULT_GIT_BRANCH)], cwd=self.path, stderr=STDOUT, shell=True)
         self._refresh_versions()
         sleep(1)
         self.install_info = ''
@@ -303,7 +297,7 @@ class AiidaLabApp(traitlets.HasTraits):
                                            "on branch '{}'.".format(branch))
 
         # Perform uninstall process.
-        shutil.rmtree(self._get_appdir())
+        shutil.rmtree(self.path)
         self._refresh_versions()
 
     @property
@@ -428,7 +422,7 @@ class AiidaLabApp(traitlets.HasTraits):
     def _observe_current_version(self, change):
         """Change the app's current version."""
         if change['new'] is not None:
-            check_output(['git', 'checkout', change['new']], cwd=self._get_appdir(), stderr=STDOUT)
+            check_output(['git', 'checkout', change['new']], cwd=self.path, stderr=STDOUT)
 
     def _refresh_versions(self):
         """Refresh version."""
@@ -447,7 +441,7 @@ class AiidaLabApp(traitlets.HasTraits):
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
         if self.is_installed():
             try:
-                with open(os.path.join(self._get_appdir(), 'metadata.json')) as json_file:
+                with open(os.path.join(self.path, 'metadata.json')) as json_file:
                     return json.load(json_file)
             except IOError:
                 return dict()
@@ -460,7 +454,7 @@ class AiidaLabApp(traitlets.HasTraits):
         try:
             return "{}".format(self.metadata[what])
         except KeyError:
-            if not os.path.isfile(os.path.join(self._get_appdir(), 'metadata.json')):
+            if not os.path.isfile(os.path.join(self.path, 'metadata.json')):
                 return '({}) metadata.json file is not present'.format(what)
             return 'the field "{}" is not present in metadata.json file'.format(what)
 
@@ -522,7 +516,7 @@ class AiidaLabApp(traitlets.HasTraits):
         """Returns Git repository."""
         if not self.is_installed():
             raise AppNotInstalledException("The app is not installed")
-        return Repo(self._get_appdir())
+        return Repo(self.path)
 
     def _updates_available(self):
         if self._has_git_repo() and self._git_url:
