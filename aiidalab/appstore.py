@@ -3,6 +3,7 @@
 
 import ipywidgets as ipw
 from IPython.display import display
+from jinja2 import Template
 
 from .app import AiidaLabApp, AppManagerWidget
 from .config import AIIDALAB_APPS
@@ -125,7 +126,16 @@ class AiidaLabAppStore(ipw.HBox):
                     display(ipw.HTML("<h1>{}</h1>".format(
                         self.app_corresponding_categories[start:end][number].title())))
 
-                widget = AppManagerWidget(app_base)
+                widget = AppStoreAppManagerWidget(app_base)
+                display(ipw.HTML('<hr>'))  # horizontal line
                 display(widget)
 
         return self.output
+
+
+class AppStoreAppManagerWidget(AppManagerWidget):
+
+    TEMPLATE = Template("""<h2 style="text-align:center;">{{ app.title }}</h2>
+    <div style="font-size: 15px; font-style: italic">Description: {{ app.description | truncate(200) }}</div>
+    <br>
+    <div style="text-align:right;"><a href=./single_app.ipynb?app={{ app.name }}>Manage App</a>""")

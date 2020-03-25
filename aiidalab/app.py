@@ -18,6 +18,7 @@ from dulwich.objects import Commit, Tag
 from dulwich.porcelain import status, clone, pull, fetch
 from dulwich.errors import NotGitRepository
 from cachetools.func import ttl_cache
+from jinja2 import Template
 
 from .config import AIIDALAB_DEFAULT_GIT_BRANCH
 from .widgets import StatusHTML
@@ -553,21 +554,21 @@ class AppManagerWidget(ipw.VBox):
     versions if possible.
     """
 
-    BODY_MAIN = """<b> <div style="font-size: 30px; text-align:center;">{title}</div></b>
+    TEMPLATE = Template("""<b> <div style="font-size: 30px; text-align:center;">{{ app.title }}</div></b>
     <br>
-    <b>Authors:</b> {authors}
+    <b>Authors:</b> {{ app.authors }}
     <br>
-    <b>Description:</b> {description}"""
-
-    BODY_URL = """<br>
-    <b>URL:</b> <a href="{url}">{url}</a>"""
+    <b>Description:</b> {{ app.description }}
+    {% if app.url %}
+    <br>
+    <b>URL:</b> <a href="{{ app.url }}">{{ app.url }}</a>
+    {% endif %}""")
 
     def __init__(self, app, with_version_selector=False):
         self.app = app
 
-        body = ipw.HTML(self.BODY_MAIN.format(title=app.title, authors=app.authors, description=app.description))
-        if app.url is not None:
-            body.value += self.BODY_URL.format(url=app.url)
+        body = ipw.HTML(self.TEMPLATE.render(app=app))
+        body.layout = {'width': '600px'}
 
         # Setup install_info
         self.install_info = StatusHTML()
