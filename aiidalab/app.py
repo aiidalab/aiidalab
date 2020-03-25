@@ -93,7 +93,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def _found_uncommited_modifications(self):
         """Check whether the git-supervised files were modified."""
-        stts = status(self.repo)
+        stts = status(self._repo)
         if stts.unstaged:
             return True
         for _, value in stts.staged.items():
@@ -125,18 +125,18 @@ class AiidaLabApp(traitlets.HasTraits):
             # Look for the local branches that track the remote ones.
             try:
                 local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)
-                local_head_at = self.repo[local_branch]
+                local_head_at = self._repo[local_branch]
 
             # Current branch is not tracking any remote one.
             except KeyError:
                 return False
-            remote_head_at = self.repo[self.current_version]
+            remote_head_at = self._repo[self.current_version]
             if remote_head_at.id == local_head_at.id:
                 return False
 
             # Maybe remote head has some updates.
             # Go back in the history and check if the current commit is in the remote branch history.
-            for cmmt in self.repo.get_walker(remote_head_at.id):
+            for cmmt in self._repo.get_walker(remote_head_at.id):
                 if local_head_at.id == cmmt.commit.id:  # If yes - then local branch is just outdated
                     return False
             return True
@@ -208,14 +208,14 @@ class AiidaLabApp(traitlets.HasTraits):
 
             # Learn about local repository.
             local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)
-            local_head_id = self.repo[local_branch].id
-            remote_head_id = self.repo[self.current_version].id
+            local_head_id = self._repo[local_branch].id
+            remote_head_id = self._repo[self.current_version].id
 
             # Check whether the current commit is not the same as remote commit.
             if local_head_id != remote_head_id:
 
                 # Go back in the current branch commit history and see if I can find the remote commit there.
-                for cmmt in self.repo.get_walker(local_head_id):
+                for cmmt in self._repo.get_walker(local_head_id):
 
                     # Found, so the remote branch is outdated - no update.
                     if cmmt.commit.id == remote_head_id:
@@ -237,7 +237,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
                 # Check if the commit on remote server is present in my remote commit history.
                 # It means the remote server is outdated.
-                for cmmt in self.repo.get_walker(remote_head_id):
+                for cmmt in self._repo.get_walker(remote_head_id):
                     if cmmt.commit.id == on_server_head_at:
                         to_return = False
                         break
@@ -270,8 +270,8 @@ class AiidaLabApp(traitlets.HasTraits):
 
         self.install_info = """<i class="fa fa-spinner fa-pulse" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1"><blink>Updating the app...</blink></font>"""
-        fetch(repo=self.repo, remote_location=self._git_url)
-        pull(repo=self.repo, remote_location=self._git_url, refspecs=self.current_version)
+        fetch(repo=self._repo, remote_location=self._git_url)
+        pull(repo=self._repo, remote_location=self._git_url, refspecs=self.current_version)
         self.install_info = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1">Success</font>"""
         sleep(1)
@@ -304,10 +304,10 @@ class AiidaLabApp(traitlets.HasTraits):
     def _refs_dict(self):
         """Returns a dictionary of references: branch names, tags."""
         refs = dict()
-        for key, value in self.repo.get_refs().items():
+        for key, value in self._repo.get_refs().items():
             if key.endswith(b'HEAD') or key.startswith(b'refs/heads/'):
                 continue
-            obj = self.repo.get_object(value)
+            obj = self._repo.get_object(value)
             if isinstance(obj, Tag):
                 refs[key] = obj.object[1]
             elif isinstance(obj, Commit):
@@ -365,7 +365,7 @@ class AiidaLabApp(traitlets.HasTraits):
         try:
 
             # Get local branch name, except if not yet exists.
-            current = self.repo.refs.follow(b'HEAD')[0][1]  # returns 'refs/heads/master'
+            current = self._repo.refs.follow(b'HEAD')[0][1]  # returns 'refs/heads/master'
 
             # If it is a tag it will except here
             branch_label = current.replace(b'refs/heads/', b'')  # becomes 'master'
@@ -380,7 +380,8 @@ class AiidaLabApp(traitlets.HasTraits):
         except IndexError:
             reverted_refs_dict = {value: key for key, value in self._refs_dict.items()}
             try:
-                current = reverted_refs_dict[self.repo.refs.follow(b'HEAD')[1]]  # knowing the hash I can access the tag
+                current = reverted_refs_dict[self._repo.refs.follow(b'HEAD')
+                                             [1]]  # knowing the hash I can access the tag
             except KeyError:
                 print(("Detached HEAD state ({} app)?".format(self.name)))
                 return None
@@ -512,7 +513,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return res
 
     @property
-    def repo(self):
+    def _repo(self):
         """Returns Git repository."""
         if not self.is_installed():
             raise AppNotInstalledException("The app is not installed")
