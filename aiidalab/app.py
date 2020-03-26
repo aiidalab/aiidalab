@@ -5,22 +5,17 @@ import re
 import os
 import shutil
 import json
-from time import sleep
-from collections import OrderedDict
 from subprocess import check_output, STDOUT
-from contextlib import contextmanager
 
 import requests
 import traitlets
 import ipywidgets as ipw
-from dulwich.repo import Repo
 from dulwich.objects import Commit, Tag
-from dulwich.porcelain import status, clone, pull, fetch
 from dulwich.errors import NotGitRepository
 from jinja2 import Template
 
-from .config import AIIDALAB_DEFAULT_GIT_BRANCH
 from .widgets import StatusHTML
+from .git_util import GitManagedAppRepo as Repo
 
 HTML_MSG_SUCCESS = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
 {}"""
@@ -36,19 +31,25 @@ class AppNotInstalledException(Exception):
 class VersionSelectorWidget(ipw.VBox):
     """Class to choose app's version."""
 
+    available_versions = traitlets.Dict(traitlets.Unicode())
+
     def __init__(self):
+        style = {'description_width': '100px'}
         self.channel = ipw.Dropdown(
             description='Select channel',
-            style={'description_width': 'initial'},
+            style=style,
         )
-        self.version = ipw.Select(
-            options={},
-            description='Select version',
-            disabled=False,
-            style={'description_width': 'initial'},
+        self.installed_version = ipw.Text(
+            description='Installed version',
+            disabled=True,
+            style=style,
         )
         self.info = StatusHTML('')
-        super().__init__([self.channel, self.version, self.info])
+
+        super().__init__(
+            children=[self.channel, self.installed_version, self.info],
+            layout={'min_width': '300px'},
+        )
 
 
 class AiidaLabApp(traitlets.HasTraits):
@@ -56,11 +57,15 @@ class AiidaLabApp(traitlets.HasTraits):
 
     path = traitlets.Unicode(allow_none=True, readonly=True)
     install_info = traitlets.Unicode()
-    available_channels = traitlets.Dict(traitlets.Bytes)
-    current_channel = traitlets.Bytes(allow_none=True, readonly=True)
-    updates_available = traitlets.Bool(allow_none=True)  # Use None if updates cannot be determined.
 
-    def __init__(self, name, app_data, aiidalab_apps):  #, custom_update=False):
+    available_channels = traitlets.Set(traitlets.Unicode)
+    installed_channel = traitlets.Unicode(allow_none=True)
+    installed_version = traitlets.Unicode(allow_none=True)
+    updates_available = traitlets.Bool(readonly=True, allow_none=True)
+
+    modified = traitlets.Bool(readonly=True, allow_none=True)
+
+    def __init__(self, name, app_data, aiidalab_apps):
         super().__init__()
 
         if app_data is not None:
@@ -75,9 +80,13 @@ class AiidaLabApp(traitlets.HasTraits):
         self.aiidalab_apps = aiidalab_apps
         self.name = name
         self.path = os.path.join(self.aiidalab_apps, self.name)
-        self._refresh_channels_versions()
+        self._refresh_app_state()
 
-        self._install_app_mode = False
+    @traitlets.default('modified')
+    def _default_modified(self):
+        if self.is_installed():
+            return self._repo.dirty()
+        return None
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
@@ -95,214 +104,24 @@ class AiidaLabApp(traitlets.HasTraits):
         except NotGitRepository:
             return False
 
-    def _found_uncommited_modifications(self):
-        """Check whether the git-supervised files were modified."""
-        stts = status(self._repo)
-        if stts.unstaged:
-            return True
-        for _, value in stts.staged.items():
-            if value:
-                return True
-        return False
-
-    def _found_local_commits(self):
-        """Check whether user did some work in the current branch.
-
-        Here is the logic:
-        - if it is a tag - return False
-        - if it is a local branch - always return True (even though it
-          can be that there are no local commits in it
-        - if it is a remote branch - check properly."""
-
-        # No local commits if it is a tag.
-        if self.current_channel.startswith(b'refs/tags/'):
-            return False
-
-        # Here it is assumed that if the branch is local, it has some stuff done in it,
-        # therefore True is returned even though technically it is not always true.
-        if self.current_channel.startswith(b'refs/heads/'):
-            return True
-
-        # If it is a remote branch.
-        if self.current_channel.startswith(b'refs/remotes/'):
-
-            # Look for the local branches that track the remote ones.
-            try:
-                local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_channel)
-                local_head_at = self._repo[local_branch]
-
-            # Current branch is not tracking any remote one.
-            except KeyError:
-                return False
-            remote_head_at = self._repo[self.current_channel]
-            if remote_head_at.id == local_head_at.id:
-                return False
-
-            # Maybe remote head has some updates.
-            # Go back in the history and check if the current commit is in the remote branch history.
-            for cmmt in self._repo.get_walker(remote_head_at.id):
-                if local_head_at.id == cmmt.commit.id:  # If yes - then local branch is just outdated
-                    return False
-            return True
-
-        # Something else - raise an exception.
-        raise Exception("Unknown git reference type (should be either branch or tag), found: {}".format(
-            self.current_channel))
-
-    def found_local_versions(self):
-        """Find if local git branches are present."""
-        pattern = re.compile(rb'refs/heads/(\w+)')
-        return any(pattern.match(value) for value in self.available_channels.values())
-
-    @contextmanager
-    def _for_all_versions(self):
-        """Iterate through all versions to perform internal checks."""
-        original_version = self.current_channel
-        with self.hold_trait_notifications():
-            try:
-
-                def _iterate_all_versions():
-                    for branch in self.available_channels.values():
-                        self.set_trait('current_channel', branch)
-                        yield branch
-
-                yield _iterate_all_versions()
-            finally:
-                self.set_trait('current_channel', original_version)
-
-    def cannot_modify_app(self):
-        """Check if there is any reason to not let modifying the app."""
-
-        # It is not a git repo.
-        if not self._has_git_repo():
-            return 'not a git repo'
-
-        # There is no remote URL specified.
-        if not self._git_url:
-            return 'no remote URL specified (risk to lose your work)'
-
-        with self._for_all_versions() as branches:
-            for branch in branches:
-
-                # The repo has some uncommited modifications.
-                if self._found_uncommited_modifications():
-                    return "found uncommited modifications for branch '{}' (risk to lose your work)".format(branch)
-
-                # Found local commits.
-                if self._found_local_commits():
-                    return "local commits found for branch '{}' (risk to lose your work)".format(branch)
-
-        # Found no branches.
-        if not self.available_channels:
-            return 'no branches found'
-
-        return ''
-
-    def update_available(self):
-        """Check whether there are updates available."""
-
-        if self.current_channel is None or not self._git_url or self.current_channel.startswith(b'refs/tags/'):
-            # For later: if it is a tag check for the newer tags
-            return False
-
-        to_return = False
-
-        # If it is a branch.
-        if self.current_channel.startswith(b'refs/remotes/'):
-
-            # Learn about local repository.
-            local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_channel)
-            local_head_id = self._repo[local_branch].id
-            remote_head_id = self._repo[self.current_channel].id
-
-            # Check whether the current commit is not the same as remote commit.
-            if local_head_id != remote_head_id:
-
-                # Go back in the current branch commit history and see if I can find the remote commit there.
-                for cmmt in self._repo.get_walker(local_head_id):
-
-                    # Found, so the remote branch is outdated - no update.
-                    if cmmt.commit.id == remote_head_id:
-                        to_return = False
-                        break
-
-                # Not found, so the remote branch has additional commit(s).
-                else:
-                    to_return = True
-
-            # Learn about remote repository, if possible
-            try:
-                on_server_head_at = bytes(self._git_remote_refs[local_branch.decode()], 'utf-8')
-            except KeyError:
-                return False
-
-            # Check whether the remote reference on the server is outdated.
-            if remote_head_id != on_server_head_at:
-
-                # Check if the commit on remote server is present in my remote commit history.
-                # It means the remote server is outdated.
-                for cmmt in self._repo.get_walker(remote_head_id):
-                    if cmmt.commit.id == on_server_head_at:
-                        to_return = False
-                        break
-                else:
-                    to_return = True
-
-        return to_return
-
-    def install_app(self, _=None):
+    def install_app(self, version):
         """Installing the app."""
-        self.install_info = """<i class="fa fa-spinner fa-pulse" style="color:#337ab7;font-size:4em;" ></i>
-        <font size="1"><blink>Installing the app...</blink></font>"""
-        clone(source=self._git_url, target=self.path)
-        self.install_info = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
-        <font size="1">Success</font>"""
-        check_output(['git checkout {}'.format(AIIDALAB_DEFAULT_GIT_BRANCH)], cwd=self.path, stderr=STDOUT, shell=True)
-        self._refresh_channels_versions()
-        sleep(1)
-        self.install_info = ''
+        assert version.startswith('git:refs/heads/')
+        branch = re.sub(r'git:refs\/heads\/', '', version)
+        check_output(['git', 'checkout', branch], cwd=self.path, stderr=STDOUT)
+        self._refresh_app_state()
 
     def update_app(self, _=None):
         """Perform app update."""
-        cannot_modify = self.cannot_modify_app()
-        if cannot_modify:
-            self.install_info = """<i class="fa fa-times" style="color:red;font-size:4em;" >
-            </i>Can not update the repository: {}""".format(cannot_modify)
-            sleep(3)
-            self.install_info = ''
-            return
-
-        self.install_info = """<i class="fa fa-spinner fa-pulse" style="color:#337ab7;font-size:4em;" ></i>
-        <font size="1"><blink>Updating the app...</blink></font>"""
-        fetch(repo=self._repo, remote_location=self._git_url)
-        pull(repo=self._repo, remote_location=self._git_url, refspecs=self.current_channel)
-        self.install_info = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
-        <font size="1">Success</font>"""
-        sleep(1)
-        self.install_info = ''
+        tracked_branch = self._repo.get_tracked_branch()
+        check_output(['git', 'reset', '--hard', tracked_branch], cwd=self.path, stderr=STDOUT)
+        self._refresh_app_state()
 
     def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
-        cannot_modify = self.cannot_modify_app()
-
-        # Check if one cannot install the app.
-        if cannot_modify:
-            pass
-        elif self.name == 'home':
-            cannot_modify = "can't remove the home app"
-        elif self.found_local_versions():
-            cannot_modify = "you have local branches"
-        else:
-            # look for the local commited modifications all the available branches
-            with self._for_all_versions() as branches:
-                for branch in branches:
-                    if self._found_local_commits():
-                        raise RuntimeError("Can not delete the repository, there are local commits "
-                                           "on branch '{}'.".format(branch))
-
         # Perform uninstall process.
         shutil.rmtree(self.path)
-        self._refresh_channels_versions()
+        self._refresh_app_state()
 
     @property
     def _refs_dict(self):
@@ -318,128 +137,37 @@ class AiidaLabApp(traitlets.HasTraits):
                 refs[key] = value
         return refs
 
-    def _available_channels(self):
-        """Function that looks for all the available branches. The branches can be both
-        local and remote.
+    def update_available(self):
+        """Check whether there is an update available for the installed channel."""
+        return self._repo.update_available()
 
-        : return : an OrderedDict that contains all available branches, for example
-                   OrderedDict([('master', 'refs/remotes/origin/master')])."""
+    def _installed_version(self):
+        if self.is_installed():
+            return self._repo.head()
+        return None
 
-        # HEAD branch won't be included
-        if not self._refs_dict:  # if no branches were found - return None
-            return {}
-
-        # Add remote branches.
-        available = OrderedDict({
-            name.split(b'/')[-1].decode("utf-8"): name
-            for name, _ in self._refs_dict.items()
-            if name.startswith(b'refs/remotes/')
-        })
-
-        # Add local branches that do not have tracked remotes.
-        for name in self._refs_dict:
-            if name.startswith(b'refs/heads/'):
-                branch_label = name.replace(b'refs/heads/', b'').decode("utf-8")
-                pattern = re.compile("refs/remotes/.*/{}".format(branch_label))
-                # check if no tracked remotes that correspond to the current local branch
-                if not any(pattern.match(value) for value in available.values()):
-                    available[branch_label] = name
-
-        # Add tags.
-        available.update(
-            sorted({
-                name.split(b'/')[-1].decode("utf-8"): name
-                for name, _ in self._refs_dict.items()
-                if name.startswith(b'refs/tags/')
-            }.items(),
-                   reverse=True))
-
-        return available
-
-    def _current_channel(self):
-        """Function that returns the reference to the currently selected branch,
-        for example 'refs/remotes/origin/master'."""
-
-        # If no branches were found - return None
-        if not self._refs_dict:
-            return None
-
-        # Get the current version
-        available = self.available_channels
-        try:
-
-            # Get local branch name, except if not yet exists.
-            current = self._repo.refs.follow(b'HEAD')[0][1]  # returns 'refs/heads/master'
-
-            # If it is a tag it will except here
-            branch_label = current.replace(b'refs/heads/', b'')  # becomes 'master'
-
-            # Find the corresponding (remote or local) branch among the ones that were found before.
-            pattern = re.compile(b"refs/.*/%s" % branch_label)
-            for key in set(available.values()):
-                if pattern.match(key):
-                    current = key
-
-        # In case this is not a branch, but a tag for example.
-        except IndexError:
-            reverted_refs_dict = {value: key for key, value in self._refs_dict.items()}
-            try:
-                current = reverted_refs_dict[self._repo.refs.follow(b'HEAD')
-                                             [1]]  # knowing the hash I can access the tag
-            except KeyError:
-                print(("Detached HEAD state ({} app)?".format(self.name)))
-                return None
-
-        return current
-
-    @contextmanager
-    def request_installation(self):
-        """Use this context manager to safely request an app installation.
-
-        This includes the installation of a different version. In case that the
-        installation fails, all changes are automatically rolled back.
-        """
-        assert not self._install_app_mode, "Can't enter context manager more than once."
-        self._install_app_mode = True
-
-        def request_version(new_version):
-            self.set_trait('current_channel', new_version)
-
-        try:
-            objection = self.cannot_modify_app()
-            if objection:
-                raise RuntimeError(objection)
-            yield request_version
-        finally:
-            self._install_app_mode = False
-
-    @traitlets.validate('current_channel')
-    def _valid_current_channel(self, proposal):
-        """Validate new version proposal."""
-
-        if self.current_channel is not None and self.current_channel != proposal['value']:
-            if self._found_uncommited_modifications():
-                raise traitlets.TraitError("Can not switch to version {}: you have uncommitted modifications."
-                                           "".format(proposal['value']))
-        return proposal['value']
-
-    @traitlets.observe('current_channel')
-    def _observe_current_channel(self, change):
-        """Change the app's current version."""
-        if change['new'] is not None:
-            check_output(['git', 'checkout', change['new']], cwd=self.path, stderr=STDOUT)
-
-    def _refresh_channels_versions(self):
+    def _refresh_app_state(self):
         """Refresh version."""
         with self.hold_trait_notifications():
             if self.is_installed() and self._has_git_repo():
-                self.available_channels = self._available_channels()
-                self.set_trait('current_channel', self._current_channel())
-                self.updates_available = self._updates_available()
+                self.available_channels = \
+                    {'git:refs/heads/' + branch.decode() for branch in self._repo.list_branches()}
+                try:
+                    self.installed_channel = 'git:refs/heads/' + self._repo.branch().decode()
+                except RuntimeError:
+                    self.installed_channel = None
+                self.installed_version = self._repo.head()
+                try:
+                    self.set_trait('updates_available', self._repo.update_available())
+                except RuntimeError:
+                    self.set_trait('updates_available', None)
+                self.set_trait('modified', self._repo.dirty())
             else:
-                self.available_channels = dict()
-                self.set_trait('current_channel', None)
-                self.updates_available = None
+                self.available_channels = set()
+                self.installed_channel = None
+                self.installed_version = None
+                self.set_trait('updates_available', None)
+                self.set_trait('modified', None)
 
     @property
     def metadata(self):
@@ -479,8 +207,6 @@ class AiidaLabApp(traitlets.HasTraits):
     def url(self):
         """Provide explicit link to Git repository."""
         return self._git_url
-
-    git_url = url  # deprecated
 
     @property
     def more(self):
@@ -523,12 +249,6 @@ class AiidaLabApp(traitlets.HasTraits):
             raise AppNotInstalledException("The app is not installed")
         return Repo(self.path)
 
-    def _updates_available(self):
-        if self._has_git_repo() and self._git_url:
-            return self.update_available()
-
-        return None
-
     def render_app_manager_widget(self):
         """"Display widget to manage the app."""
         if self._has_git_repo():
@@ -566,65 +286,99 @@ class AppManagerWidget(ipw.VBox):
         self.install_info = StatusHTML()
 
         # Setup buttons
-        self.install_button = ipw.Button(description='install')
-        self.install_button.on_click(app.install_app)
+        self.install_button = ipw.Button(description='Install')
+        self.install_button.on_click(self._install_version)
 
-        self.uninstall_button = ipw.Button(description='uninstall')
+        self.uninstall_button = ipw.Button(description='Uninstall')
         self.uninstall_button.on_click(self._uninstall_app)
 
-        self.update_button = ipw.Button(description='update')
-        self.update_button.on_click(app.update_app)
+        self.update_button = ipw.Button(description='Update')
+        self.update_button.on_click(self._update_app)
+        self.update_button.button_style = 'success'
 
-        self.app.observe(self._refresh, names=['path', 'install_info'])
+        self.modifications_indicator = ipw.HTML()
+        self.modifications_ignore = ipw.Checkbox(description="Ignore")
 
         children = [
             ipw.HBox([app.logo, body]),
-            ipw.HBox([self.uninstall_button, self.update_button, self.install_button]),
-            ipw.HBox([self.install_info])
+            ipw.HBox([self.uninstall_button, self.install_button, self.update_button]),
+            ipw.HBox([self.install_info]),
+            ipw.HBox([self.modifications_indicator, self.modifications_ignore]),
         ]
 
-        if with_version_selector:
-            self.version_selector = VersionSelectorWidget()
-            ipw.dlink((self.app, 'available_channels'), (self.version_selector.channel, 'options'))
-            ipw.dlink((self.app, 'current_channel'), (self.version_selector.channel, 'value'))
-            self.version_selector.channel.observe(self._change_version, names=['value'])
-            children.append(self.version_selector)
+        self.version_selector = VersionSelectorWidget()
+        ipw.dlink((self.app, 'available_channels'), (self.version_selector.channel, 'options'),
+                  transform=lambda channels: [(self._format_channel_name(channel), channel) for channel in channels])
+        ipw.dlink((self.app, 'installed_channel'), (self.version_selector.channel, 'value'))
+        ipw.dlink((self.app, 'installed_version'), (self.version_selector.installed_version, 'value'),
+                  transform=lambda version: '' if version is None else version)
+        self.version_selector.channel.observe(self._refresh_widget_state, names=['value'])
+        children.insert(1, self.version_selector)
+        self.version_selector.layout.visibility = 'visible' if with_version_selector else 'hidden'
 
-        self._refresh()  # init all widgets
+        self._refresh_widget_state()  # init all widgets
+        self.app.observe(self._refresh_widget_state)
+        self.modifications_ignore.observe(self._refresh_widget_state)
 
         super().__init__(children=children)
 
-    def _change_version(self, change):
-        """Attempt to change the app version."""
-        assert hasattr(self, 'version_selector')
-        if change['new'] == self.app.current_channel:
-            return
+    @staticmethod
+    def _format_channel_name(channel):
+        """Return a human-readable version of a channel name."""
+        if re.match(r'git:refs\/heads\/.*', channel):
+            return re.sub(r'git:refs\/heads\/', '', channel)
+        return channel
 
+    def _refresh_widget_state(self, _=None):
+        """Refresh the widget to reflect the current state of the app."""
+        modified = self.app.modified
+        blocked = modified and not self.modifications_ignore.value
+
+        warn_or_ban_icon = ("warning" if modified and self.modifications_ignore.value else "ban") if modified else ""
+
+        can_install = self.version_selector.channel.value != self.app.installed_channel and not blocked
+        can_uninstall = self.app.is_installed() and not blocked
         try:
-            with self.app.request_installation() as request:
-                request(change['new'])
+            can_update = self.app.updates_available and not can_install
+        except RuntimeError:
+            can_update = False
 
+        self.install_button.disabled = blocked or not can_install
+        self.install_button.button_style = 'info' if can_install else ''
+        self.install_button.icon = "" if can_install and not modified else warn_or_ban_icon if can_install else ''
+
+        self.uninstall_button.disabled = blocked or not can_uninstall
+        self.uninstall_button.button_style = 'danger' if can_uninstall else ''
+        self.uninstall_button.icon = "" if can_uninstall and not modified else warn_or_ban_icon if can_uninstall else ''
+
+        self.update_button.disabled = blocked or not can_update
+        self.update_button.icon = "circle-up" if can_update and not modified else warn_or_ban_icon if can_update else ''
+        self.update_button.button_style = 'success' if can_update else ''
+        self.update_button.tooltip = "Unable to update due to local modifications." if modified and blocked else ''
+
+        self.modifications_indicator.value = \
+            f'<i class="fa fa-{warn_or_ban_icon}"> There are local modifications.' if modified else ''
+        self.modifications_ignore.layout.visibility = 'visible' if modified else 'hidden'
+
+    def _install_version(self, _):
+        """Attempt to install the a specific version of the app."""
+        channel = self.version_selector.channel.value
+        try:
+            self.app.install_app(channel)
         except RuntimeError as error:
-            self.version_selector.info.show_temporary_message(
-                HTML_MSG_FAIL.format("Failed to switch version, error: '{}'".format(error)))
+            self.install_info.show_temporary_message(HTML_MSG_FAIL.format(error))
         else:
-            self.version_selector.info.show_temporary_message(
-                HTML_MSG_SUCCESS.format("Switched to version '{}'.".format(change['new'].decode())))
+            self.install_info.show_temporary_message(
+                HTML_MSG_SUCCESS.format(f"Installed app ({self._format_channel_name(channel)})."))
 
-    def _refresh(self, _=None):
-        """Refresh interface based on potentially changed app install and version state."""
-        with self.hold_trait_notifications():
-            installed = self.app.path and os.path.exists(self.app.path)
-            update_available = self.app.update_available() if installed else False
-
-            self.install_button.disabled = installed or self.app.url is None
-            self.install_button.button_style = '' if installed else 'info'
-
-            self.uninstall_button.disabled = not installed
-            self.uninstall_button.button_style = 'danger' if installed else ''
-
-            self.update_button.disabled = not update_available
-            self.update_button.button_style = 'warning' if update_available else ''
+    def _update_app(self, _):
+        """Attempt to uninstall the app."""
+        try:
+            self.app.update_app()
+        except RuntimeError as error:
+            self.install_info.show_temporary_message(HTML_MSG_FAIL.format(error))
+        else:
+            self.install_info.show_temporary_message(HTML_MSG_SUCCESS.format(f"Updated app."))
 
     def _uninstall_app(self, _):
         """Attempt to uninstall the app."""
@@ -634,4 +388,3 @@ class AppManagerWidget(ipw.VBox):
             self.install_info.show_temporary_message(HTML_MSG_FAIL.format(error))
         else:
             self.install_info.show_temporary_message(HTML_MSG_SUCCESS.format("Uninstalled app."))
-            self.uninstall_button.disabled = True
