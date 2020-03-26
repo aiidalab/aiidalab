@@ -37,14 +37,18 @@ class VersionSelectorWidget(ipw.VBox):
     """Class to choose app's version."""
 
     def __init__(self):
-        self.selected = ipw.Select(
+        self.channel = ipw.Dropdown(
+            description='Select channel',
+            style={'description_width': 'initial'},
+        )
+        self.version = ipw.Select(
             options={},
             description='Select version',
             disabled=False,
             style={'description_width': 'initial'},
         )
         self.info = StatusHTML('')
-        super().__init__([self.selected, self.info])
+        super().__init__([self.channel, self.version, self.info])
 
 
 class AiidaLabApp(traitlets.HasTraits):
@@ -52,8 +56,8 @@ class AiidaLabApp(traitlets.HasTraits):
 
     path = traitlets.Unicode(allow_none=True, readonly=True)
     install_info = traitlets.Unicode()
-    available_versions = traitlets.Dict(traitlets.Bytes)
-    current_version = traitlets.Bytes(allow_none=True, readonly=True)
+    available_channels = traitlets.Dict(traitlets.Bytes)
+    current_channel = traitlets.Bytes(allow_none=True, readonly=True)
     updates_available = traitlets.Bool(allow_none=True)  # Use None if updates cannot be determined.
 
     def __init__(self, name, app_data, aiidalab_apps):  #, custom_update=False):
@@ -71,9 +75,9 @@ class AiidaLabApp(traitlets.HasTraits):
         self.aiidalab_apps = aiidalab_apps
         self.name = name
         self.path = os.path.join(self.aiidalab_apps, self.name)
-        self._refresh_versions()
+        self._refresh_channels_versions()
 
-        self._change_version_mode = False
+        self._install_app_mode = False
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
@@ -111,26 +115,26 @@ class AiidaLabApp(traitlets.HasTraits):
         - if it is a remote branch - check properly."""
 
         # No local commits if it is a tag.
-        if self.current_version.startswith(b'refs/tags/'):
+        if self.current_channel.startswith(b'refs/tags/'):
             return False
 
         # Here it is assumed that if the branch is local, it has some stuff done in it,
         # therefore True is returned even though technically it is not always true.
-        if self.current_version.startswith(b'refs/heads/'):
+        if self.current_channel.startswith(b'refs/heads/'):
             return True
 
         # If it is a remote branch.
-        if self.current_version.startswith(b'refs/remotes/'):
+        if self.current_channel.startswith(b'refs/remotes/'):
 
             # Look for the local branches that track the remote ones.
             try:
-                local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)
+                local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_channel)
                 local_head_at = self._repo[local_branch]
 
             # Current branch is not tracking any remote one.
             except KeyError:
                 return False
-            remote_head_at = self._repo[self.current_version]
+            remote_head_at = self._repo[self.current_channel]
             if remote_head_at.id == local_head_at.id:
                 return False
 
@@ -143,28 +147,28 @@ class AiidaLabApp(traitlets.HasTraits):
 
         # Something else - raise an exception.
         raise Exception("Unknown git reference type (should be either branch or tag), found: {}".format(
-            self.current_version))
+            self.current_channel))
 
     def found_local_versions(self):
         """Find if local git branches are present."""
         pattern = re.compile(rb'refs/heads/(\w+)')
-        return any(pattern.match(value) for value in self.available_versions.values())
+        return any(pattern.match(value) for value in self.available_channels.values())
 
     @contextmanager
     def _for_all_versions(self):
         """Iterate through all versions to perform internal checks."""
-        original_version = self.current_version
+        original_version = self.current_channel
         with self.hold_trait_notifications():
             try:
 
                 def _iterate_all_versions():
-                    for branch in self.available_versions.values():
-                        self.set_trait('current_version', branch)
+                    for branch in self.available_channels.values():
+                        self.set_trait('current_channel', branch)
                         yield branch
 
                 yield _iterate_all_versions()
             finally:
-                self.set_trait('current_version', original_version)
+                self.set_trait('current_channel', original_version)
 
     def cannot_modify_app(self):
         """Check if there is any reason to not let modifying the app."""
@@ -189,7 +193,7 @@ class AiidaLabApp(traitlets.HasTraits):
                     return "local commits found for branch '{}' (risk to lose your work)".format(branch)
 
         # Found no branches.
-        if not self.available_versions:
+        if not self.available_channels:
             return 'no branches found'
 
         return ''
@@ -197,19 +201,19 @@ class AiidaLabApp(traitlets.HasTraits):
     def update_available(self):
         """Check whether there are updates available."""
 
-        if self.current_version is None or not self._git_url or self.current_version.startswith(b'refs/tags/'):
+        if self.current_channel is None or not self._git_url or self.current_channel.startswith(b'refs/tags/'):
             # For later: if it is a tag check for the newer tags
             return False
 
         to_return = False
 
         # If it is a branch.
-        if self.current_version.startswith(b'refs/remotes/'):
+        if self.current_channel.startswith(b'refs/remotes/'):
 
             # Learn about local repository.
-            local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_version)
+            local_branch = re.sub(rb'refs/remotes/(\w+)/', b'refs/heads/', self.current_channel)
             local_head_id = self._repo[local_branch].id
-            remote_head_id = self._repo[self.current_version].id
+            remote_head_id = self._repo[self.current_channel].id
 
             # Check whether the current commit is not the same as remote commit.
             if local_head_id != remote_head_id:
@@ -254,7 +258,7 @@ class AiidaLabApp(traitlets.HasTraits):
         self.install_info = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1">Success</font>"""
         check_output(['git checkout {}'.format(AIIDALAB_DEFAULT_GIT_BRANCH)], cwd=self.path, stderr=STDOUT, shell=True)
-        self._refresh_versions()
+        self._refresh_channels_versions()
         sleep(1)
         self.install_info = ''
 
@@ -271,7 +275,7 @@ class AiidaLabApp(traitlets.HasTraits):
         self.install_info = """<i class="fa fa-spinner fa-pulse" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1"><blink>Updating the app...</blink></font>"""
         fetch(repo=self._repo, remote_location=self._git_url)
-        pull(repo=self._repo, remote_location=self._git_url, refspecs=self.current_version)
+        pull(repo=self._repo, remote_location=self._git_url, refspecs=self.current_channel)
         self.install_info = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
         <font size="1">Success</font>"""
         sleep(1)
@@ -298,7 +302,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
         # Perform uninstall process.
         shutil.rmtree(self.path)
-        self._refresh_versions()
+        self._refresh_channels_versions()
 
     @property
     def _refs_dict(self):
@@ -314,7 +318,7 @@ class AiidaLabApp(traitlets.HasTraits):
                 refs[key] = value
         return refs
 
-    def _available_versions(self):
+    def _available_channels(self):
         """Function that looks for all the available branches. The branches can be both
         local and remote.
 
@@ -352,7 +356,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
         return available
 
-    def _current_version(self):
+    def _current_channel(self):
         """Function that returns the reference to the currently selected branch,
         for example 'refs/remotes/origin/master'."""
 
@@ -361,7 +365,7 @@ class AiidaLabApp(traitlets.HasTraits):
             return None
 
         # Get the current version
-        available = self.available_versions
+        available = self.available_channels
         try:
 
             # Get local branch name, except if not yet exists.
@@ -389,17 +393,17 @@ class AiidaLabApp(traitlets.HasTraits):
         return current
 
     @contextmanager
-    def request_version_change(self):
-        """Use this context manager to safely request a version change.
+    def request_installation(self):
+        """Use this context manager to safely request an app installation.
 
-        In case that the version cannot be changed, all changes are automatically
-        rolled back.
+        This includes the installation of a different version. In case that the
+        installation fails, all changes are automatically rolled back.
         """
-        assert not self._change_version_mode, "Can't enter context manager more than once."
-        self._change_version_mode = True
+        assert not self._install_app_mode, "Can't enter context manager more than once."
+        self._install_app_mode = True
 
         def request_version(new_version):
-            self.set_trait('current_version', new_version)
+            self.set_trait('current_channel', new_version)
 
         try:
             objection = self.cannot_modify_app()
@@ -407,34 +411,34 @@ class AiidaLabApp(traitlets.HasTraits):
                 raise RuntimeError(objection)
             yield request_version
         finally:
-            self._change_version_mode = False
+            self._install_app_mode = False
 
-    @traitlets.validate('current_version')
-    def _valid_current_version(self, proposal):
+    @traitlets.validate('current_channel')
+    def _valid_current_channel(self, proposal):
         """Validate new version proposal."""
 
-        if self.current_version is not None and self.current_version != proposal['value']:
+        if self.current_channel is not None and self.current_channel != proposal['value']:
             if self._found_uncommited_modifications():
                 raise traitlets.TraitError("Can not switch to version {}: you have uncommitted modifications."
                                            "".format(proposal['value']))
         return proposal['value']
 
-    @traitlets.observe('current_version')
-    def _observe_current_version(self, change):
+    @traitlets.observe('current_channel')
+    def _observe_current_channel(self, change):
         """Change the app's current version."""
         if change['new'] is not None:
             check_output(['git', 'checkout', change['new']], cwd=self.path, stderr=STDOUT)
 
-    def _refresh_versions(self):
+    def _refresh_channels_versions(self):
         """Refresh version."""
         with self.hold_trait_notifications():
             if self.is_installed() and self._has_git_repo():
-                self.available_versions = self._available_versions()
-                self.set_trait('current_version', self._current_version())
+                self.available_channels = self._available_channels()
+                self.set_trait('current_channel', self._current_channel())
                 self.updates_available = self._updates_available()
             else:
-                self.available_versions = dict()
-                self.set_trait('current_version', None)
+                self.available_channels = dict()
+                self.set_trait('current_channel', None)
                 self.updates_available = None
 
     @property
@@ -581,9 +585,9 @@ class AppManagerWidget(ipw.VBox):
 
         if with_version_selector:
             self.version_selector = VersionSelectorWidget()
-            ipw.dlink((self.app, 'available_versions'), (self.version_selector.selected, 'options'))
-            ipw.dlink((self.app, 'current_version'), (self.version_selector.selected, 'value'))
-            self.version_selector.selected.observe(self._change_version, names=['value'])
+            ipw.dlink((self.app, 'available_channels'), (self.version_selector.channel, 'options'))
+            ipw.dlink((self.app, 'current_channel'), (self.version_selector.channel, 'value'))
+            self.version_selector.channel.observe(self._change_version, names=['value'])
             children.append(self.version_selector)
 
         self._refresh()  # init all widgets
@@ -593,11 +597,11 @@ class AppManagerWidget(ipw.VBox):
     def _change_version(self, change):
         """Attempt to change the app version."""
         assert hasattr(self, 'version_selector')
-        if change['new'] == self.app.current_version:
+        if change['new'] == self.app.current_channel:
             return
 
         try:
-            with self.app.request_version_change() as request:
+            with self.app.request_installation() as request:
                 request(change['new'])
 
         except RuntimeError as error:
