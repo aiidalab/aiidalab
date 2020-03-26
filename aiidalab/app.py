@@ -35,8 +35,8 @@ class VersionSelectorWidget(ipw.VBox):
 
     def __init__(self):
         style = {'description_width': '100px'}
-        self.channel = ipw.Dropdown(
-            description='Select channel',
+        self.release_line = ipw.Dropdown(
+            description='Release line',
             style=style,
         )
         self.installed_version = ipw.Text(
@@ -47,7 +47,7 @@ class VersionSelectorWidget(ipw.VBox):
         self.info = StatusHTML('')
 
         super().__init__(
-            children=[self.channel, self.installed_version, self.info],
+            children=[self.release_line, self.installed_version, self.info],
             layout={'min_width': '300px'},
         )
 
@@ -58,8 +58,8 @@ class AiidaLabApp(traitlets.HasTraits):
     path = traitlets.Unicode(allow_none=True, readonly=True)
     install_info = traitlets.Unicode()
 
-    available_channels = traitlets.Set(traitlets.Unicode)
-    installed_channel = traitlets.Unicode(allow_none=True)
+    available_release_lines = traitlets.Set(traitlets.Unicode)
+    installed_release_line = traitlets.Unicode(allow_none=True)
     installed_version = traitlets.Unicode(allow_none=True)
     updates_available = traitlets.Bool(readonly=True, allow_none=True)
 
@@ -138,7 +138,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return refs
 
     def update_available(self):
-        """Check whether there is an update available for the installed channel."""
+        """Check whether there is an update available for the installed release line."""
         return self._repo.update_available()
 
     def _installed_version(self):
@@ -150,12 +150,12 @@ class AiidaLabApp(traitlets.HasTraits):
         """Refresh version."""
         with self.hold_trait_notifications():
             if self.is_installed() and self._has_git_repo():
-                self.available_channels = \
+                self.available_release_lines = \
                     {'git:refs/heads/' + branch.decode() for branch in self._repo.list_branches()}
                 try:
-                    self.installed_channel = 'git:refs/heads/' + self._repo.branch().decode()
+                    self.installed_release_line = 'git:refs/heads/' + self._repo.branch().decode()
                 except RuntimeError:
-                    self.installed_channel = None
+                    self.installed_release_line = None
                 self.installed_version = self._repo.head()
                 try:
                     self.set_trait('updates_available', self._repo.update_available())
@@ -163,8 +163,8 @@ class AiidaLabApp(traitlets.HasTraits):
                     self.set_trait('updates_available', None)
                 self.set_trait('modified', self._repo.dirty())
             else:
-                self.available_channels = set()
-                self.installed_channel = None
+                self.available_release_lines = set()
+                self.installed_release_line = None
                 self.installed_version = None
                 self.set_trait('updates_available', None)
                 self.set_trait('modified', None)
@@ -307,12 +307,13 @@ class AppManagerWidget(ipw.VBox):
         ]
 
         self.version_selector = VersionSelectorWidget()
-        ipw.dlink((self.app, 'available_channels'), (self.version_selector.channel, 'options'),
-                  transform=lambda channels: [(self._format_channel_name(channel), channel) for channel in channels])
-        ipw.dlink((self.app, 'installed_channel'), (self.version_selector.channel, 'value'))
+        ipw.dlink((self.app, 'available_release_lines'), (self.version_selector.release_line, 'options'),
+                  transform=lambda release_lines: [(self._format_release_line_name(release_line), release_line)
+                                                   for release_line in release_lines])
+        ipw.dlink((self.app, 'installed_release_line'), (self.version_selector.release_line, 'value'))
         ipw.dlink((self.app, 'installed_version'), (self.version_selector.installed_version, 'value'),
                   transform=lambda version: '' if version is None else version)
-        self.version_selector.channel.observe(self._refresh_widget_state, names=['value'])
+        self.version_selector.release_line.observe(self._refresh_widget_state, names=['value'])
         children.insert(1, self.version_selector)
         self.version_selector.layout.visibility = 'visible' if with_version_selector else 'hidden'
 
@@ -323,11 +324,11 @@ class AppManagerWidget(ipw.VBox):
         super().__init__(children=children)
 
     @staticmethod
-    def _format_channel_name(channel):
-        """Return a human-readable version of a channel name."""
-        if re.match(r'git:refs\/heads\/.*', channel):
-            return re.sub(r'git:refs\/heads\/', '', channel)
-        return channel
+    def _format_release_line_name(release_line):
+        """Return a human-readable version of a release line name."""
+        if re.match(r'git:refs\/heads\/.*', release_line):
+            return re.sub(r'git:refs\/heads\/', '', release_line)
+        return release_line
 
     def _refresh_widget_state(self, _=None):
         """Refresh the widget to reflect the current state of the app."""
@@ -336,7 +337,7 @@ class AppManagerWidget(ipw.VBox):
 
         warn_or_ban_icon = ("warning" if modified and self.modifications_ignore.value else "ban") if modified else ""
 
-        can_install = self.version_selector.channel.value != self.app.installed_channel and not blocked
+        can_install = self.version_selector.release_line.value != self.app.installed_release_line and not blocked
         can_uninstall = self.app.is_installed() and not blocked
         try:
             can_update = self.app.updates_available and not can_install
@@ -362,14 +363,14 @@ class AppManagerWidget(ipw.VBox):
 
     def _install_version(self, _):
         """Attempt to install the a specific version of the app."""
-        channel = self.version_selector.channel.value
+        release_line = self.version_selector.release_line.value
         try:
-            self.app.install_app(channel)
+            self.app.install_app(release_line)
         except RuntimeError as error:
             self.install_info.show_temporary_message(HTML_MSG_FAIL.format(error))
         else:
             self.install_info.show_temporary_message(
-                HTML_MSG_SUCCESS.format(f"Installed app ({self._format_channel_name(channel)})."))
+                HTML_MSG_SUCCESS.format(f"Installed app ({self._format_release_line_name(release_line)})."))
 
     def _update_app(self, _):
         """Attempt to uninstall the app."""
