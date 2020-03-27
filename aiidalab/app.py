@@ -6,18 +6,21 @@ import os
 import shutil
 import json
 from contextlib import contextmanager
+from time import sleep
 from threading import Thread
-from subprocess import check_output, STDOUT
+from subprocess import check_output, STDOUT, CalledProcessError
 
 import requests
 import traitlets
 import ipywidgets as ipw
 from dulwich.objects import Commit, Tag
+from dulwich.porcelain import clone
 from dulwich.errors import NotGitRepository
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from jinja2 import Template
 
+from .config import AIIDALAB_DEFAULT_GIT_BRANCH
 from .widgets import StatusHTML
 from .git_util import GitManagedAppRepo as Repo
 from .utils import throttled
@@ -120,6 +123,8 @@ class AiidaLabApp(traitlets.HasTraits):
             self._git_remote_refs = {}
 
         self._observer = None
+        self._check_install_status_changed_thread = None
+
         self.aiidalab_apps = aiidalab_apps
         self.name = name
         self.path = os.path.join(self.aiidalab_apps, self.name)
@@ -157,11 +162,33 @@ class AiidaLabApp(traitlets.HasTraits):
             self._observer.schedule(event_handler, self.path, recursive=True)
             self._observer.start()
 
+        if self._check_install_status_changed_thread is None:
+
+            def check_install_status_changed():
+                installed = self.is_installed()
+                while not self._check_install_status_changed_thread.stop_flag:
+                    if installed != self.is_installed():
+                        installed = self.is_installed()
+                        self.refresh()
+                    sleep(1)
+
+            self._check_install_status_changed_thread = Thread(target=check_install_status_changed)
+            self._check_install_status_changed_thread.stop_flag = False
+            self._check_install_status_changed_thread.start()
+
     def _stop_watch_repository(self, timeout=None):
         """Stop watching the app repository for file system events."""
         if self._observer is not None:
             self._observer.stop()
             self._observer.join(timeout=timeout)
+            if not self._observer.isAlive():
+                self._observer = None
+
+        if self._check_install_status_changed_thread is not None:
+            self._check_install_status_changed_thread.stop_flag = True
+            self._check_install_status_changed_thread.join(timeout=timeout)
+            if not self._check_install_status_changed_thread.is_alive():
+                self._check_install_status_changed_thread = None
 
     def __del__(self):  # pylint: disable=missing-docstring
         self._stop_watch_repository(timeout=10.0)  # timeout after 10 seconds
@@ -182,14 +209,22 @@ class AiidaLabApp(traitlets.HasTraits):
         except NotGitRepository:
             return False
 
-    def install_app(self, version):
+    def install_app(self, version=None):
         """Installing the app."""
+        if version is None:
+            version = 'git:refs/heads/' + AIIDALAB_DEFAULT_GIT_BRANCH
+
         with self._show_busy():
             assert version.startswith('git:refs/heads/')
             branch = re.sub(r'git:refs\/heads\/', '', version)
-            check_output(['git', 'checkout', branch], cwd=self.path, stderr=STDOUT)
+
+            if not os.path.isdir(self.path):  # clone first
+                clone(source=self._git_url, target=self.path)
+
+            check_output(['git', 'checkout', '-f', branch], cwd=self.path, stderr=STDOUT)
             self.refresh()
             self._watch_repository()
+            return branch
 
     def update_app(self, _=None):
         """Perform app update."""
@@ -203,8 +238,12 @@ class AiidaLabApp(traitlets.HasTraits):
         # Perform uninstall process.
         with self._show_busy():
             self._stop_watch_repository()
-            shutil.rmtree(self.path)
+            try:
+                shutil.rmtree(self.path)
+            except FileNotFoundError:
+                raise RuntimeError("App was already uninstalled!")
             self.refresh()
+            self._watch_repository()
 
     @property
     def _refs_dict(self):
@@ -341,11 +380,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def render_app_manager_widget(self):
         """"Display widget to manage the app."""
-        if self._has_git_repo():
-            widget = AppManagerWidget(self, with_version_selector=True)
-        else:
-            widget = ipw.HTML("""<center><h1>Enable <i class="fa fa-git"></i> first!</h1></center>""")
-        return widget
+        return AppManagerWidget(self, with_version_selector=True)
 
 
 class AppManagerWidget(ipw.VBox):
@@ -446,7 +481,9 @@ class AppManagerWidget(ipw.VBox):
                 tooltip = "Operation blocked due to local modifications."
 
             # Determine whether we can install, updated, and uninstall.
-            switch_release_line = self.version_selector.release_line.value != self.app.installed_release_line
+            requested_release_line = self.version_selector.release_line.value
+            switch_release_line = requested_release_line is not None \
+                and requested_release_line != self.app.installed_release_line
             can_install = not self.app.is_installed() or (switch_release_line and not blocked)
             can_uninstall = self.app.is_installed()
             try:
@@ -500,8 +537,8 @@ class AppManagerWidget(ipw.VBox):
         release_line = self.version_selector.release_line.value
         try:
             self._check_modified_state()
-            self.app.install_app(release_line)
-        except RuntimeError as error:
+            release_line = self.app.install_app(release_line)  # argument may be None
+        except (RuntimeError, CalledProcessError) as error:
             self._show_msg_failure(str(error))
         else:
             self._show_msg_success(f"Installed app ({self._format_release_line_name(release_line)}).")
@@ -511,7 +548,7 @@ class AppManagerWidget(ipw.VBox):
         try:
             self._check_modified_state()
             self.app.update_app()
-        except RuntimeError as error:
+        except (RuntimeError, CalledProcessError) as error:
             self._show_msg_failure(str(error))
         else:
             self._show_msg_success("Updated app.")
