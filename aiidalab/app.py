@@ -108,7 +108,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
         def on_any_event(self, event):
             """Refresh app for any event."""
-            self.app.refresh_async()  # pylint: disable=protected-access
+            self.app.refresh_async()
 
     def __init__(self, name, app_data, aiidalab_apps):
         super().__init__()
