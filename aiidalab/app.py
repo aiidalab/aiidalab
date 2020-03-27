@@ -80,7 +80,7 @@ class AiidaLabApp(traitlets.HasTraits):
         self.aiidalab_apps = aiidalab_apps
         self.name = name
         self.path = os.path.join(self.aiidalab_apps, self.name)
-        self._refresh_app_state()
+        self.refresh()
 
     @traitlets.default('modified')
     def _default_modified(self):
@@ -109,19 +109,19 @@ class AiidaLabApp(traitlets.HasTraits):
         assert version.startswith('git:refs/heads/')
         branch = re.sub(r'git:refs\/heads\/', '', version)
         check_output(['git', 'checkout', branch], cwd=self.path, stderr=STDOUT)
-        self._refresh_app_state()
+        self.refresh()
 
     def update_app(self, _=None):
         """Perform app update."""
         tracked_branch = self._repo.get_tracked_branch()
         check_output(['git', 'reset', '--hard', tracked_branch], cwd=self.path, stderr=STDOUT)
-        self._refresh_app_state()
+        self.refresh()
 
     def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
         # Perform uninstall process.
         shutil.rmtree(self.path)
-        self._refresh_app_state()
+        self.refresh()
 
     @property
     def _refs_dict(self):
@@ -146,7 +146,7 @@ class AiidaLabApp(traitlets.HasTraits):
             return self._repo.head()
         return None
 
-    def _refresh_app_state(self):
+    def refresh(self):
         """Refresh version."""
         with self.hold_trait_notifications():
             if self.is_installed() and self._has_git_repo():
@@ -369,10 +369,19 @@ class AppManagerWidget(ipw.VBox):
         """Show a message indicating failure to execute a requested operation."""
         self.install_info.show_temporary_message(HTML_MSG_FAILURE.format(msg))
 
+    def _check_modified_state(self):
+        """Check whether there are local modifications to the app that prevent any install etc. operations."""
+        self.app.refresh()
+        self._refresh_widget_state()
+        blocked = self.app.modified and not self.modifications_ignore.value
+        if blocked:
+            raise RuntimeError("Unable to perform operation, there are local modifications to the app repository.")
+
     def _install_version(self, _):
         """Attempt to install the a specific version of the app."""
         release_line = self.version_selector.release_line.value
         try:
+            self._check_modified_state()
             self.app.install_app(release_line)
         except RuntimeError as error:
             self._show_msg_failure(str(error))
@@ -382,6 +391,7 @@ class AppManagerWidget(ipw.VBox):
     def _update_app(self, _):
         """Attempt to uninstall the app."""
         try:
+            self._check_modified_state()
             self.app.update_app()
         except RuntimeError as error:
             self._show_msg_failure(str(error))
@@ -391,6 +401,7 @@ class AppManagerWidget(ipw.VBox):
     def _uninstall_app(self, _):
         """Attempt to uninstall the app."""
         try:
+            self._check_modified_state()
             self.app.uninstall_app()
         except RuntimeError as error:
             self._show_msg_failure(str(error))
