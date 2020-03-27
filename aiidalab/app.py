@@ -20,7 +20,7 @@ from .git_util import GitManagedAppRepo as Repo
 HTML_MSG_SUCCESS = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
 {}"""
 
-HTML_MSG_FAIL = """"<i class="fa fa-times" style="color:red;font-size:4em;" ></i>
+HTML_MSG_FAILURE = """"<i class="fa fa-times" style="color:red;font-size:4em;" ></i>
 {}"""
 
 
@@ -361,31 +361,38 @@ class AppManagerWidget(ipw.VBox):
             f'<i class="fa fa-{warn_or_ban_icon}"> There are local modifications.' if modified else ''
         self.modifications_ignore.layout.visibility = 'visible' if modified else 'hidden'
 
+    def _show_msg_success(self, msg):
+        """Show a message indicating successful execution of a requested operation."""
+        self.install_info.show_temporary_message(HTML_MSG_SUCCESS.format(msg))
+
+    def _show_msg_failure(self, msg):
+        """Show a message indicating failure to execute a requested operation."""
+        self.install_info.show_temporary_message(HTML_MSG_FAILURE.format(msg))
+
     def _install_version(self, _):
         """Attempt to install the a specific version of the app."""
         release_line = self.version_selector.release_line.value
         try:
             self.app.install_app(release_line)
         except RuntimeError as error:
-            self.install_info.show_temporary_message(HTML_MSG_FAIL.format(error))
+            self._show_msg_failure(str(error))
         else:
-            self.install_info.show_temporary_message(
-                HTML_MSG_SUCCESS.format(f"Installed app ({self._format_release_line_name(release_line)})."))
+            self._show_msg_success(f"Installed app ({self._format_release_line_name(release_line)}).")
 
     def _update_app(self, _):
         """Attempt to uninstall the app."""
         try:
             self.app.update_app()
         except RuntimeError as error:
-            self.install_info.show_temporary_message(HTML_MSG_FAIL.format(error))
+            self._show_msg_failure(str(error))
         else:
-            self.install_info.show_temporary_message(HTML_MSG_SUCCESS.format(f"Updated app."))
+            self._show_msg_success("Updated app.")
 
     def _uninstall_app(self, _):
         """Attempt to uninstall the app."""
         try:
             self.app.uninstall_app()
         except RuntimeError as error:
-            self.install_info.show_temporary_message(HTML_MSG_FAIL.format(error))
+            self._show_msg_failure(str(error))
         else:
-            self.install_info.show_temporary_message(HTML_MSG_SUCCESS.format("Uninstalled app."))
+            self._show_msg_success("Uninstalled app.")
