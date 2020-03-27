@@ -484,7 +484,7 @@ class AppManagerWidget(ipw.VBox):
             requested_release_line = self.version_selector.release_line.value
             switch_release_line = requested_release_line is not None \
                 and requested_release_line != self.app.installed_release_line
-            can_install = not self.app.is_installed() or (switch_release_line and not blocked)
+            can_install = switch_release_line or not self.app.is_installed()
             can_uninstall = self.app.is_installed()
             try:
                 can_update = self.app.updates_available and not can_install
