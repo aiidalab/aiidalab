@@ -71,7 +71,7 @@ class AiidaLabHome:
         if name == 'home':
             app_widget = AppWidget(app, allow_move=False)
         else:
-            app_widget = CollapsableAppWidget(app)
+            app_widget = CollapsableAppWidget(app, allow_move=True)
             app_widget.hidden = name in config['hidden']
             app_widget.observe(self._on_app_widget_change_hidden, names=['hidden'])
 
