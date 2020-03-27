@@ -191,7 +191,7 @@ class AiidaLabApp(traitlets.HasTraits):
                 self._check_install_status_changed_thread = None
 
     def __del__(self):  # pylint: disable=missing-docstring
-        self._stop_watch_repository(timeout=10.0)  # timeout after 10 seconds
+        self._stop_watch_repository(1)
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
@@ -285,7 +285,7 @@ class AiidaLabApp(traitlets.HasTraits):
             if ref.startswith('refs/heads/'):
                 yield 'git:' + ref
 
-    @throttled(calls_per_second=10)
+    @throttled(calls_per_second=1)
     def refresh(self):
         """Refresh app state."""
         with self._show_busy():
@@ -523,7 +523,7 @@ class AppManagerWidget(ipw.VBox):
 
             # Update the update button state.
             self.update_button.disabled = busy or blocked or not can_update
-            if can_update is None:
+            if self.app.is_installed() and can_update is None:
                 self.update_button.icon = 'warning'
                 self.update_button.tooltip = 'Unable to determine availability of updates.'
             else:

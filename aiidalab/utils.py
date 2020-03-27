@@ -2,11 +2,13 @@
 
 import sys
 import json
+import time
 from os import path
 from importlib import import_module
 from urllib.parse import urlparse
+from collections import defaultdict
 from functools import wraps
-from time import time
+from threading import Lock
 
 import requests
 from markdown import markdown
@@ -92,24 +94,40 @@ def load_start_md(name):
 
 
 class throttled:  # pylint: disable=invalid-name
-    """Decorator to throttle calls to a function to a specified rate."""
+    """Decorator to throttle calls to a function to a specified rate.
+
+    The throttle is specific to the first argument of the wrapped
+    function. That means for class methods it is specific to each
+    instance.
+
+    Adapted from: https://gist.github.com/gregburek/1441055
+
+    """
 
     def __init__(self, calls_per_second=1):
         self.calls_per_second = calls_per_second
-        self.last_call = None
+        self.last_start = defaultdict(lambda: -1)
+        self.locks = defaultdict(Lock)
 
     def __call__(self, func):
         """Return decorator function."""
 
         @wraps(func)
-        def wrapped(*args, **kwargs):
-            now = time()
-            if self.last_call is not None:
-                period = now - self.last_call
-                if period < (1 / self.calls_per_second):
-                    return None
+        def wrapped(instance, *args, **kwargs):
+            if self.last_start[hash(instance)] >= 0:
+                elapsed = time.perf_counter() - self.last_start[hash(instance)]
+                to_wait = 1.0 / self.calls_per_second - elapsed
+                if to_wait > 0:
+                    locked = self.locks[hash(instance)].acquire(blocking=False)
+                    if locked:
+                        try:
+                            time.sleep(to_wait)
+                        finally:
+                            self.locks[hash(instance)].release()
+                    else:
+                        return None  # drop
 
-            self.last_call = now
-            return func(*args, **kwargs)
+            self.last_start[hash(instance)] = time.perf_counter()
+            return func(instance, *args, **kwargs)
 
         return wrapped
