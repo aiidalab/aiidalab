@@ -14,7 +14,6 @@ import requests
 import traitlets
 import ipywidgets as ipw
 from dulwich.objects import Commit, Tag
-from dulwich.porcelain import clone
 from dulwich.errors import NotGitRepository
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -219,7 +218,9 @@ class AiidaLabApp(traitlets.HasTraits):
             branch = re.sub(r'git:refs\/heads\/', '', version)
 
             if not os.path.isdir(self.path):  # clone first
-                clone(source=self._git_url, target=self.path)
+                check_output(['git', 'clone', '--branch', branch, self._git_url, self.path],
+                             cwd=os.path.dirname(self.path),
+                             stderr=STDOUT)
 
             check_output(['git', 'checkout', '-f', branch], cwd=self.path, stderr=STDOUT)
             self.refresh()
