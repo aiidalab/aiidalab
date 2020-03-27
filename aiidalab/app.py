@@ -13,6 +13,7 @@ from subprocess import check_output, STDOUT, CalledProcessError
 import requests
 import traitlets
 import ipywidgets as ipw
+from dulwich.porcelain import fetch
 from dulwich.objects import Commit, Tag
 from dulwich.errors import NotGitRepository
 from watchdog.observers import Observer
@@ -230,6 +231,7 @@ class AiidaLabApp(traitlets.HasTraits):
     def update_app(self, _=None):
         """Perform app update."""
         with self._show_busy():
+            fetch(repo=self._repo, remote_location=self._git_url)
             tracked_branch = self._repo.get_tracked_branch()
             check_output(['git', 'reset', '--hard', tracked_branch], cwd=self.path, stderr=STDOUT)
             self.refresh_async()
@@ -260,14 +262,28 @@ class AiidaLabApp(traitlets.HasTraits):
                 refs[key] = value
         return refs
 
-    def update_available(self):
+    def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""
-        return self._repo.update_available()
+        try:
+            branch_ref = 'refs/heads/' + self._repo.branch().decode()
+            assert self._repo.get_tracked_branch() is not None
+            remote_update_available = self._git_remote_refs.get(branch_ref) != self._repo.head().decode()
+            self.set_trait('updates_available', remote_update_available or self._repo.update_available())
+        except (AssertionError, RuntimeError):
+            self.set_trait('updates_available', None)
 
     def _installed_version(self):
         if self.is_installed():
             return self._repo.head()
         return None
+
+    def _available_release_lines(self):
+        """"Return all available release lines (local and remote)."""
+        for branch in self._repo.list_branches():
+            yield 'git:refs/heads/' + branch.decode()
+        for ref in self._git_remote_refs:
+            if ref.startswith('refs/heads/'):
+                yield 'git:' + ref
 
     @throttled(calls_per_second=10)
     def refresh(self):
@@ -275,17 +291,13 @@ class AiidaLabApp(traitlets.HasTraits):
         with self._show_busy():
             with self.hold_trait_notifications():
                 if self.is_installed() and self._has_git_repo():
-                    self.available_release_lines = \
-                        {'git:refs/heads/' + branch.decode() for branch in self._repo.list_branches()}
+                    self.available_release_lines = set(self._available_release_lines())
                     try:
                         self.installed_release_line = 'git:refs/heads/' + self._repo.branch().decode()
                     except RuntimeError:
                         self.installed_release_line = None
                     self.installed_version = self._repo.head()
-                    try:
-                        self.set_trait('updates_available', self._repo.update_available())
-                    except RuntimeError:
-                        self.set_trait('updates_available', None)
+                    self.check_for_updates()
                     self.set_trait('modified', self._repo.dirty())
                 else:
                     self.available_release_lines = set()
@@ -490,7 +502,7 @@ class AppManagerWidget(ipw.VBox):
             try:
                 can_update = self.app.updates_available and not can_install
             except RuntimeError:
-                can_update = False
+                can_update = None
 
             # Update the install button state.
             self.install_button.disabled = busy or blocked or not can_install
@@ -511,10 +523,14 @@ class AppManagerWidget(ipw.VBox):
 
             # Update the update button state.
             self.update_button.disabled = busy or blocked or not can_update
-            self.update_button.icon = \
-                "circle-up" if can_update and not modified else warn_or_ban_icon if can_update else ""
-            self.update_button.button_style = 'success' if can_update else ''
-            self.update_button.tooltip = '' if can_update and not modified else tooltip if can_update else ''
+            if can_update is None:
+                self.update_button.icon = 'warning'
+                self.update_button.tooltip = 'Unable to determine availability of updates.'
+            else:
+                self.update_button.icon = \
+                    "circle-up" if can_update and not modified else warn_or_ban_icon if can_update else ""
+                self.update_button.button_style = 'success' if can_update else ''
+                self.update_button.tooltip = '' if can_update and not modified else tooltip if can_update else ''
 
             # Indicate whether there are local modifications and present option for user override.
             self.modifications_indicator.value = \
