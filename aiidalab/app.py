@@ -5,6 +5,8 @@ import re
 import os
 import shutil
 import json
+from contextlib import contextmanager
+from threading import Thread
 from subprocess import check_output, STDOUT
 
 import requests
@@ -12,15 +14,18 @@ import traitlets
 import ipywidgets as ipw
 from dulwich.objects import Commit, Tag
 from dulwich.errors import NotGitRepository
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 from jinja2 import Template
 
 from .widgets import StatusHTML
 from .git_util import GitManagedAppRepo as Repo
+from .utils import throttled
 
-HTML_MSG_SUCCESS = """<i class="fa fa-check" style="color:#337ab7;font-size:4em;" ></i>
+HTML_MSG_SUCCESS = """<i class="fa fa-check" style="color:#337ab7;font-size:1em;" ></i>
 {}"""
 
-HTML_MSG_FAILURE = """"<i class="fa fa-times" style="color:red;font-size:4em;" ></i>
+HTML_MSG_FAILURE = """"<i class="fa fa-times" style="color:red;font-size:1em;" ></i>
 {}"""
 
 
@@ -31,6 +36,7 @@ class AppNotInstalledException(Exception):
 class VersionSelectorWidget(ipw.VBox):
     """Class to choose app's version."""
 
+    disabled = traitlets.Bool()
     available_versions = traitlets.Dict(traitlets.Unicode())
 
     def __init__(self):
@@ -51,6 +57,31 @@ class VersionSelectorWidget(ipw.VBox):
             layout={'min_width': '300px'},
         )
 
+    @traitlets.observe('disabled')
+    def _observe_disabled(self, change):
+        self.release_line.disabled = change['new']
+
+
+class Spinner(ipw.HTML):
+    """Widget that shows a simple spinner if enabled."""
+
+    enabled = traitlets.Bool()
+
+    def __init__(self, spinner_style=None):
+        self.spinner_style = '' if spinner_style is None else f' style="{spinner_style}"'
+        super().__init__()
+
+    @traitlets.default('enabled')
+    def _default_enabled(self):  # pylint: disable=no-self-use
+        return False
+
+    @traitlets.observe('enabled')
+    def _observe_enabled(self, change):  # pylint: disable=missing-docstring
+        if change['new']:
+            self.value = f"""<i class="fa fa-spinner fa-pulse"{self.spinner_style}></i>"""
+        else:
+            self.value = ""
+
 
 class AiidaLabApp(traitlets.HasTraits):
     """Class to manage AiiDA lab app."""
@@ -63,7 +94,18 @@ class AiidaLabApp(traitlets.HasTraits):
     installed_version = traitlets.Unicode(allow_none=True)
     updates_available = traitlets.Bool(readonly=True, allow_none=True)
 
+    busy = traitlets.Bool(readonly=True)
     modified = traitlets.Bool(readonly=True, allow_none=True)
+
+    class AppPathFileSystemEventHandler(FileSystemEventHandler):
+        """Internal event handeler for app path file system events."""
+
+        def __init__(self, app):
+            self.app = app
+
+        def on_any_event(self, event):
+            """Refresh app for any event."""
+            self.app.refresh_async()  # pylint: disable=protected-access
 
     def __init__(self, name, app_data, aiidalab_apps):
         super().__init__()
@@ -77,16 +119,52 @@ class AiidaLabApp(traitlets.HasTraits):
             self._git_url = None
             self._git_remote_refs = {}
 
+        self._observer = None
         self.aiidalab_apps = aiidalab_apps
         self.name = name
         self.path = os.path.join(self.aiidalab_apps, self.name)
-        self.refresh()
+        self.refresh_async()
+        self._watch_repository()
 
     @traitlets.default('modified')
     def _default_modified(self):
         if self.is_installed():
             return self._repo.dirty()
         return None
+
+    @traitlets.default('busy')
+    def _default_busy(self):  # pylint: disable=no-self-use
+        return False
+
+    @contextmanager
+    def _show_busy(self):
+        """Apply this decorator to indicate that the app is busy during execution."""
+        self.set_trait('busy', True)
+        try:
+            yield
+        finally:
+            self.set_trait('busy', False)
+
+    def _watch_repository(self):
+        """Watch the app repository for file system events.
+
+        The app state is refreshed automatically for all events.
+        """
+        if self._observer is None and os.path.isdir(self.path):
+            event_handler = self.AppPathFileSystemEventHandler(self)
+
+            self._observer = Observer()
+            self._observer.schedule(event_handler, self.path, recursive=True)
+            self._observer.start()
+
+    def _stop_watch_repository(self, timeout=None):
+        """Stop watching the app repository for file system events."""
+        if self._observer is not None:
+            self._observer.stop()
+            self._observer.join(timeout=timeout)
+
+    def __del__(self):  # pylint: disable=missing-docstring
+        self._stop_watch_repository(timeout=10.0)  # timeout after 10 seconds
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
@@ -106,22 +184,27 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def install_app(self, version):
         """Installing the app."""
-        assert version.startswith('git:refs/heads/')
-        branch = re.sub(r'git:refs\/heads\/', '', version)
-        check_output(['git', 'checkout', branch], cwd=self.path, stderr=STDOUT)
-        self.refresh()
+        with self._show_busy():
+            assert version.startswith('git:refs/heads/')
+            branch = re.sub(r'git:refs\/heads\/', '', version)
+            check_output(['git', 'checkout', branch], cwd=self.path, stderr=STDOUT)
+            self.refresh()
+            self._watch_repository()
 
     def update_app(self, _=None):
         """Perform app update."""
-        tracked_branch = self._repo.get_tracked_branch()
-        check_output(['git', 'reset', '--hard', tracked_branch], cwd=self.path, stderr=STDOUT)
-        self.refresh()
+        with self._show_busy():
+            tracked_branch = self._repo.get_tracked_branch()
+            check_output(['git', 'reset', '--hard', tracked_branch], cwd=self.path, stderr=STDOUT)
+            self.refresh_async()
 
     def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
         # Perform uninstall process.
-        shutil.rmtree(self.path)
-        self.refresh()
+        with self._show_busy():
+            self._stop_watch_repository()
+            shutil.rmtree(self.path)
+            self.refresh()
 
     @property
     def _refs_dict(self):
@@ -146,28 +229,35 @@ class AiidaLabApp(traitlets.HasTraits):
             return self._repo.head()
         return None
 
+    @throttled(calls_per_second=10)
     def refresh(self):
-        """Refresh version."""
-        with self.hold_trait_notifications():
-            if self.is_installed() and self._has_git_repo():
-                self.available_release_lines = \
-                    {'git:refs/heads/' + branch.decode() for branch in self._repo.list_branches()}
-                try:
-                    self.installed_release_line = 'git:refs/heads/' + self._repo.branch().decode()
-                except RuntimeError:
+        """Refresh app state."""
+        with self._show_busy():
+            with self.hold_trait_notifications():
+                if self.is_installed() and self._has_git_repo():
+                    self.available_release_lines = \
+                        {'git:refs/heads/' + branch.decode() for branch in self._repo.list_branches()}
+                    try:
+                        self.installed_release_line = 'git:refs/heads/' + self._repo.branch().decode()
+                    except RuntimeError:
+                        self.installed_release_line = None
+                    self.installed_version = self._repo.head()
+                    try:
+                        self.set_trait('updates_available', self._repo.update_available())
+                    except RuntimeError:
+                        self.set_trait('updates_available', None)
+                    self.set_trait('modified', self._repo.dirty())
+                else:
+                    self.available_release_lines = set()
                     self.installed_release_line = None
-                self.installed_version = self._repo.head()
-                try:
-                    self.set_trait('updates_available', self._repo.update_available())
-                except RuntimeError:
+                    self.installed_version = None
                     self.set_trait('updates_available', None)
-                self.set_trait('modified', self._repo.dirty())
-            else:
-                self.available_release_lines = set()
-                self.installed_release_line = None
-                self.installed_version = None
-                self.set_trait('updates_available', None)
-                self.set_trait('modified', None)
+                    self.set_trait('modified', None)
+
+    def refresh_async(self):
+        """Asynchronized (non-blocking) refresh of the app state."""
+        refresh_thread = Thread(target=self.refresh)
+        refresh_thread.start()
 
     @property
     def metadata(self):
@@ -287,21 +377,27 @@ class AppManagerWidget(ipw.VBox):
 
         # Setup buttons
         self.install_button = ipw.Button(description='Install')
+        self.install_button.disabled = True
         self.install_button.on_click(self._install_version)
 
         self.uninstall_button = ipw.Button(description='Uninstall')
+        self.uninstall_button.disabled = True
         self.uninstall_button.on_click(self._uninstall_app)
 
         self.update_button = ipw.Button(description='Update')
+        self.update_button.disabled = True
         self.update_button.on_click(self._update_app)
-        self.update_button.button_style = 'success'
 
         self.modifications_indicator = ipw.HTML()
         self.modifications_ignore = ipw.Checkbox(description="Ignore")
+        self.modifications_ignore.observe(self._refresh_widget_state)
+
+        self.spinner = Spinner("color:#337ab7;font-size:1em;")
+        ipw.dlink((self.app, 'busy'), (self.spinner, 'enabled'))
 
         children = [
             ipw.HBox([app.logo, body]),
-            ipw.HBox([self.uninstall_button, self.install_button, self.update_button]),
+            ipw.HBox([self.uninstall_button, self.install_button, self.update_button, self.spinner]),
             ipw.HBox([self.install_info]),
             ipw.HBox([self.modifications_indicator, self.modifications_ignore]),
         ]
@@ -310,18 +406,20 @@ class AppManagerWidget(ipw.VBox):
         ipw.dlink((self.app, 'available_release_lines'), (self.version_selector.release_line, 'options'),
                   transform=lambda release_lines: [(self._format_release_line_name(release_line), release_line)
                                                    for release_line in release_lines])
-        ipw.dlink((self.app, 'installed_release_line'), (self.version_selector.release_line, 'value'))
+        ipw.dlink((self.app, 'installed_release_line'), (self.version_selector.release_line, 'value'),
+                  transform=lambda value: value if value else None)
         ipw.dlink((self.app, 'installed_version'), (self.version_selector.installed_version, 'value'),
                   transform=lambda version: '' if version is None else version)
         self.version_selector.release_line.observe(self._refresh_widget_state, names=['value'])
-        children.insert(1, self.version_selector)
+        ipw.dlink((self.app, 'busy'), (self.version_selector, 'disabled'))
         self.version_selector.layout.visibility = 'visible' if with_version_selector else 'hidden'
-
-        self._refresh_widget_state()  # init all widgets
-        self.app.observe(self._refresh_widget_state)
-        self.modifications_ignore.observe(self._refresh_widget_state)
+        self.version_selector.disabled = True
+        children.insert(1, self.version_selector)
 
         super().__init__(children=children)
+
+        self.app.observe(self._refresh_widget_state)
+        self.app.refresh_async()  # init all widgets
 
     @staticmethod
     def _format_release_line_name(release_line):
@@ -332,34 +430,54 @@ class AppManagerWidget(ipw.VBox):
 
     def _refresh_widget_state(self, _=None):
         """Refresh the widget to reflect the current state of the app."""
-        modified = self.app.modified
-        blocked = modified and not self.modifications_ignore.value
+        with self.hold_trait_notifications():
+            # Collect information about app state.
+            busy = self.app.busy
+            modified = self.app.modified
+            override = modified and self.modifications_ignore.value
+            blocked = modified and not self.modifications_ignore.value
 
-        warn_or_ban_icon = ("warning" if modified and self.modifications_ignore.value else "ban") if modified else ""
+            # Prepare warning icons and messages depending on whether we override or not.
+            # These messages and icons are only shown if needed.
+            warn_or_ban_icon = "ban" if blocked else "warning"
+            if override:
+                tooltip = "Operation will lead to potential loss of local modifications!"
+            else:
+                tooltip = "Operation blocked due to local modifications."
 
-        can_install = self.version_selector.release_line.value != self.app.installed_release_line and not blocked
-        can_uninstall = self.app.is_installed() and not blocked
-        try:
-            can_update = self.app.updates_available and not can_install
-        except RuntimeError:
-            can_update = False
+            # Determine whether we can install, updated, and uninstall.
+            switch_release_line = self.version_selector.release_line.value != self.app.installed_release_line
+            can_install = not self.app.is_installed() or (switch_release_line and not blocked)
+            can_uninstall = self.app.is_installed()
+            try:
+                can_update = self.app.updates_available and not can_install
+            except RuntimeError:
+                can_update = False
 
-        self.install_button.disabled = blocked or not can_install
-        self.install_button.button_style = 'info' if can_install else ''
-        self.install_button.icon = "" if can_install and not modified else warn_or_ban_icon if can_install else ''
+            # Update the install button state.
+            self.install_button.disabled = busy or blocked or not can_install
+            self.install_button.button_style = 'info' if can_install else ''
+            self.install_button.icon = '' if can_install and not modified else warn_or_ban_icon if can_install else ''
+            self.install_button.tooltip = '' if can_install and not modified else tooltip if can_install else ''
 
-        self.uninstall_button.disabled = blocked or not can_uninstall
-        self.uninstall_button.button_style = 'danger' if can_uninstall else ''
-        self.uninstall_button.icon = "" if can_uninstall and not modified else warn_or_ban_icon if can_uninstall else ''
+            # Update the uninstall button state.
+            self.uninstall_button.disabled = busy or blocked or not can_uninstall
+            self.uninstall_button.button_style = 'danger' if can_uninstall else ''
+            self.uninstall_button.icon = \
+                "" if can_uninstall and not modified else warn_or_ban_icon if can_uninstall else ""
+            self.uninstall_button.tooltip = '' if can_uninstall and not modified else tooltip if can_uninstall else ''
 
-        self.update_button.disabled = blocked or not can_update
-        self.update_button.icon = "circle-up" if can_update and not modified else warn_or_ban_icon if can_update else ''
-        self.update_button.button_style = 'success' if can_update else ''
-        self.update_button.tooltip = "Unable to update due to local modifications." if modified and blocked else ''
+            # Update the update button state.
+            self.update_button.disabled = busy or blocked or not can_update
+            self.update_button.icon = \
+                "circle-up" if can_update and not modified else warn_or_ban_icon if can_update else ""
+            self.update_button.button_style = 'success' if can_update else ''
+            self.update_button.tooltip = '' if can_update and not modified else tooltip if can_update else ''
 
-        self.modifications_indicator.value = \
-            f'<i class="fa fa-{warn_or_ban_icon}"> There are local modifications.' if modified else ''
-        self.modifications_ignore.layout.visibility = 'visible' if modified else 'hidden'
+            # Indicate whether there are local modifications and present option for user override.
+            self.modifications_indicator.value = \
+                f'<i class="fa fa-{warn_or_ban_icon}"> There are local modifications.' if modified else ''
+            self.modifications_ignore.layout.visibility = 'visible' if modified else 'hidden'
 
     def _show_msg_success(self, msg):
         """Show a message indicating successful execution of a requested operation."""

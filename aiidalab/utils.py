@@ -5,6 +5,8 @@ import json
 from os import path
 from importlib import import_module
 from urllib.parse import urlparse
+from functools import wraps
+from time import time
 
 import requests
 from markdown import markdown
@@ -87,3 +89,27 @@ def load_start_md(name):
 
     except Exception as exc:  # pylint: disable=broad-except
         return ipw.HTML("Could not load start.md: {}".format(str(exc)))
+
+
+class throttled:  # pylint: disable=invalid-name
+    """Decorator to throttle calls to a function to a specified rate."""
+
+    def __init__(self, calls_per_second=1):
+        self.calls_per_second = calls_per_second
+        self.last_call = None
+
+    def __call__(self, func):
+        """Return decorator function."""
+
+        @wraps(func)
+        def wrapped(*args, **kwargs):
+            now = time()
+            if self.last_call is not None:
+                period = now - self.last_call
+                if period < (1 / self.calls_per_second):
+                    return None
+
+            self.last_call = now
+            return func(*args, **kwargs)
+
+        return wrapped
