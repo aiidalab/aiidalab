@@ -496,6 +496,10 @@ class AppManagerWidget(ipw.VBox):
             self.install_button.button_style = 'info' if can_install else ''
             self.install_button.icon = '' if can_install and not modified else warn_or_ban_icon if can_install else ''
             self.install_button.tooltip = '' if can_install and not modified else tooltip if can_install else ''
+            if switch_release_line:
+                self.install_button.description = f'Install ({self._format_release_line_name(requested_release_line)})'
+            else:
+                self.install_button.description = 'Install'
 
             # Update the uninstall button state.
             self.uninstall_button.disabled = busy or blocked or not can_uninstall
