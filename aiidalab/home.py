@@ -41,10 +41,10 @@ def _workaround_property_lock_issue(func):
     @wraps(func)
     def _inner(self, change):
         if change['name'] == '_property_lock':
-            if 'selected_index' in change['new']:
+            if 'selected_index' in change['old']:
                 fixed_change = change.copy()
                 fixed_change['name'] = 'selected_index'
-                fixed_change['new'] = change['new']['selected_index']
+                fixed_change['new'] = change['old']['selected_index']
                 del fixed_change['old']
                 return func(self, fixed_change)
 
@@ -83,7 +83,7 @@ class AiidaLabHome:
         hidden = set(config['hidden'])
         if change['new']:  # hidden
             hidden.add(change['owner'].app.name)
-        else:  # visiable
+        else:  # visible
             hidden.discard(change['owner'].app.name)
         config['hidden'] = list(hidden)
         self.write_config(config)
@@ -169,14 +169,15 @@ class AppWidget(ipw.VBox):
 class CollapsableAppWidget(ipw.Accordion):
     """Widget that represents a collapsable app as part of the home page."""
 
+    hidden = traitlets.Bool()
+
     def __init__(self, app, **kwargs):
+        self.app = app
         app_widget = AppWidget(app, **kwargs)
         super().__init__(children=[app_widget])
         self.set_title(0, app.title)
         # Need to observe all names here due to unidentified issue:
         self.observe(self._observe_accordion_selected_index)  # , names=['selected_index'])
-
-    hidden = traitlets.Bool()
 
     @_workaround_property_lock_issue
     def _observe_accordion_selected_index(self, change):
