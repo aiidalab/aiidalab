@@ -71,7 +71,7 @@ class Spinner(ipw.HTML):
     enabled = traitlets.Bool()
 
     def __init__(self, spinner_style=None):
-        self.spinner_style = '' if spinner_style is None else f' style="{spinner_style}"'
+        self.spinner_style = f' style="{spinner_style}"' if spinner_style else ''
         super().__init__()
 
     @traitlets.default('enabled')
