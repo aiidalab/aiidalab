@@ -257,11 +257,6 @@ class AiidaLabApp(traitlets.HasTraits):
         except (AssertionError, RuntimeError):
             self.set_trait('updates_available', None)
 
-    def _installed_version(self):
-        if self.is_installed():
-            return self._repo.head()
-        return None
-
     def _available_release_lines(self):
         """"Return all available release lines (local and remote)."""
         for branch in self._repo.list_branches():
