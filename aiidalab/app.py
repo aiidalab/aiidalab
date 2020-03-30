@@ -119,7 +119,9 @@ class AiidaLabApp(traitlets.HasTraits):
             self.categories = app_data['categories']
         else:
             self._git_url = None
+            self._meta_url = None
             self._git_remote_refs = {}
+            self.categories = None
 
         self._observer = None
         self._check_install_status_changed_thread = None
@@ -303,6 +305,9 @@ class AiidaLabApp(traitlets.HasTraits):
                     return json.load(json_file)
             except IOError:
                 return dict()
+        elif self._meta_url is None:
+            raise RuntimeError(
+                f"Requested app '{self.name}' is not installed and is also not registered on the app registry.")
         else:
             return requests.get(self._meta_url).json()
 
@@ -376,7 +381,14 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def render_app_manager_widget(self):
         """"Display widget to manage the app."""
-        return AppManagerWidget(self, with_version_selector=True)
+        try:
+            return AppManagerWidget(self, with_version_selector=True)
+        except Exception as error:  # pylint: disable=broad-except
+            return ipw.HTML(
+                '<div style="font-size: 30px; text-align:center;">'
+                f'Unable to show app widget due to error: {error}'
+                '</div>',
+                layout={'width': '600px'})
 
 
 class AppManagerWidget(ipw.VBox):
