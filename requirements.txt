@@ -190,3 +190,4 @@ widgetsnbextension==3.5.1
 wrapt==1.11.2
 xmlschema==1.0.13
 zipp==3.1.0
+watchdog==0.10.2
