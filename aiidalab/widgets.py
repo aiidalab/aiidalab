@@ -1,30 +1,40 @@
 # -*- coding: utf-8 -*-
 """AiiDA lab basic widgets."""
 
-from threading import Thread
-from time import sleep, time
+from threading import Timer
 
 import traitlets
 import ipywidgets as ipw
 
 
 class _StatusWidgetMixin:
-    """Show temporary messages for example for status updates."""
+    """Show temporary messages for example for status updates.
+
+    This is a mixin class that is meant to be part of an inheritance
+    tree of an actual widget with a 'value' traitlet that is used
+    to convey a status message. See the non-private classes below
+    for examples.
+    """
 
     def __init__(self, *args, **kwargs):
-        self._clear_timer = 0
+        self._clear_timer = None
         super().__init__(*args, **kwargs)
 
-    def _clear_value_after_delay(self, delay):
-        self._clear_timer = time() + delay  # reset timer
-        sleep(delay)
-        if time() > self._clear_timer:
-            self.value = ''
+    def _clear_value(self):
+        """Set widget .value to be an empty string."""
+        self.value = ''
 
     def show_temporary_message(self, value, clear_after=3):
+        """Show a temporary message and clear it after the given interval."""
+        if self._clear_timer is not None:
+            # Cancel previous timer; has no effect if it already timed out.
+            self._clear_timer.cancel()
+
         self.value = value
-        if clear_after > 0:
-            Thread(target=self._clear_value_after_delay, args=(clear_after,)).start()
+
+        # Start new timer that will clear the value after the specified interval.
+        self._clear_timer = Timer(clear_after, self._clear_value)
+        self._clear_timer.start()
 
 
 class StatusLabel(_StatusWidgetMixin, ipw.Label):
