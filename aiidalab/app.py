@@ -431,16 +431,13 @@ class AppManagerWidget(ipw.VBox):
         self.install_info = StatusHTML()
 
         # Setup buttons
-        self.install_button = ipw.Button(description='Install')
-        self.install_button.disabled = True
+        self.install_button = ipw.Button(description='Install', disabled=True)
         self.install_button.on_click(self._install_version)
 
-        self.uninstall_button = ipw.Button(description='Uninstall')
-        self.uninstall_button.disabled = True
+        self.uninstall_button = ipw.Button(description='Uninstall', disabled=True)
         self.uninstall_button.on_click(self._uninstall_app)
 
-        self.update_button = ipw.Button(description='Update')
-        self.update_button.disabled = True
+        self.update_button = ipw.Button(description='Update', disabled=True)
         self.update_button.on_click(self._update_app)
 
         self.modifications_indicator = ipw.HTML()
