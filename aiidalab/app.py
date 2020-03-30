@@ -14,7 +14,6 @@ import requests
 import traitlets
 import ipywidgets as ipw
 from dulwich.porcelain import fetch
-from dulwich.objects import Commit, Tag
 from dulwich.errors import NotGitRepository
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -247,20 +246,6 @@ class AiidaLabApp(traitlets.HasTraits):
                 raise RuntimeError("App was already uninstalled!")
             self.refresh()
             self._watch_repository()
-
-    @property
-    def _refs_dict(self):
-        """Returns a dictionary of references: branch names, tags."""
-        refs = dict()
-        for key, value in self._repo.get_refs().items():
-            if key.endswith(b'HEAD') or key.startswith(b'refs/heads/'):
-                continue
-            obj = self._repo.get_object(value)
-            if isinstance(obj, Tag):
-                refs[key] = obj.object[1]
-            elif isinstance(obj, Commit):
-                refs[key] = value
-        return refs
 
     def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""
