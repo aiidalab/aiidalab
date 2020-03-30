@@ -210,6 +210,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def install_app(self, version=None):
         """Installing the app."""
+        assert self._git_url is not None
         if version is None:
             version = 'git:refs/heads/' + AIIDALAB_DEFAULT_GIT_BRANCH
 
@@ -229,6 +230,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def update_app(self, _=None):
         """Perform app update."""
+        assert self._git_url is not None
         with self._show_busy():
             fetch(repo=self._repo, remote_location=self._git_url)
             tracked_branch = self._repo.get_tracked_branch()
@@ -250,6 +252,7 @@ class AiidaLabApp(traitlets.HasTraits):
     def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""
         try:
+            assert self._git_url is not None
             branch_ref = 'refs/heads/' + self._repo.branch().decode()
             assert self._repo.get_tracked_branch() is not None
             remote_update_available = self._git_remote_refs.get(branch_ref) != self._repo.head().decode()
@@ -539,7 +542,7 @@ class AppManagerWidget(ipw.VBox):
         try:
             self._check_modified_state()
             release_line = self.app.install_app(release_line)  # argument may be None
-        except (RuntimeError, CalledProcessError) as error:
+        except (AssertionError, RuntimeError, CalledProcessError) as error:
             self._show_msg_failure(str(error))
         else:
             self._show_msg_success(f"Installed app ({self._format_release_line_name(release_line)}).")
@@ -549,7 +552,7 @@ class AppManagerWidget(ipw.VBox):
         try:
             self._check_modified_state()
             self.app.update_app()
-        except (RuntimeError, CalledProcessError) as error:
+        except (AssertionError, RuntimeError, CalledProcessError) as error:
             self._show_msg_failure(str(error))
         else:
             self._show_msg_success("Updated app.")
