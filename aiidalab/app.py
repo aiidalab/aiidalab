@@ -130,11 +130,13 @@ class AiidaLabApp(traitlets.HasTraits):
             self._meta_url = app_data['meta_url']
             self._git_remote_refs = app_data['gitinfo']
             self.categories = app_data['categories']
+            self._meta_info = app_data['metainfo']
         else:
             self._git_url = None
             self._meta_url = None
             self._git_remote_refs = {}
             self.categories = None
+            self._meta_info = None
 
         self._observer = None
         self._check_install_status_changed_thread = None
@@ -317,6 +319,8 @@ class AiidaLabApp(traitlets.HasTraits):
                     return json.load(json_file)
             except IOError:
                 return dict()
+        elif self._meta_info is not None:
+            return dict(self._meta_info)
         elif self._meta_url is None:
             raise RuntimeError(
                 f"Requested app '{self.name}' is not installed and is also not registered on the app registry.")
