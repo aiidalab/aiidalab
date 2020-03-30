@@ -80,7 +80,8 @@ class Spinner(ipw.HTML):
         return False
 
     @traitlets.observe('enabled')
-    def _observe_enabled(self, change):  # pylint: disable=missing-docstring
+    def _observe_enabled(self, change):
+        """Show spinner if enabled, otherwise nothing."""
         if change['new']:
             self.value = f"""<i class="fa fa-spinner fa-pulse"{self.spinner_style}></i>"""
         else:
