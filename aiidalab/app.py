@@ -27,7 +27,7 @@ from .utils import throttled
 HTML_MSG_SUCCESS = """<i class="fa fa-check" style="color:#337ab7;font-size:1em;" ></i>
 {}"""
 
-HTML_MSG_FAILURE = """"<i class="fa fa-times" style="color:red;font-size:1em;" ></i>
+HTML_MSG_FAILURE = """<i class="fa fa-times" style="color:red;font-size:1em;" ></i>
 {}"""
 
 
@@ -381,7 +381,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return Repo(self.path)
 
     def render_app_manager_widget(self):
-        """"Display widget to manage the app."""
+        """Display widget to manage the app."""
         try:
             return AppManagerWidget(self, with_version_selector=True)
         except Exception as error:  # pylint: disable=broad-except
