@@ -57,7 +57,8 @@ class VersionSelectorWidget(ipw.VBox):
         super().__init__(
             children=[self.release_line, self.installed_version, self.info],
             layout={'min_width': '300px'},
-            *args, **kwargs,
+            *args,
+            **kwargs,
         )
 
     @traitlets.observe('disabled')
