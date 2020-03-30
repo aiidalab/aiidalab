@@ -67,3 +67,25 @@ class UpdateAvailableInfoWidget(ipw.HTML):
     @traitlets.observe('updates_available')
     def _observe_updates_available(self, change):
         self.value = self.MESSAGES[change['new']]
+
+
+class Spinner(ipw.HTML):
+    """Widget that shows a simple spinner if enabled."""
+
+    enabled = traitlets.Bool()
+
+    def __init__(self, spinner_style=None):
+        self.spinner_style = f' style="{spinner_style}"' if spinner_style else ''
+        super().__init__()
+
+    @traitlets.default('enabled')
+    def _default_enabled(self):  # pylint: disable=no-self-use
+        return False
+
+    @traitlets.observe('enabled')
+    def _observe_enabled(self, change):
+        """Show spinner if enabled, otherwise nothing."""
+        if change['new']:
+            self.value = f"""<i class="fa fa-spinner fa-pulse"{self.spinner_style}></i>"""
+        else:
+            self.value = ""
