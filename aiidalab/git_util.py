@@ -62,7 +62,7 @@ class GitManagedAppRepo(Repo):
         if tracked_branch:
             ref = b'refs/heads/' + branch
 
-            # Check of local branch points to same commit as tracked branch:
+            # Check if local branch points to same commit as tracked branch:
             if self.refs[ref] == self.refs[tracked_branch]:
                 return BranchTrackingStatus.EQUAL
 
