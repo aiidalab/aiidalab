@@ -41,7 +41,7 @@ class VersionSelectorWidget(ipw.VBox):
     disabled = traitlets.Bool()
     available_versions = traitlets.Dict(traitlets.Unicode())
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         style = {'description_width': '100px'}
         self.release_line = ipw.Dropdown(
             description='Release line',
@@ -57,6 +57,7 @@ class VersionSelectorWidget(ipw.VBox):
         super().__init__(
             children=[self.release_line, self.installed_version, self.info],
             layout={'min_width': '300px'},
+            *args, **kwargs,
         )
 
     @traitlets.observe('disabled')
