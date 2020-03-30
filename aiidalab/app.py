@@ -88,7 +88,17 @@ class Spinner(ipw.HTML):
 
 
 class AiidaLabApp(traitlets.HasTraits):
-    """Class to manage AiiDA lab app."""
+    """Manage installation status of an AiiDA lab app.
+
+    Arguments:
+
+        name (str):
+            Name of the Aiida lab app.
+        app_data (dict):
+            Dictionary containing the app metadata.
+        aiidalab_apps_path (str):
+            Path to directory at which the app is expected to be installed.
+    """
 
     path = traitlets.Unicode(allow_none=True, readonly=True)
     install_info = traitlets.Unicode()
@@ -111,7 +121,7 @@ class AiidaLabApp(traitlets.HasTraits):
             """Refresh app for any event."""
             self.app.refresh_async()
 
-    def __init__(self, name, app_data, aiidalab_apps):
+    def __init__(self, name, app_data, aiidalab_apps_path):
         super().__init__()
 
         if app_data is not None:
@@ -128,9 +138,8 @@ class AiidaLabApp(traitlets.HasTraits):
         self._observer = None
         self._check_install_status_changed_thread = None
 
-        self.aiidalab_apps = aiidalab_apps
         self.name = name
-        self.path = os.path.join(self.aiidalab_apps, self.name)
+        self.path = os.path.join(aiidalab_apps_path, self.name)
         self.refresh_async()
         self._watch_repository()
 
