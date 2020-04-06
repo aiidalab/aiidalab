@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 #aiida-ase = "~=1.0.1"
+aiida-bigdft = "~=0.1.0a0"
 aiida-castep = "~=1.0.0"
 #aiida-crystal17 = "~=0.10.0b5"
 #aiida-gudhi = "==0.1.0a3"

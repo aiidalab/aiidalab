@@ -1,5 +1,6 @@
 -i https://pypi.org/simple
 aiida-bands-inspect==0.3.0
+aiida-bigdft==0.1.0a0
 aiida-castep==1.0.0
 aiida-codtools==2.0.0
 aiida-core[atomic_tools,rest]==1.1.1
