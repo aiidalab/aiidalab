@@ -124,6 +124,7 @@ pandocfilters==1.4.2
 paramiko==2.7.1
 parsevasp==0.4.3
 parso==0.7.0
+pathtools==0.1.2
 pbr==5.4.5
 pexpect==4.8.0 ; sys_platform != 'win32'
 pg8000==1.15.2
@@ -206,6 +207,7 @@ tzlocal==2.1b1
 upf-to-json==0.9.2
 urllib3==1.25.9
 voluptuous==0.11.7
+watchdog==0.10.2
 wcwidth==0.1.9
 webencodings==0.5.1
 werkzeug==1.0.1
