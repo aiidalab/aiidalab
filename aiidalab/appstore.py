@@ -3,8 +3,9 @@
 
 import ipywidgets as ipw
 from IPython.display import display
+from jinja2 import Template
 
-from .app import AiidaLabApp
+from .app import AiidaLabApp, AppManagerWidget
 from .config import AIIDALAB_APPS
 from .utils import load_app_registry
 
@@ -115,36 +116,26 @@ class AiidaLabAppStore(ipw.HBox):
 
     def render(self, _=None):
         """Show all the available apps."""
-        max_len = 180
         self.output.clear_output()
         page = self.page_selector.value - 1
         start = page * self.items_per_page.value
         end = (page + 1) * self.items_per_page.value
         with self.output:
-            horisontal_line = ipw.HTML('<hr>')
             for number, app_base in enumerate(self.apps_to_display[start:end]):
                 if self.category_filter.value and self.app_corresponding_categories[start:end][number]:
                     display(ipw.HTML("<h1>{}</h1>".format(
                         self.app_corresponding_categories[start:end][number].title())))
 
-                description = ipw.HTML("""<h2 style="text-align:center;">{}</h2>
-                <div style="font-size: 15px; font-style: italic">Description: {}</div>
-                <br>
-                <div style="text-align:right;">{}</div>
-                """.format(
-                    app_base.title,
-                    app_base.description if len(app_base.description) < max_len else app_base.description[:max_len] +
-                    '...', app_base.more))
-                description.layout = {'width': '600px'}
-                description.layout.margin = "0px 0px 0px 40px"
-
-                # Warning! put here as less widgets as possible. They take a lot of time to load.
-                result = ipw.VBox([
-                    horisontal_line,
-                    ipw.HBox([app_base.logo, description]),
-                    ipw.HBox([app_base.uninstall_button, app_base.update_button, app_base.install_button]),
-                    ipw.HBox([app_base.install_info]),
-                ])
-                display(result)
+                widget = AppStoreAppManagerWidget(app_base)
+                display(ipw.HTML('<hr>'))  # horizontal line
+                display(widget)
 
         return self.output
+
+
+class AppStoreAppManagerWidget(AppManagerWidget):
+
+    TEMPLATE = Template("""<h2 style="text-align:center;">{{ app.title }}</h2>
+    <div style="font-size: 15px; font-style: italic">Description: {{ app.description | truncate(200) }}</div>
+    <br>
+    <div style="text-align:right;"><a href=./single_app.ipynb?app={{ app.name }}>Manage App</a>""")
