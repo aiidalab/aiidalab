@@ -1,0 +1,38 @@
+name: continuous-integration
+
+on: [push, pull_request]
+
+jobs:
+
+  test-app:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        tag: [ stable, latest ]
+        browser: [ chrome, firefox ]
+      fail-fast: false
+
+    steps:
+
+      - name: Checkout home app
+        uses: actions/checkout@v2
+        with:
+          repository: aiidalab/aiidalab-home
+
+      - name: Check out the aiidalab repository
+        uses: actions/checkout@v2
+        with:
+          path: aiidalab-package
+
+      - name: Copy aiidalab into app directory
+        run: cp -r "${GITHUB_WORKSPACE}/aiidalab-package/aiidalab" "${GITHUB_WORKSPACE}/aiidalab"
+
+      - name: Test app
+        uses: aiidalab/aiidalab-test-app-action@v2
+        with:
+          image: aiidalab/aiidalab-docker-stack:${{ matrix.tag }}
+          browser: ${{ matrix.browser }}
+          notebooks: appstore.ipynb,start.ipynb
