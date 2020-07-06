@@ -5,8 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 #aiida-ase = "~=1.0.1"
-aiida-bigdft = "~=0.1.0a0"
-aiida-castep = "~=1.0"
+#aiida-castep = "~=1.0"
 #aiida-crystal17 = "~=0.10.0b5"
 #aiida-gudhi = "==0.1.0a3"
 #aiida-lammps = "~=0.4.0b3"
@@ -15,6 +14,7 @@ aiida-castep = "~=1.0"
 
 [packages]
 aiida-core = {extras = ['rest', 'atomic_tools'],version = "~=1.2"}
+aiida-bigdft = "~=0.2"
 aiida-codtools = "~=2.0"
 aiida-cp2k = "~=1.1"
 aiida-ddec = "~=1.0.0a1"
