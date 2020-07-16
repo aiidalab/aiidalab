@@ -48,6 +48,7 @@ pythreejs = "~=2.1.1"
 pysmiles = "~=1.0.0"
 requests-cache = "~=0.5.2"
 watchdog = "~=0.10.2"
+widget_periodictable = "~=2.0"
 ipywidgets = "<8.0.0" # Version 8.0.0 introduces some backwards-incompatible changes
 
 [requires]
