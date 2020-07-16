@@ -8,6 +8,7 @@ aiida-ddec==1.0.0a1
 aiida-diff==1.2.0
 aiida-fleur==1.1.0
 aiida-lsmo==1.0.0b2
+aiida-nanotech-empa==0.1.0a0
 aiida-optimize==0.3.1
 aiida-qeq==1.0.0a1
 aiida-quantumespresso==3.1.0
@@ -24,7 +25,7 @@ alabaster==0.7.12
 aldjemy==0.9.1
 alembic==1.4.2
 aniso8601==8.0.0
-appnope==0.1.0 ; sys_platform == 'darwin'
+appnope==0.1.0 ; platform_system == 'Darwin'
 arrow==0.15.7
 ase==3.19.1
 attrs==19.3.0
