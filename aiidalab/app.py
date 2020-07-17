@@ -569,25 +569,11 @@ class AppManagerWidget(ipw.VBox):
             ipw.HBox([self.modifications_indicator, self.modifications_ignore]),
         ]
 
-        def formatted_version(version):
-            if version is None:
-                return '[not installed]'
-            if not version:
-                return '[n/a]'
-            if version.startswith('git:refs/heads/'):  # branch
-                return f"{version[len('git:refs/heads/'):]} (latest)"
-            if version.startswith('git:refs/tags/'):  # tag
-                return version[len('git:refs/tags/'):]
-            if version.startswith('git:'):  # commit
-                return version[4:4 + 8]
-            raise ValueError("Unknown version format: '{}'".format(version))
-
         self.version_selector = VersionSelectorWidget()
         ipw.dlink((self.app, 'available_versions'), (self.version_selector.install_version, 'options'),
-                  transform=lambda versions: [(formatted_version(version), version) for version in versions])
+                  transform=lambda versions: [(self._formatted_version(version), version) for version in versions])
         ipw.dlink((self.app, 'installed_version'), (self.version_selector.installed_version, 'value'),
-                  transform=formatted_version)
-        ipw.dlink((self.app, 'busy'), (self.version_selector, 'disabled'))
+                  transform=self._formatted_version)
         self.version_selector.layout.visibility = 'visible' if with_version_selector else 'hidden'
         self.version_selector.disabled = True
         self.version_selector.install_version.observe(self._refresh_widget_state, 'value')
@@ -597,6 +583,26 @@ class AppManagerWidget(ipw.VBox):
 
         self.app.observe(self._refresh_widget_state)
         self.app.refresh_async()  # init all widgets
+
+    @staticmethod
+    def _formatted_version(version):
+        """Format the unambigious version identifiee to a human-friendly representation."""
+        if version is None:  # not installed
+            return '[not installed]'
+
+        if not version:  # will be displayed during transition phases
+            return '[n/a]'
+
+        if version.startswith('git:refs/heads/'):  # branch
+            return f"{version[len('git:refs/heads/'):]} (latest)"
+
+        if version.startswith('git:refs/tags/'):  # tag
+            return version[len('git:refs/tags/'):]
+
+        if version.startswith('git:'):  # commit
+            return version[4:4 + 8]
+
+        raise ValueError("Unknown version format: '{}'".format(version))
 
     def _refresh_widget_state(self, _=None):
         """Refresh the widget to reflect the current state of the app."""
@@ -616,8 +622,9 @@ class AppManagerWidget(ipw.VBox):
                 tooltip = "Operation blocked due to local modifications."
 
             # Determine whether we can install, updated, and uninstall.
-            can_install = not self.app.is_installed() \
-                    or self.app.installed_version != self.version_selector.install_version.value
+            installed = self.app.is_installed()
+            can_switch = self.app.installed_version != self.version_selector.install_version.value
+            can_install = can_switch or not installed
             can_uninstall = self.app.is_installed()
             try:
                 can_update = self.app.updates_available and not can_install
@@ -629,7 +636,8 @@ class AppManagerWidget(ipw.VBox):
             self.install_button.button_style = 'info' if can_install else ''
             self.install_button.icon = '' if can_install and not modified else warn_or_ban_icon if can_install else ''
             self.install_button.tooltip = '' if can_install and not modified else tooltip if can_install else ''
-            self.install_button.description = 'Install'
+            self.install_button.description = 'Install' if not (installed and can_switch) \
+                    else f'Install ({self._formatted_version(self.version_selector.install_version.value)})'
 
             # Update the uninstall button state.
             self.uninstall_button.disabled = busy or blocked or not can_uninstall
@@ -648,6 +656,10 @@ class AppManagerWidget(ipw.VBox):
                     "circle-up" if can_update and not modified else warn_or_ban_icon if can_update else ""
                 self.update_button.button_style = 'success' if can_update else ''
                 self.update_button.tooltip = '' if can_update and not modified else tooltip if can_update else ''
+
+            # Update the version_selector widget state.
+            more_than_one_version = len(self.version_selector.install_version.options) > 1
+            self.version_selector.disabled = busy or blocked or not more_than_one_version
 
             # Indicate whether there are local modifications and present option for user override.
             self.modifications_indicator.value = \
@@ -679,7 +691,7 @@ class AppManagerWidget(ipw.VBox):
         except (AssertionError, RuntimeError, CalledProcessError) as error:
             self._show_msg_failure(str(error))
         else:
-            self._show_msg_success(f"Installed app ({version}).")
+            self._show_msg_success(f"Installed app ({self._formatted_version(version)}).")
 
     def _update_app(self, _):
         """Attempt to uninstall the app."""
