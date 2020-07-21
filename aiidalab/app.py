@@ -105,14 +105,14 @@ class AiidaLabApp(traitlets.HasTraits):
     class _GitReleaseLine:
         """Utility class to operate on the release line of the app.
 
-        A release line is specified via the app url as the part behind the '@'.
+        A release line is specified via the app url as the part after the '@'.
 
         A release line can be specified either as
             a) a commit denoted by a hexadecimal number with either 20 or 40 digits, or
             b) a short reference, which can be either a branch or a tag name.
 
         A full ref is the ref as defined in the Git glossary, e.g., 'refs/heads/main'.
-        A full ref and a commit are a revision.
+        A revision is either a full ref or a commit.
         """
 
         def __init__(self, app, line):
@@ -171,7 +171,7 @@ class AiidaLabApp(traitlets.HasTraits):
             else:
                 ref = self._resolve_short_ref(self.short_ref)
                 if ref is None:
-                    raise ValueError(f"Unable to resolve '{self.short_ref}'. "
+                    raise ValueError(f"Unable to resolve {self.short_ref!r}. "
                                      "Are you sure this is a valid git branch or tag?")
 
                 # The release line is a head (branch).
