@@ -6,6 +6,7 @@ import os
 import shutil
 import json
 from contextlib import contextmanager
+from enum import Enum, auto
 from time import sleep
 from threading import Thread
 from subprocess import check_output, STDOUT, CalledProcessError
@@ -68,6 +69,15 @@ class VersionSelectorWidget(ipw.VBox):
         self.install_version.disabled = change['new']
 
 
+# A version is usually of type str, but it can also be a value
+# of this Enum to indicate special app states in which the
+# version cannot be determined, e.g., because the app is in a
+# detached state, or because the app is not installed at all.
+class AppVersion(Enum):
+    UNKNOWN = auto()
+    NOT_INSTALLED = auto()
+
+
 class AiidaLabApp(traitlets.HasTraits):
     """Manage installation status of an AiiDA lab app.
 
@@ -85,11 +95,11 @@ class AiidaLabApp(traitlets.HasTraits):
     install_info = traitlets.Unicode()
 
     available_versions = traitlets.List(traitlets.Unicode)
-    installed_version = traitlets.Unicode(allow_none=True)
+    installed_version = traitlets.Union([traitlets.Unicode(), traitlets.UseEnum(AppVersion)])
     updates_available = traitlets.Bool(readonly=True, allow_none=True)
 
     busy = traitlets.Bool(readonly=True)
-    modified = traitlets.Bool(readonly=True, allow_none=True)
+    detached = traitlets.Bool(readonly=True, allow_none=True)
 
     @dataclass
     class AppRegistryData:
@@ -212,13 +222,14 @@ class AiidaLabApp(traitlets.HasTraits):
         def current_revision(self):
             """Return the version currently installed on the release line.
 
-            Raises a RuntimeError if the current revision is not on this release line.
+            Returns None if the current revision is not on this release line.
             """
             current_commit = self._repo.head()
             on_release_line = self._on_release_line(current_commit)
             if on_release_line:
                 return self.resolve_revision(current_commit)
-            raise RuntimeError("Current revision not on release line.")
+
+            return None  # current revision not on the release line
 
     class AppPathFileSystemEventHandler(FileSystemEventHandler):
         """Internal event handeler for app path file system events."""
@@ -257,10 +268,15 @@ class AiidaLabApp(traitlets.HasTraits):
         return (f"<AiidaLabApp(name={self.name!r}, app_data={app_data_argument!r}, "
                 f"aiidalab_apps_path={os.path.dirname(self.path)!r})>")
 
-    @traitlets.default('modified')
-    def _default_modified(self):
+    @traitlets.default('detached')
+    def _default_detached(self):
+        """Provide default value for detached traitlet."""
         if self.is_installed():
-            return self._repo.dirty()
+            modified = self._repo.dirty()
+            if self._release_line is not None:
+                revision = self._release_line.current_revision()
+                return revision is not None and not modified
+            return True
         return None
 
     @traitlets.default('busy')
@@ -394,14 +410,20 @@ class AiidaLabApp(traitlets.HasTraits):
             self.set_trait('updates_available', None)
 
     def _available_versions(self):
-        if self.is_installed():
+        if self.is_installed() and self._release_line is not None:
             for version in self._release_line.find_versions():
                 yield 'git:' + version.decode()
 
     def _installed_version(self):
+        """Determine the currently installed version."""
         if self.is_installed():
-            return 'git:' + self._release_line.current_revision().decode()
-        return None
+            modified = self._repo.dirty()
+            if not (self._release_line is None or modified):
+                revision = self._release_line.current_revision()
+                if revision is not None:
+                    return f'git:{revision.decode()}'
+            return AppVersion.UNKNOWN
+        return AppVersion.NOT_INSTALLED
 
     @throttled(calls_per_second=1)
     def refresh(self):
@@ -413,10 +435,11 @@ class AiidaLabApp(traitlets.HasTraits):
                 if self.is_installed() and self._has_git_repo():
                     self.installed_version = self._installed_version()
                     self.check_for_updates()
-                    self.set_trait('modified', self._repo.dirty())
+                    modified = self._repo.dirty()
+                    self.set_trait('detached', self.installed_version is AppVersion.UNKNOWN or modified)
                 else:
                     self.set_trait('updates_available', None)
-                    self.set_trait('modified', None)
+                    self.set_trait('detached', None)
 
     def refresh_async(self):
         """Asynchronized (non-blocking) refresh of the app state."""
@@ -555,9 +578,9 @@ class AppManagerWidget(ipw.VBox):
         self.update_button = ipw.Button(description='Update', disabled=True)
         self.update_button.on_click(self._update_app)
 
-        self.modifications_indicator = ipw.HTML()
-        self.modifications_ignore = ipw.Checkbox(description="Ignore")
-        self.modifications_ignore.observe(self._refresh_widget_state)
+        self.detachment_indicator = ipw.HTML()
+        self.detachment_ignore = ipw.Checkbox(description="Ignore")
+        self.detachment_ignore.observe(self._refresh_widget_state)
 
         self.spinner = Spinner("color:#337ab7;font-size:1em;")
         ipw.dlink((self.app, 'busy'), (self.spinner, 'enabled'))
@@ -566,7 +589,7 @@ class AppManagerWidget(ipw.VBox):
             ipw.HBox([app.logo, body]),
             ipw.HBox([self.uninstall_button, self.install_button, self.update_button, self.spinner]),
             ipw.HBox([self.install_info]),
-            ipw.HBox([self.modifications_indicator, self.modifications_ignore]),
+            ipw.HBox([self.detachment_indicator, self.detachment_ignore]),
         ]
 
         self.version_selector = VersionSelectorWidget()
@@ -587,8 +610,11 @@ class AppManagerWidget(ipw.VBox):
     @staticmethod
     def _formatted_version(version):
         """Format the unambigious version identifiee to a human-friendly representation."""
-        if version is None:  # not installed
+        if version is AppVersion.NOT_INSTALLED:
             return '[not installed]'
+
+        if version is AppVersion.UNKNOWN:
+            return '[unknown version]'
 
         if not version:  # will be displayed during transition phases
             return '[n/a]'
@@ -608,10 +634,14 @@ class AppManagerWidget(ipw.VBox):
         """Refresh the widget to reflect the current state of the app."""
         with self.hold_trait_notifications():
             # Collect information about app state.
+            installed = self.app.is_installed()
+            installed_version = self.app.installed_version
             busy = self.app.busy
-            modified = self.app.modified
-            override = modified and self.modifications_ignore.value
-            blocked = modified and not self.modifications_ignore.value
+            detached = self.app.detached
+            available_versions = self.app.available_versions
+
+            override = detached and self.detachment_ignore.value
+            blocked = detached and not self.detachment_ignore.value
 
             # Prepare warning icons and messages depending on whether we override or not.
             # These messages and icons are only shown if needed.
@@ -622,8 +652,7 @@ class AppManagerWidget(ipw.VBox):
                 tooltip = "Operation blocked due to local modifications."
 
             # Determine whether we can install, updated, and uninstall.
-            installed = self.app.is_installed()
-            can_switch = self.app.installed_version != self.version_selector.install_version.value
+            can_switch = installed_version != self.version_selector.install_version.value and available_versions
             can_install = can_switch or not installed
             can_uninstall = self.app.is_installed()
             try:
@@ -634,8 +663,8 @@ class AppManagerWidget(ipw.VBox):
             # Update the install button state.
             self.install_button.disabled = busy or blocked or not can_install
             self.install_button.button_style = 'info' if can_install else ''
-            self.install_button.icon = '' if can_install and not modified else warn_or_ban_icon if can_install else ''
-            self.install_button.tooltip = '' if can_install and not modified else tooltip if can_install else ''
+            self.install_button.icon = '' if can_install and not detached else warn_or_ban_icon if can_install else ''
+            self.install_button.tooltip = '' if can_install and not detached else tooltip if can_install else ''
             self.install_button.description = 'Install' if not (installed and can_switch) \
                     else f'Install ({self._formatted_version(self.version_selector.install_version.value)})'
 
@@ -643,8 +672,8 @@ class AppManagerWidget(ipw.VBox):
             self.uninstall_button.disabled = busy or blocked or not can_uninstall
             self.uninstall_button.button_style = 'danger' if can_uninstall else ''
             self.uninstall_button.icon = \
-                "" if can_uninstall and not modified else warn_or_ban_icon if can_uninstall else ""
-            self.uninstall_button.tooltip = '' if can_uninstall and not modified else tooltip if can_uninstall else ''
+                "" if can_uninstall and not detached else warn_or_ban_icon if can_uninstall else ""
+            self.uninstall_button.tooltip = '' if can_uninstall and not detached else tooltip if can_uninstall else ''
 
             # Update the update button state.
             self.update_button.disabled = busy or blocked or not can_update
@@ -653,18 +682,22 @@ class AppManagerWidget(ipw.VBox):
                 self.update_button.tooltip = 'Unable to determine availability of updates.'
             else:
                 self.update_button.icon = \
-                    "circle-up" if can_update and not modified else warn_or_ban_icon if can_update else ""
+                    "circle-up" if can_update and not detached else warn_or_ban_icon if can_update else ""
                 self.update_button.button_style = 'success' if can_update else ''
-                self.update_button.tooltip = '' if can_update and not modified else tooltip if can_update else ''
+                self.update_button.tooltip = '' if can_update and not detached else tooltip if can_update else ''
 
             # Update the version_selector widget state.
             more_than_one_version = len(self.version_selector.install_version.options) > 1
             self.version_selector.disabled = busy or blocked or not more_than_one_version
 
             # Indicate whether there are local modifications and present option for user override.
-            self.modifications_indicator.value = \
-                f'<i class="fa fa-{warn_or_ban_icon}"> There are local modifications.' if modified else ''
-            self.modifications_ignore.layout.visibility = 'visible' if modified else 'hidden'
+            if detached:
+                self.detachment_indicator.value = \
+                    f'<i class="fa fa-{warn_or_ban_icon}"> The app is modified or the installed version '\
+                    'is not on the specified release line.'
+            else:
+                self.detachment_indicator.value = ''
+            self.detachment_ignore.layout.visibility = 'visible' if detached else 'hidden'
 
     def _show_msg_success(self, msg):
         """Show a message indicating successful execution of a requested operation."""
@@ -674,19 +707,19 @@ class AppManagerWidget(ipw.VBox):
         """Show a message indicating failure to execute a requested operation."""
         self.install_info.show_temporary_message(HTML_MSG_FAILURE.format(msg))
 
-    def _check_modified_state(self):
-        """Check whether there are local modifications to the app that prevent any install etc. operations."""
+    def _check_detached_state(self):
+        """Check whether the app is in a detached state which would prevent any install or other operations."""
         self.app.refresh()
         self._refresh_widget_state()
-        blocked = self.app.modified and not self.modifications_ignore.value
+        blocked = self.app.detached and not self.detachment_ignore.value
         if blocked:
-            raise RuntimeError("Unable to perform operation, there are local modifications to the app repository.")
+            raise RuntimeError("Unable to perform operation, the app is in a detached state.")
 
     def _install_version(self, _=None):
         """Attempt to install the a specific version of the app."""
         version = self.version_selector.install_version.value  # can be None
         try:
-            self._check_modified_state()
+            self._check_detached_state()
             version = self.app.install_app(version=version)  # argument may be None
         except (AssertionError, RuntimeError, CalledProcessError) as error:
             self._show_msg_failure(str(error))
@@ -696,7 +729,7 @@ class AppManagerWidget(ipw.VBox):
     def _update_app(self, _):
         """Attempt to uninstall the app."""
         try:
-            self._check_modified_state()
+            self._check_detached_state()
             self.app.update_app()
         except (AssertionError, RuntimeError, CalledProcessError) as error:
             self._show_msg_failure(str(error))
@@ -706,7 +739,7 @@ class AppManagerWidget(ipw.VBox):
     def _uninstall_app(self, _):
         """Attempt to uninstall the app."""
         try:
-            self._check_modified_state()
+            self._check_detached_state()
             self.app.uninstall_app()
         except RuntimeError as error:
             self._show_msg_failure(str(error))
