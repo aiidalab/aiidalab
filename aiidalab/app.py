@@ -18,6 +18,7 @@ import traitlets
 import ipywidgets as ipw
 from dulwich.porcelain import fetch
 from dulwich.errors import NotGitRepository
+from dulwich.objects import Tag, Commit
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from jinja2 import Template
@@ -184,16 +185,17 @@ class AiidaLabApp(traitlets.HasTraits):
                     raise ValueError(f"Unable to resolve {self.short_ref!r}. "
                                      "Are you sure this is a valid git branch or tag?")
 
+                def get_sha(obj):
+                    assert isinstance(obj, (Tag, Commit))
+                    return obj.object[1] if isinstance(obj, Tag) else obj.id
+
                 # The release line is a head (branch).
                 if ref.startswith(b'refs/heads/'):
                     ref_commit = self._repo.get_peeled(ref)
-                    all_tags = {
-                        ref: c for ref, c in self._repo.refs.as_dict().items() if ref.startswith('refs/tags'.encode())
-                    }
-                    tags_lookup = {c: ref for ref, c in all_tags.items()}
-                    tagged_commits_on_head = [
-                        c.commit.id for c in self._repo.get_walker(self._repo.refs[ref]) if c.commit.id in tags_lookup
-                    ]
+                    all_tags = {ref for ref in self._repo.get_refs() if ref.startswith(b'refs/tags')}
+                    tags_lookup = {get_sha(self._repo[ref]): ref for ref in all_tags}
+                    commits_on_head = self._repo.get_walker(self._repo.refs[ref])
+                    tagged_commits_on_head = [c.commit.id for c in commits_on_head if c.commit.id in tags_lookup]
                     yield tags_lookup.get(ref_commit, ref)
                     for commit in tagged_commits_on_head:
                         if commit != ref_commit:
