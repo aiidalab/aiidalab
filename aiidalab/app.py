@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from time import sleep
 from threading import Thread
 from subprocess import check_output, STDOUT, CalledProcessError
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 from typing import List, Dict
 
@@ -128,6 +128,11 @@ class AiidaLabApp(traitlets.HasTraits):
         self.path = os.path.join(aiidalab_apps_path, self.name)
         self.refresh_async()
         self._watch_repository()
+
+    def __repr__(self):
+        app_data_argument = None if self._registry_data is None else asdict(self._registry_data)
+        return f"AiidaLabApp(name={self.name!r}, app_data={app_data_argument!r}, " + \
+                f"aiidalab_apps_path={os.path.dirname(self.path)!r})"
 
     @traitlets.default('modified')
     def _default_modified(self):
