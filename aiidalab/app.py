@@ -131,8 +131,8 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def __repr__(self):
         app_data_argument = None if self._registry_data is None else asdict(self._registry_data)
-        return f"AiidaLabApp(name={self.name!r}, app_data={app_data_argument!r}, " + \
-                f"aiidalab_apps_path={os.path.dirname(self.path)!r})"
+        return (f"<AiidaLabApp(name={self.name!r}, app_data={app_data_argument!r}, "
+                f"aiidalab_apps_path={os.path.dirname(self.path)!r})>")
 
     @traitlets.default('modified')
     def _default_modified(self):
