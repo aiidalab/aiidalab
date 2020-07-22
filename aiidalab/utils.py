@@ -4,8 +4,9 @@ import sys
 import json
 import time
 from os import path
+from hashlib import sha1
 from importlib import import_module
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote_plus
 from collections import defaultdict
 from functools import wraps
 from threading import Lock
@@ -58,6 +59,11 @@ def load_widget(name):
     return load_start_md(name)
 
 
+def make_kernel_name(name):
+    """Determine the kernel name for a given app name."""
+    return sha1(quote_plus(name).encode()).hexdigest()
+
+
 def load_start_py(name):
     """Load app appearance from a Python file."""
     try:
@@ -66,9 +72,15 @@ def load_start_py(name):
         jupbase = "../../.."
         notebase = jupbase + "/notebooks/apps/" + name
         try:
-            return mod.get_start_widget(appbase=appbase, jupbase=jupbase, notebase=notebase)
+            return mod.get_start_widget(appbase=appbase,
+                                        jupbase=jupbase,
+                                        notebase=notebase,
+                                        kernel_name=make_kernel_name(name))
         except TypeError:
-            return mod.get_start_widget(appbase=appbase, jupbase=jupbase)
+            try:
+                return mod.get_start_widget(appbase=appbase, jupbase=jupbase, notebase=notebase)
+            except TypeError:
+                return mod.get_start_widget(appbase=appbase, jupbase=jupbase)
     except Exception:  # pylint: disable=broad-except
         return ipw.HTML("<pre>{}</pre>".format(sys.exc_info()))
 
