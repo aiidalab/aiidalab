@@ -338,9 +338,7 @@ class AiidaLabApp(traitlets.HasTraits):
     @property
     def url(self):
         """Provide explicit link to Git repository."""
-        if self._registry_data is not None:
-            return self._registry_data.git_url
-        return None
+        return getattr(self._registry_data, "git_url", None)
 
     @property
     def more(self):
