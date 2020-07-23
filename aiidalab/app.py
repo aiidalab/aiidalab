@@ -9,8 +9,10 @@ from contextlib import contextmanager
 from time import sleep
 from threading import Thread
 from subprocess import check_output, STDOUT, CalledProcessError
+from dataclasses import dataclass, field, asdict
 
-import requests
+from typing import List, Dict
+
 import traitlets
 import ipywidgets as ipw
 from dulwich.porcelain import fetch
@@ -90,6 +92,17 @@ class AiidaLabApp(traitlets.HasTraits):
     busy = traitlets.Bool(readonly=True)
     modified = traitlets.Bool(readonly=True, allow_none=True)
 
+    @dataclass
+    class AppRegistryData:
+        """Dataclass that contains the app data from the app registry."""
+        git_url: str
+        meta_url: str
+        categories: List[str]
+        groups: List[str]  # appears to be a duplicate of categories?
+        metainfo: Dict[str, str] = field(default_factory=dict)
+        gitinfo: Dict[str, str] = field(default_factory=dict)
+        hosted_on: str = None
+
     class AppPathFileSystemEventHandler(FileSystemEventHandler):
         """Internal event handeler for app path file system events."""
 
@@ -103,18 +116,10 @@ class AiidaLabApp(traitlets.HasTraits):
     def __init__(self, name, app_data, aiidalab_apps_path):
         super().__init__()
 
-        if app_data is not None:
-            self._git_url = app_data['git_url']
-            self._meta_url = app_data['meta_url']
-            self._git_remote_refs = app_data['gitinfo']
-            self.categories = app_data['categories']
-            self._meta_info = app_data['metainfo']
+        if app_data is None:
+            self._registry_data = None
         else:
-            self._git_url = None
-            self._meta_url = None
-            self._git_remote_refs = {}
-            self.categories = None
-            self._meta_info = None
+            self._registry_data = self.AppRegistryData(**app_data)
 
         self._observer = None
         self._check_install_status_changed_thread = None
@@ -123,6 +128,11 @@ class AiidaLabApp(traitlets.HasTraits):
         self.path = os.path.join(aiidalab_apps_path, self.name)
         self.refresh_async()
         self._watch_repository()
+
+    def __repr__(self):
+        app_data_argument = None if self._registry_data is None else asdict(self._registry_data)
+        return (f"<AiidaLabApp(name={self.name!r}, app_data={app_data_argument!r}, "
+                f"aiidalab_apps_path={os.path.dirname(self.path)!r})>")
 
     @traitlets.default('modified')
     def _default_modified(self):
@@ -188,7 +198,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
-        return category in self.categories
+        return category in self._registry_data.categories
 
     def is_installed(self):
         """The app is installed if the corresponding folder is present."""
@@ -204,7 +214,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def install_app(self, version=None):
         """Installing the app."""
-        assert self._git_url is not None
+        assert self._registry_data is not None
         if version is None:
             version = 'git:refs/heads/' + AIIDALAB_DEFAULT_GIT_BRANCH
 
@@ -213,7 +223,7 @@ class AiidaLabApp(traitlets.HasTraits):
             branch = re.sub(r'git:refs\/heads\/', '', version)
 
             if not os.path.isdir(self.path):  # clone first
-                check_output(['git', 'clone', '--branch', branch, self._git_url, self.path],
+                check_output(['git', 'clone', '--branch', branch, self._registry_data.git_url, self.path],
                              cwd=os.path.dirname(self.path),
                              stderr=STDOUT)
 
@@ -224,9 +234,9 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def update_app(self, _=None):
         """Perform app update."""
-        assert self._git_url is not None
+        assert self._registry_data is not None
         with self._show_busy():
-            fetch(repo=self._repo, remote_location=self._git_url)
+            fetch(repo=self._repo, remote_location=self._registry_data.git_url)
             tracked_branch = self._repo.get_tracked_branch()
             check_output(['git', 'reset', '--hard', tracked_branch], cwd=self.path, stderr=STDOUT)
             self.refresh_async()
@@ -246,10 +256,10 @@ class AiidaLabApp(traitlets.HasTraits):
     def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""
         try:
-            assert self._git_url is not None
+            assert self._registry_data is not None
             branch_ref = 'refs/heads/' + self._repo.branch().decode()
             assert self._repo.get_tracked_branch() is not None
-            remote_update_available = self._git_remote_refs.get(branch_ref) != self._repo.head().decode()
+            remote_update_available = self._registry_data.gitinfo.get(branch_ref) != self._repo.head().decode()
             self.set_trait('updates_available', remote_update_available or self._repo.update_available())
         except (AssertionError, RuntimeError):
             self.set_trait('updates_available', None)
@@ -258,7 +268,7 @@ class AiidaLabApp(traitlets.HasTraits):
         """"Return all available release lines (local and remote)."""
         for branch in self._repo.list_branches():
             yield 'git:refs/heads/' + branch.decode()
-        for ref in self._git_remote_refs:
+        for ref in self._registry_data.gitinfo:
             if ref.startswith('refs/heads/'):
                 yield 'git:' + ref
 
@@ -297,13 +307,11 @@ class AiidaLabApp(traitlets.HasTraits):
                     return json.load(json_file)
             except IOError:
                 return dict()
-        elif self._meta_info is not None:
-            return dict(self._meta_info)
-        elif self._meta_url is None:
+        elif self._registry_data is not None and self._registry_data.metainfo:
+            return dict(self._registry_data.metainfo)
+        else:
             raise RuntimeError(
                 f"Requested app '{self.name}' is not installed and is also not registered on the app registry.")
-        else:
-            return requests.get(self._meta_url).json()
 
     def _get_from_metadata(self, what):
         """Get information from metadata."""
@@ -330,7 +338,7 @@ class AiidaLabApp(traitlets.HasTraits):
     @property
     def url(self):
         """Provide explicit link to Git repository."""
-        return self._git_url
+        return getattr(self._registry_data, "git_url", None)
 
     @property
     def more(self):
@@ -354,7 +362,7 @@ class AiidaLabApp(traitlets.HasTraits):
         # If not installed, getting file from the remote git repository.
         else:
             # Remove .git if present.
-            html_link = os.path.splitext(self._git_url)[0]
+            html_link = os.path.splitext(self._registry_data.git_url)[0]
 
             # We expect it to always be a git repository
             html_link += '/master/' + self.metadata['logo']
