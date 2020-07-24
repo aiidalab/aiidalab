@@ -67,6 +67,7 @@ class AppKernel:
     def install(self, system_site_packages=True, clear=True):
         """Create the Python virtual environment and install the Jupyter kernel."""
         venv.create(self.prefix, system_site_packages=system_site_packages, clear=clear)
+        run([self.executable, '-c', 'import reentry; reentry.manager.scan()'], check=True)
         run([self.executable, '-m', 'ipykernel', 'install', '--user', f'--name={self.name}'], check=True)
 
     def uninstall(self):
