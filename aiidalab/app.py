@@ -24,10 +24,11 @@ from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 from jinja2 import Template
 
-from .config import AIIDALAB_DEFAULT_GIT_BRANCH, AIIDALAB_HOME
+from .config import AIIDALAB_DEFAULT_GIT_BRANCH
 from .widgets import StatusHTML, Spinner
 from .git_util import GitManagedAppRepo as Repo
-from .utils import throttled, make_kernel_name
+from .utils import throttled
+from .kernel import AppKernel
 
 HTML_MSG_SUCCESS = """<i class="fa fa-check" style="color:#337ab7;font-size:1em;" ></i>
 {}"""
@@ -429,38 +430,14 @@ class AiidaLabApp(traitlets.HasTraits):
             return False
 
     @property
-    def _environment_prefix(self):
-        return os.path.join(AIIDALAB_HOME, 'envs', self.name)
-
-    @property
-    def _environment_executable(self):
-        return os.path.join(self._environment_prefix, 'bin', 'python')
-
-    @property
-    def _kernel_name(self):
-        return make_kernel_name(self.name)
-
-    def _install_kernel(self):
-        """Create the app kernel environment and install the kernel."""
-        venv.create(self._environment_prefix, system_site_packages=True, clear=True)
-        run([self._environment_executable, '-m', 'ipykernel', 'install', '--user', f'--name={self._kernel_name}'],
-            check=True)
-
-    def _uninstall_kernel(self):
-        """Uninstall the app specific kernel."""
-        try:
-            shutil.rmtree(os.path.expanduser(f'~/.local/share/jupyter/kernels/{self._kernel_name}'))
-        except FileNotFoundError:
-            pass  # kernel was not installed
-        try:
-            shutil.rmtree(self._environment_prefix)
-        except FileNotFoundError:
-            pass  # environment was not installed
+    def _kernel(self):
+        """Return the kernel instance for this app."""
+        return AppKernel(self.name)
 
     def _install_dependencies(self):
         """Install all missing dependencies for this app."""
         if os.path.isfile(os.path.join(self.path, 'requirements.txt')):
-            return run([self._environment_executable, '-m', 'pip', 'install', '-r', 'requirements.txt'],
+            return run([self._kernel.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'],
                        capture_output=True,
                        check=True,
                        cwd=self.path)
@@ -488,7 +465,7 @@ class AiidaLabApp(traitlets.HasTraits):
             check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
 
             # Install environnment dependencies
-            self._install_kernel()
+            self._kernel.install()
             self._install_dependencies()
 
             self.refresh()
@@ -508,7 +485,7 @@ class AiidaLabApp(traitlets.HasTraits):
         # Perform uninstall process.
         with self._show_busy():
             try:
-                self._uninstall_kernel()
+                self._kernel.uninstall()
             except Exception as error:
                 raise RuntimeError(f"Failed to uninstall kernel: {error!s}")
             try:

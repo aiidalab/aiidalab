@@ -4,9 +4,9 @@ import sys
 import json
 import time
 from os import path
-from hashlib import sha1
+from pathlib import Path
 from importlib import import_module
-from urllib.parse import urlparse, quote_plus
+from urllib.parse import urlparse
 from collections import defaultdict
 from functools import wraps
 from threading import Lock
@@ -17,6 +17,7 @@ import ipywidgets as ipw
 from IPython.lib import backgroundjobs as bg
 
 from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
+from .kernel import AppKernel
 
 
 def update_cache():
@@ -59,9 +60,12 @@ def load_widget(name):
     return load_start_md(name)
 
 
-def make_kernel_name(name):
-    """Determine the kernel name for a given app name."""
-    return sha1(quote_plus(name).encode()).hexdigest()
+def url_for(appbase, endpoint):
+    """Generate the correct URL for a given endpoint."""
+    app_name = Path(appbase).stem
+    app_kernel = AppKernel(app_name)
+    app_kernel.check()
+    return f"{appbase}/{endpoint}?kernel_name={app_kernel.name}"
 
 
 def load_start_py(name):
@@ -72,15 +76,9 @@ def load_start_py(name):
         jupbase = "../../.."
         notebase = jupbase + "/notebooks/apps/" + name
         try:
-            return mod.get_start_widget(appbase=appbase,
-                                        jupbase=jupbase,
-                                        notebase=notebase,
-                                        kernel_name=make_kernel_name(name))
+            return mod.get_start_widget(appbase=appbase, jupbase=jupbase, notebase=notebase)
         except TypeError:
-            try:
-                return mod.get_start_widget(appbase=appbase, jupbase=jupbase, notebase=notebase)
-            except TypeError:
-                return mod.get_start_widget(appbase=appbase, jupbase=jupbase)
+            return mod.get_start_widget(appbase=appbase, jupbase=jupbase)
     except Exception:  # pylint: disable=broad-except
         return ipw.HTML("<pre>{}</pre>".format(sys.exc_info()))
 
