@@ -152,7 +152,7 @@ class AiidaLabApp(traitlets.HasTraits):
             This function returns None if the short-ref cannot be resolved
             to a full reference.
             """
-            # Check if short-ref is a head:
+            # Check if short-ref is a head (branch):
             if f'refs/heads/{short_ref}'.encode() in self._repo.refs.allkeys():
                 return f'refs/heads/{short_ref}'.encode()
 
@@ -196,7 +196,11 @@ class AiidaLabApp(traitlets.HasTraits):
                     tags_lookup = {get_sha(self._repo[ref]): ref for ref in all_tags}
                     commits_on_head = self._repo.get_walker(self._repo.refs[ref])
                     tagged_commits_on_head = [c.commit.id for c in commits_on_head if c.commit.id in tags_lookup]
+
+                    # Always yield the tip of the branch (HEAD), i.e., the latest commit on the branch.
                     yield tags_lookup.get(ref_commit, ref)
+
+                    # Yield all other tagged commits on the branch:
                     for commit in tagged_commits_on_head:
                         if commit != ref_commit:
                             yield tags_lookup[commit]
