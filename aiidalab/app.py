@@ -46,7 +46,7 @@ class VersionSelectorWidget(ipw.VBox):
 
     def __init__(self, *args, **kwargs):
         style = {'description_width': '100px'}
-        self.install_version = ipw.Dropdown(
+        self.version_to_install = ipw.Dropdown(
             description='Install version',
             disabled=True,
             style=style,
@@ -59,7 +59,7 @@ class VersionSelectorWidget(ipw.VBox):
         self.info = StatusHTML('')
 
         super().__init__(
-            children=[self.installed_version, self.install_version, self.info],
+            children=[self.installed_version, self.version_to_install, self.info],
             layout={'min_width': '300px'},
             *args,
             **kwargs,
@@ -67,7 +67,7 @@ class VersionSelectorWidget(ipw.VBox):
 
     @traitlets.observe('disabled')
     def _observe_disabled(self, change):
-        self.install_version.disabled = change['new']
+        self.version_to_install.disabled = change['new']
 
 
 # A version is usually of type str, but it can also be a value
@@ -595,13 +595,13 @@ class AppManagerWidget(ipw.VBox):
         ]
 
         self.version_selector = VersionSelectorWidget()
-        ipw.dlink((self.app, 'available_versions'), (self.version_selector.install_version, 'options'),
+        ipw.dlink((self.app, 'available_versions'), (self.version_selector.version_to_install, 'options'),
                   transform=lambda versions: [(self._formatted_version(version), version) for version in versions])
         ipw.dlink((self.app, 'installed_version'), (self.version_selector.installed_version, 'value'),
                   transform=self._formatted_version)
         self.version_selector.layout.visibility = 'visible' if with_version_selector else 'hidden'
         self.version_selector.disabled = True
-        self.version_selector.install_version.observe(self._refresh_widget_state, 'value')
+        self.version_selector.version_to_install.observe(self._refresh_widget_state, 'value')
         children.insert(1, self.version_selector)
 
         super().__init__(children=children)
@@ -654,7 +654,7 @@ class AppManagerWidget(ipw.VBox):
                 tooltip = "Operation blocked due to local modifications."
 
             # Determine whether we can install, updated, and uninstall.
-            can_switch = installed_version != self.version_selector.install_version.value and available_versions
+            can_switch = installed_version != self.version_selector.version_to_install.value and available_versions
             can_install = can_switch or not installed
             can_uninstall = self.app.is_installed()
             try:
@@ -668,7 +668,7 @@ class AppManagerWidget(ipw.VBox):
             self.install_button.icon = '' if can_install and not detached else warn_or_ban_icon if can_install else ''
             self.install_button.tooltip = '' if can_install and not detached else tooltip if can_install else ''
             self.install_button.description = 'Install' if not (installed and can_switch) \
-                    else f'Install ({self._formatted_version(self.version_selector.install_version.value)})'
+                    else f'Install ({self._formatted_version(self.version_selector.version_to_install.value)})'
 
             # Update the uninstall button state.
             self.uninstall_button.disabled = busy or blocked or not can_uninstall
@@ -689,7 +689,7 @@ class AppManagerWidget(ipw.VBox):
                 self.update_button.tooltip = '' if can_update and not detached else tooltip if can_update else ''
 
             # Update the version_selector widget state.
-            more_than_one_version = len(self.version_selector.install_version.options) > 1
+            more_than_one_version = len(self.version_selector.version_to_install.options) > 1
             self.version_selector.disabled = busy or blocked or not more_than_one_version
 
             # Indicate whether there are local modifications and present option for user override.
@@ -719,7 +719,7 @@ class AppManagerWidget(ipw.VBox):
 
     def _install_version(self, _=None):
         """Attempt to install the a specific version of the app."""
-        version = self.version_selector.install_version.value  # can be None
+        version = self.version_selector.version_to_install.value  # can be None
         try:
             self._check_detached_state()
             version = self.app.install_app(version=version)  # argument may be None
