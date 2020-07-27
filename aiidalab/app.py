@@ -30,6 +30,8 @@ from .git_util import GitManagedAppRepo as Repo
 from .utils import throttled
 from .kernel import AppKernel
 
+HTML_MSG_PROGRESS = """{}"""
+
 HTML_MSG_SUCCESS = """<i class="fa fa-check" style="color:#337ab7;font-size:1em;" ></i>
 {}"""
 
@@ -468,15 +470,19 @@ class AiidaLabApp(traitlets.HasTraits):
 
             if not os.path.isdir(self.path):  # clone first
                 url = self._registry_data.git_url.split('@')[0]
+                yield "Checking out repository..."
 
                 check_output(['git', 'clone', url, self.path], cwd=os.path.dirname(self.path), stderr=STDOUT)
 
             # Switch to desired version
+            yield "Switch to desired version..."
             rev = self._release_line.resolve_revision(re.sub('git:', '', version))
             check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
 
             # Install environnment dependencies
+            yield "Install app kernel..."
             self._kernel.install()
+            yield "Install app dependencies..."
             self._install_dependencies()
 
             self.refresh()
@@ -807,6 +813,10 @@ class AppManagerWidget(ipw.VBox):
                 self.detachment_indicator.value = ''
             self.detachment_ignore.layout.visibility = 'visible' if detached else 'hidden'
 
+    def _show_msg_progress(self, msg):
+        """Show a message indicating currently executed operation."""
+        self.install_info.show_temporary_message(HTML_MSG_PROGRESS.format(msg))
+
     def _show_msg_success(self, msg):
         """Show a message indicating successful execution of a requested operation."""
         self.install_info.show_temporary_message(HTML_MSG_SUCCESS.format(msg))
@@ -828,11 +838,12 @@ class AppManagerWidget(ipw.VBox):
         version = self.version_selector.version_to_install.value  # can be None
         try:
             self._check_detached_state()
-            version = self.app.install_app(version=version)  # argument may be None
+            for msg in self.app.install_app(version=version):
+                self._show_msg_progress(msg)
         except (AssertionError, RuntimeError, CalledProcessError) as error:
             self._show_msg_failure(str(error))
         else:
-            self._show_msg_success(f"Installed app ({self._formatted_version(version)}).")
+            self._show_msg_success(f"Installed app ({self._formatted_version(self.app.installed_version)}).")
 
     def _update_app(self, _):
         """Attempt to uninstall the app."""
