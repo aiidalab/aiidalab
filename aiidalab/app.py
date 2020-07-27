@@ -435,12 +435,23 @@ class AiidaLabApp(traitlets.HasTraits):
         return AppKernel(self.name)
 
     def _install_dependencies(self):
-        """Install all missing dependencies for this app."""
+        """Install dependencies for this app into the app-specific kernel environment."""
+
+        # Install as editable package if 'setup.py' is present.
+        if os.path.isfile(os.path.join(self.path, 'setup.py')):
+            return run([self._kernel.executable, '-m', 'pip', 'install', '-e', '.'],
+                       capture_output=True,
+                       check=True,
+                       cwd=self.path)
+
+        # Otherwise, install from 'requirements.txt' if present.
         if os.path.isfile(os.path.join(self.path, 'requirements.txt')):
             return run([self._kernel.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'],
                        capture_output=True,
                        check=True,
                        cwd=self.path)
+
+        # Neither 'setup.py' or 'requirements.txt' file present, nothing to do.
         return None
 
     def install_app(self, version=None):
