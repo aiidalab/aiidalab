@@ -81,7 +81,6 @@ class AppKernel:
         except FileNotFoundError:
             pass  # environment was not installed
 
-    def check(self):
-        assert self.prefix.is_dir()
-        assert self.executable.is_file()
-        assert self.jupyter_kernel_path.is_dir()
+    def installed(self):
+        """Check whether this kernel is installed."""
+        return self.prefix.is_dir() and self.executable.is_file() and self.jupyter_kernel_path.is_dir()

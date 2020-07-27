@@ -7,6 +7,7 @@ from os import path
 from pathlib import Path
 from importlib import import_module
 from urllib.parse import urlparse
+from urllib.parse import urlsplit, urlunsplit, parse_qs, urlencode
 from collections import defaultdict
 from functools import wraps
 from threading import Lock
@@ -60,12 +61,25 @@ def load_widget(name):
     return load_start_md(name)
 
 
-def url_for(appbase, endpoint):
-    """Generate the correct URL for a given endpoint."""
-    app_name = Path(appbase).stem
+def url_for(endpoint):
+    """Generate the fully-qualified URL for a given endpoint."""
+    parsed_url = urlsplit(endpoint)
+    url_path = Path(parsed_url.path)
+    query_string = parse_qs(parsed_url.query)
+
+    try:
+        app_name = url_path.resolve().relative_to(AIIDALAB_APPS).parts[0]
+    except ValueError:
+        raise ValueError("Endpoint argument to url_for() must be relative to the AIIDALAB_APPS path.")
+
     app_kernel = AppKernel(app_name)
-    app_kernel.check()
-    return f"{appbase}/{endpoint}?kernel_name={app_kernel.name}"
+
+    if app_kernel.installed():
+        query_string.setdefault('kernel_name', app_kernel.name)
+    else:  # Use fallback kernel:
+        query_string.setdefault('kernel_name', 'python3')
+
+    return urlunsplit(parsed_url._replace(query=urlencode(query_string, doseq=True)))
 
 
 def load_start_py(name):
