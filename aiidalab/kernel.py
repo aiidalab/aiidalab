@@ -8,7 +8,7 @@ from pathlib import Path
 from subprocess import run
 from urllib.parse import quote_plus
 
-from .config import AIIDALAB_HOME
+from .config import AIIDALAB_APPS
 
 
 def _valid_jupyter_kernel_name(name):
@@ -56,7 +56,7 @@ class AppKernel:
 
     @property
     def prefix(self):
-        return Path(AIIDALAB_HOME).joinpath('.environments', self._app_name)
+        return Path(AIIDALAB_APPS).joinpath(self._app_name, '.venv')
 
     @property
     def executable(self):
