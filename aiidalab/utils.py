@@ -18,7 +18,7 @@ import ipywidgets as ipw
 from IPython.lib import backgroundjobs as bg
 
 from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
-from .kernel import AppKernel
+from .kernel import AppKernel, AppKernelError
 
 
 def update_cache():
@@ -93,6 +93,8 @@ def load_start_py(name):
             return mod.get_start_widget(appbase=appbase, jupbase=jupbase, notebase=notebase)
         except TypeError:
             return mod.get_start_widget(appbase=appbase, jupbase=jupbase)
+    except AppKernelError as error:
+        return ipw.HTML(f"<p>App kernel error: {error!s}</p><p>Reinstalling the app might resolve the issue.</p>")
     except Exception:  # pylint: disable=broad-except
         return ipw.HTML("<pre>{}</pre>".format(sys.exc_info()))
 
@@ -112,6 +114,9 @@ def load_start_md(name):
         # downsize headings
         html = html.replace("<h3", "<h4")
         return ipw.HTML(html)
+
+    except AppKernelError as error:
+        return ipw.HTML(f"<p>App kernel error: {error!s}</p><p>Reinstalling the app might resolve the issue.</p>")
 
     except Exception as exc:  # pylint: disable=broad-except
         return ipw.HTML("Could not load start.md: {}".format(str(exc)))

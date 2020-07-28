@@ -16,6 +16,10 @@ def _valid_jupyter_kernel_name(name):
     return re.fullmatch(r'[a-z0-9\-\_.]+', name)
 
 
+class AppKernelError(RuntimeError):
+    """Indicates issue relating to the AppKernel installation."""
+
+
 class AppKernel:
     """Manage Python environment and Jupyter kernel for AiiDA lab app.
 
@@ -84,5 +88,29 @@ class AppKernel:
             pass  # environment was not installed
 
     def installed(self):
-        """Check whether this kernel is installed."""
-        return self.prefix.is_dir() and self.executable.is_file() and self.jupyter_kernel_path.is_dir()
+        """Check whether this kernel is (properly) installed.
+
+        Returns True if kernel is installed, otherwise False.
+
+        Raises AppKernelError exception if the installation state
+        is inconistent.
+        """
+        # First, check the consistency of the installation state:
+        if self.prefix.is_dir():
+
+            if not self.executable.is_file():
+                raise AppKernelError("The kernel executable ('{self.executable}') is missing.")
+
+            if not self.jupyter_kernel_path.is_dir():
+                raise AppKernelError(
+                    f"The app has an app-specific virtual environment ('{self.prefix}'), "
+                    f"but the corresponding Jupyter kernel ('{self.jupyter_kernel_path}') is not installed.")
+
+        if self.jupyter_kernel_path.is_dir():
+
+            if not self.prefix.is_dir():
+                raise AppKernelError(f"The kernel for this app ({self.jupyter_kernel_path}) is installed, "
+                                     f"but the corresponding environment ({self.prefix}) does not exist.")
+
+        # Passed consistency check, return installation state:
+        return self.prefix.is_dir() and self.jupyter_kernel_path.is_dir()
