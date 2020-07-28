@@ -38,7 +38,9 @@ class AppKernel:
         """
         # The unique_name is a hash value based on the app_name which is
         # guaranteed to be truly unique with respect to the app name.
-        unique_name = sha1(self._app_name.encode()).hexdigest()
+        # The current schema version (1) is explicitly encoded to simplify
+        # potential future migrations.
+        unique_name = sha1(f'1/{self._app_name}'.encode()).hexdigest()
 
         # The human-readable name is a name based on the app name that
         # constitutes a valid Jupyter kernel name:
