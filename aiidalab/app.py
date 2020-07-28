@@ -9,6 +9,7 @@ import errno
 from contextlib import contextmanager
 from enum import Enum, auto
 from time import sleep
+from pathlib import Path
 from threading import Thread
 from subprocess import check_output, STDOUT, CalledProcessError, run
 from dataclasses import dataclass, field, asdict
@@ -115,6 +116,19 @@ class AiidaLabAppWatch:
     def __repr__(self):
         return f"<{type(self).__name__}(app={self.app!r})>"
 
+    def _setup_observer(self, observer):
+        """Schdule the event handler for the given observer."""
+        # Create local reference to resolved kernel prefix directory for performance.
+        kernel_prefix = self.app._kernel.prefix.resolve()
+
+        observer.schedule(event_handler, self.app.path, recursive=True)
+        for child in Path(self.app.path).iterdir():
+            if child.is_dir():
+                # Only monitor top-level directory of app-specific virtual environment to avoid
+                # reaching the inotify watch limit.
+                observer.schedule(event_handler, child, recursive=child.resolve() != kernel_prefix)
+        return observer
+
     def _start_observer(self):
         """Start the directory observer thread.
 
@@ -125,15 +139,13 @@ class AiidaLabAppWatch:
 
         event_handler = self.AppPathFileSystemEventHandler(self.app)
 
-        self._observer = Observer()
-        self._observer.schedule(event_handler, self.app.path, recursive=True)
+        self._observer = self._setup_observer(Observer())
         try:
             self._observer.start()
         except OSError as error:
             if error.errno in (errno.ENOSPC, errno.EMFILE) and 'inotify' in str(error):
                 # We reached the inotify watch limit, using polling-based fallback observer.
-                self._observer = PollingObserver()
-                self._observer.schedule(event_handler, self.app.path, recursive=True)
+                self._observer = self._setup_observer(PollingObserver())
                 self._observer.start()
             else:  # reraise unrelated error
                 raise error
