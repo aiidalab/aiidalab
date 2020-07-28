@@ -29,7 +29,7 @@ from .config import AIIDALAB_DEFAULT_GIT_BRANCH
 from .widgets import StatusHTML, Spinner
 from .git_util import GitManagedAppRepo as Repo
 from .utils import throttled
-from .kernel import AppKernel
+from .kernel import AppKernel, AppKernelError
 
 HTML_MSG_PROGRESS = """{}"""
 
@@ -61,7 +61,11 @@ class VersionSelectorWidget(ipw.VBox):
             disabled=True,
             style=style,
         )
-        self.info = StatusHTML('')
+        self.info = StatusHTML(
+            value='',
+            layout={'max_width': '600px'},
+            style=style,
+        )
 
         super().__init__(
             children=[self.installed_version, self.version_to_install, self.info],
@@ -118,14 +122,20 @@ class AiidaLabAppWatch:
 
     def _setup_observer(self, observer):
         """Schdule the event handler for the given observer."""
+        # Setup the event handler.
+        event_handler = self.AppPathFileSystemEventHandler(self.app)
+
         # Create local reference to resolved kernel prefix directory for performance.
         kernel_prefix = self.app._kernel.prefix.resolve()
 
-        observer.schedule(event_handler, self.app.path, recursive=True)
+        # Monitor Jupyter kernel directory:
+        observer.schedule(event_handler, self.app._kernel.jupyter_kernel_path.parent)  # jupyter kernel directory
+
+        # Monitor app top-level directory and all subdirectories recursively.
+        # We only monitor the top-level directory of the virtual environment to for performance.
+        observer.schedule(event_handler, self.app.path, recursive=False)
         for child in Path(self.app.path).iterdir():
             if child.is_dir():
-                # Only monitor top-level directory of app-specific virtual environment to avoid
-                # reaching the inotify watch limit.
                 observer.schedule(event_handler, child, recursive=child.resolve() != kernel_prefix)
         return observer
 
@@ -136,8 +146,6 @@ class AiidaLabAppWatch:
         """
         assert os.path.isdir(self.app.path)
         assert self._observer is None or not self._observer.isAlive()
-
-        event_handler = self.AppPathFileSystemEventHandler(self.app)
 
         self._observer = self._setup_observer(Observer())
         try:
@@ -238,6 +246,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     busy = traitlets.Bool(readonly=True)
     detached = traitlets.Bool(readonly=True, allow_none=True)
+    kernel_message = traitlets.Unicode(readonly=True, allow_none=True)
 
     @dataclass
     class AppRegistryData:
@@ -376,6 +385,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
         super().__init__()
+        self._busy = 0
 
         if app_data is None:
             self._registry_data = None
@@ -421,11 +431,13 @@ class AiidaLabApp(traitlets.HasTraits):
     @contextmanager
     def _show_busy(self):
         """Apply this decorator to indicate that the app is busy during execution."""
-        self.set_trait('busy', True)
+        self._busy += 1
+        self.set_trait('busy', self._busy > 0)
         try:
             yield
         finally:
-            self.set_trait('busy', False)
+            self._busy -= 1
+            self.set_trait('busy', self._busy > 0)
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
@@ -448,6 +460,10 @@ class AiidaLabApp(traitlets.HasTraits):
         """Return the kernel instance for this app."""
         return AppKernel(self.name)
 
+    def _has_dependencies(self):
+        """Return True if this app has dependencies."""
+        return any(os.path.isfile(os.path.join(self.path, fn)) for fn in ('setup.py', 'requirements.txt'))
+
     def _install_dependencies(self):
         """Install dependencies for this app into the app-specific kernel environment."""
 
@@ -467,6 +483,22 @@ class AiidaLabApp(traitlets.HasTraits):
 
         # Neither 'setup.py' or 'requirements.txt' file present, nothing to do.
         return None
+
+    def install_kernel(self):
+        """Install the app-specific kernel and app dependencies."""
+        with self._show_busy():
+            assert os.path.isdir(self.path)
+            if not self._has_dependencies():
+                raise RuntimeError("Unable to install app kernel, app has no dependencies.")
+
+            yield "Install app kernel..."
+            self._kernel.install()
+            yield "Install app dependencies..."
+            try:
+                self._install_dependencies()
+            except CalledProcessError as error:
+                self._kernel.uninstall()  # rollback
+                raise RuntimeError(f"Failed to install app dependencies: {error.stderr.decode()}.")
 
     def install_app(self, version=None):
         """Installing the app."""
@@ -491,11 +523,7 @@ class AiidaLabApp(traitlets.HasTraits):
             rev = self._release_line.resolve_revision(re.sub('git:', '', version))
             check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
 
-            # Install environnment dependencies
-            yield "Install app kernel..."
-            self._kernel.install()
-            yield "Install app dependencies..."
-            self._install_dependencies()
+            yield from self.install_kernel()
 
             self.refresh()
             return 'git:' + rev
@@ -563,9 +591,21 @@ class AiidaLabApp(traitlets.HasTraits):
                     self.check_for_updates()
                     modified = self._repo.dirty()
                     self.set_trait('detached', self.installed_version is AppVersion.UNKNOWN or modified)
+                    if self._has_dependencies():
+                        try:
+                            if self._kernel.installed():
+                                self.set_trait('kernel_message', '')
+                            else:
+                                self.set_trait('kernel_message', 'App-specific kernel is not installed.')
+                        except AppKernelError as kernel_error:
+                            self.set_trait('kernel_message', str(kernel_error))
+                    else:
+                        self.set_trait('kernel_message', '')
+
                 else:
                     self.set_trait('updates_available', None)
                     self.set_trait('detached', None)
+                    self.set_trait('kernel_message', None)
 
     def refresh_async(self):
         """Asynchronized (non-blocking) refresh of the app state."""
@@ -692,7 +732,7 @@ class AppManagerWidget(ipw.VBox):
         body.layout = {'width': '600px'}
 
         # Setup install_info
-        self.install_info = StatusHTML()
+        self.install_info = StatusHTML(layout={'max_width': '600px'})
 
         # Setup buttons
         self.install_button = ipw.Button(description='Install', disabled=True)
@@ -704,6 +744,12 @@ class AppManagerWidget(ipw.VBox):
         self.update_button = ipw.Button(description='Update', disabled=True)
         self.update_button.on_click(self._update_app)
 
+        self.install_kernel_button = ipw.Button(description='Install kernel', disabled=True)
+        self.install_kernel_button.layout.visilibity = 'hidden'
+        self.install_kernel_button.button_style = 'success'
+        self.install_kernel_button.tooltip = 'Install the app-specific Python and Jupyter kernel and app dependencies.'
+        self.install_kernel_button.on_click(self._install_kernel)
+
         self.detachment_indicator = ipw.HTML()
         self.detachment_ignore = ipw.Checkbox(description="Ignore")
         self.detachment_ignore.observe(self._refresh_widget_state)
@@ -713,7 +759,9 @@ class AppManagerWidget(ipw.VBox):
 
         children = [
             ipw.HBox([app.logo, body]),
-            ipw.HBox([self.uninstall_button, self.install_button, self.update_button, self.spinner]),
+            ipw.HBox([
+                self.uninstall_button, self.install_button, self.update_button, self.spinner, self.install_kernel_button
+            ]),
             ipw.HBox([self.install_info]),
             ipw.HBox([self.detachment_indicator, self.detachment_ignore]),
         ]
@@ -726,6 +774,10 @@ class AppManagerWidget(ipw.VBox):
         self.version_selector.layout.visibility = 'visible' if with_version_selector else 'hidden'
         self.version_selector.disabled = True
         self.version_selector.version_to_install.observe(self._refresh_widget_state, 'value')
+
+        ipw.dlink((self.app, 'kernel_message'), (self.version_selector.info, 'message'),
+                  transform=lambda msg: HTML_MSG_FAILURE.format("Kernel not properly installed.") if msg else "")
+
         children.insert(1, self.version_selector)
 
         super().__init__(children=children)
@@ -825,9 +877,12 @@ class AppManagerWidget(ipw.VBox):
                 self.detachment_indicator.value = ''
             self.detachment_ignore.layout.visibility = 'visible' if detached else 'hidden'
 
+            self.install_kernel_button.layout.visibility = 'visible' if self.app.kernel_message else 'hidden'
+            self.install_kernel_button.disabled = busy or not self.app.kernel_message
+
     def _show_msg_progress(self, msg):
         """Show a message indicating currently executed operation."""
-        self.install_info.show_temporary_message(HTML_MSG_PROGRESS.format(msg))
+        self.install_info.show_temporary_message(HTML_MSG_PROGRESS.format(msg), clear_after=300)
 
     def _show_msg_success(self, msg):
         """Show a message indicating successful execution of a requested operation."""
@@ -835,7 +890,7 @@ class AppManagerWidget(ipw.VBox):
 
     def _show_msg_failure(self, msg):
         """Show a message indicating failure to execute a requested operation."""
-        self.install_info.show_temporary_message(HTML_MSG_FAILURE.format(msg))
+        self.install_info.show_temporary_message(HTML_MSG_FAILURE.format(msg), clear_after=10)
 
     def _check_detached_state(self):
         """Check whether the app is in a detached state which would prevent any install or other operations."""
@@ -866,6 +921,16 @@ class AppManagerWidget(ipw.VBox):
             self._show_msg_failure(str(error))
         else:
             self._show_msg_success("Updated app.")
+
+    def _install_kernel(self, _):
+        """Attempt to install the app kernel."""
+        try:
+            for msg in self.app.install_kernel():
+                self._show_msg_progress(msg)
+        except RuntimeError as error:
+            self._show_msg_failure(str(error))
+        else:
+            self._show_msg_success("Installed kernel.")
 
     def _uninstall_app(self, _):
         """Attempt to uninstall the app."""
