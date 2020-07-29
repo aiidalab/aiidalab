@@ -126,10 +126,10 @@ class AiidaLabAppWatch:
         event_handler = self.AppPathFileSystemEventHandler(self.app)
 
         # Create local reference to resolved kernel prefix directory for performance.
-        kernel_prefix = self.app._kernel.prefix.resolve()
+        kernel_prefix = self.app.kernel.prefix.resolve()
 
         # Monitor Jupyter kernel directory:
-        observer.schedule(event_handler, self.app._kernel.jupyter_kernel_path.parent)  # jupyter kernel directory
+        observer.schedule(event_handler, self.app.kernel.jupyter_kernel_path.parent)  # jupyter kernel directory
 
         # Monitor app top-level directory and all subdirectories recursively.
         # We only monitor the top-level directory of the virtual environment to for performance.
@@ -456,7 +456,7 @@ class AiidaLabApp(traitlets.HasTraits):
             return False
 
     @property
-    def _kernel(self):
+    def kernel(self):
         """Return the kernel instance for this app."""
         return AppKernel(self.name)
 
@@ -469,14 +469,14 @@ class AiidaLabApp(traitlets.HasTraits):
 
         # Install as editable package if 'setup.py' is present.
         if os.path.isfile(os.path.join(self.path, 'setup.py')):
-            return run([self._kernel.executable, '-m', 'pip', 'install', '-e', '.'],
+            return run([self.kernel.executable, '-m', 'pip', 'install', '-e', '.'],
                        capture_output=True,
                        check=True,
                        cwd=self.path)
 
         # Otherwise, install from 'requirements.txt' if present.
         if os.path.isfile(os.path.join(self.path, 'requirements.txt')):
-            return run([self._kernel.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'],
+            return run([self.kernel.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'],
                        capture_output=True,
                        check=True,
                        cwd=self.path)
@@ -492,12 +492,12 @@ class AiidaLabApp(traitlets.HasTraits):
                 raise RuntimeError("Unable to install app kernel, app has no dependencies.")
 
             yield "Install app kernel..."
-            self._kernel.install()
+            self.kernel.install()
             yield "Install app dependencies..."
             try:
                 self._install_dependencies()
             except CalledProcessError as error:
-                self._kernel.uninstall()  # rollback
+                self.kernel.uninstall()  # rollback
                 raise RuntimeError(f"Failed to install app dependencies: {error.stderr.decode()}.")
 
     def install_app(self, version=None):
@@ -542,7 +542,7 @@ class AiidaLabApp(traitlets.HasTraits):
         # Perform uninstall process.
         with self._show_busy():
             try:
-                self._kernel.uninstall()
+                self.kernel.uninstall()
             except Exception as error:
                 raise RuntimeError(f"Failed to uninstall kernel: {error!s}")
             try:
@@ -593,7 +593,7 @@ class AiidaLabApp(traitlets.HasTraits):
                     self.set_trait('detached', self.installed_version is AppVersion.UNKNOWN or modified)
                     if self._has_dependencies():
                         try:
-                            if self._kernel.installed():
+                            if self.kernel.installed():
                                 self.set_trait('kernel_message', '')
                             else:
                                 self.set_trait('kernel_message', 'App-specific kernel is not installed.')
