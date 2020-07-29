@@ -79,6 +79,96 @@ class AppVersion(Enum):
     NOT_INSTALLED = auto()
 
 
+class AiidaLabAppWatch:
+    """Watch to monitor the app installation status.
+
+    Create a watch instance to monitor the installation status of an
+    AiiDA lab app. This is achieved by monitoring the app repository
+    for existance and changes.
+
+    Arguments:
+        app (AiidaLabApp):
+            The AiidaLab app to monitor.
+    """
+
+    class AppPathFileSystemEventHandler(FileSystemEventHandler):
+        """Internal event handeler for app path file system events."""
+
+        def __init__(self, app):
+            self.app = app
+
+        def on_any_event(self, event):
+            """Refresh app for any event."""
+            self.app.refresh_async()
+
+    def __init__(self, app):
+        self.app = app
+
+        self._started = False
+        self._observer = None
+        self._check_install_status_changed_thread = None
+
+    def __repr__(self):
+        return f"<{type(self).__name__}(app={self.app!r})>"
+
+    def start(self):
+        """Watch the app repository for file system events.
+
+        The app state is refreshed automatically for all events.
+        """
+        if self._started:
+            raise RuntimeError(f"Instances of {type(self).__name__} can only be started once.")
+
+        if self._observer is None and os.path.isdir(self.app.path):
+            event_handler = self.AppPathFileSystemEventHandler(self.app)
+
+            self._observer = Observer()
+            self._observer.schedule(event_handler, self.app.path, recursive=True)
+            self._observer.start()
+
+        if self._check_install_status_changed_thread is None:
+
+            def check_install_status_changed():
+                installed = self.app.is_installed()
+                while not self._check_install_status_changed_thread.stop_flag:
+                    if installed != self.app.is_installed():
+                        installed = self.app.is_installed()
+                        self.app.refresh()
+                    sleep(1)
+
+            self._check_install_status_changed_thread = Thread(target=check_install_status_changed)
+            self._check_install_status_changed_thread.stop_flag = False
+            self._check_install_status_changed_thread.start()
+
+        self._started = True
+
+    def stop(self):
+        """Stop watching the app repository for file system events."""
+        if self._observer is not None:
+            self._observer.stop()
+
+        if self._check_install_status_changed_thread is not None:
+            self._check_install_status_changed_thread.stop_flag = True
+
+    def is_alive(self):
+        """Return True if this watch is still alive."""
+        return (self._observer and self._observer.isAlive()) or \
+                (self._check_install_status_changed_thread and self._check_install_status_changed_thread.is_alive())
+
+    def join(self, timeout=None):
+        """Join the watch after stopping.
+
+        This function will timeout if a timeout argument is provided. Use the
+        is_alive() function to determien whether the watch was stopped within
+        the given timout.
+        """
+        if self._observer is not None:
+            self._observer.join(timeout=timeout)
+
+        if self._check_install_status_changed_thread is not None:
+            self._check_install_status_changed_thread.join(timeout=timeout)
+
+
 class AiidaLabApp(traitlets.HasTraits):
     """Manage installation status of an AiiDA lab app.
 
@@ -90,6 +180,8 @@ class AiidaLabApp(traitlets.HasTraits):
             Dictionary containing the app metadata.
         aiidalab_apps_path (str):
             Path to directory at which the app is expected to be installed.
+        watch (bool):
+            If true (default), automatically watch the repository for changes.
     """
 
     path = traitlets.Unicode(allow_none=True, readonly=True)
@@ -237,17 +329,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
             return None  # current revision not on the release line
 
-    class AppPathFileSystemEventHandler(FileSystemEventHandler):
-        """Internal event handeler for app path file system events."""
-
-        def __init__(self, app):
-            self.app = app
-
-        def on_any_event(self, event):
-            """Refresh app for any event."""
-            self.app.refresh_async()
-
-    def __init__(self, name, app_data, aiidalab_apps_path):
+    def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
         super().__init__()
 
         if app_data is None:
@@ -261,13 +343,15 @@ class AiidaLabApp(traitlets.HasTraits):
             else:
                 self._release_line = self._GitReleaseLine(self, AIIDALAB_DEFAULT_GIT_BRANCH)
 
-        self._observer = None
-        self._check_install_status_changed_thread = None
-
         self.name = name
         self.path = os.path.join(aiidalab_apps_path, self.name)
         self.refresh_async()
-        self._watch_repository()
+
+        if watch:
+            self._watch = AiidaLabAppWatch(self)
+            self._watch.start()
+        else:
+            self._watch = None
 
     def __repr__(self):
         app_data_argument = None if self._registry_data is None else asdict(self._registry_data)
@@ -297,49 +381,6 @@ class AiidaLabApp(traitlets.HasTraits):
             yield
         finally:
             self.set_trait('busy', False)
-
-    def _watch_repository(self):
-        """Watch the app repository for file system events.
-
-        The app state is refreshed automatically for all events.
-        """
-        if self._observer is None and os.path.isdir(self.path):
-            event_handler = self.AppPathFileSystemEventHandler(self)
-
-            self._observer = Observer()
-            self._observer.schedule(event_handler, self.path, recursive=True)
-            self._observer.start()
-
-        if self._check_install_status_changed_thread is None:
-
-            def check_install_status_changed():
-                installed = self.is_installed()
-                while not self._check_install_status_changed_thread.stop_flag:
-                    if installed != self.is_installed():
-                        installed = self.is_installed()
-                        self.refresh()
-                    sleep(1)
-
-            self._check_install_status_changed_thread = Thread(target=check_install_status_changed)
-            self._check_install_status_changed_thread.stop_flag = False
-            self._check_install_status_changed_thread.start()
-
-    def _stop_watch_repository(self, timeout=None):
-        """Stop watching the app repository for file system events."""
-        if self._observer is not None:
-            self._observer.stop()
-            self._observer.join(timeout=timeout)
-            if not self._observer.isAlive():
-                self._observer = None
-
-        if self._check_install_status_changed_thread is not None:
-            self._check_install_status_changed_thread.stop_flag = True
-            self._check_install_status_changed_thread.join(timeout=timeout)
-            if not self._check_install_status_changed_thread.is_alive():
-                self._check_install_status_changed_thread = None
-
-    def __del__(self):  # pylint: disable=missing-docstring
-        self._stop_watch_repository(1)
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
@@ -379,7 +420,6 @@ class AiidaLabApp(traitlets.HasTraits):
             check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
 
             self.refresh()
-            self._watch_repository()
             return 'git:' + rev
 
     def update_app(self, _=None):
@@ -395,13 +435,11 @@ class AiidaLabApp(traitlets.HasTraits):
         """Perfrom app uninstall."""
         # Perform uninstall process.
         with self._show_busy():
-            self._stop_watch_repository()
             try:
                 shutil.rmtree(self.path)
             except FileNotFoundError:
                 raise RuntimeError("App was already uninstalled!")
             self.refresh()
-            self._watch_repository()
 
     def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""
