@@ -357,12 +357,12 @@ class AiidaLabApp(traitlets.HasTraits):
         self.path = os.path.join(aiidalab_apps_path, self.name)
         self._environment = AppEnvironment(self.name)
 
-        self.refresh_async()
-
         if watch:
+            self.refresh_async()
             self._watch = AiidaLabAppWatch(self)
             self._watch.start()
         else:
+            self.refresh()
             self._watch = None
 
     def __repr__(self):
