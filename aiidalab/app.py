@@ -5,6 +5,7 @@ import re
 import os
 import shutil
 import json
+import errno
 from contextlib import contextmanager
 from enum import Enum, auto
 from time import sleep
@@ -20,6 +21,7 @@ from dulwich.porcelain import fetch
 from dulwich.errors import NotGitRepository
 from dulwich.objects import Tag, Commit
 from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 from jinja2 import Template
 
@@ -123,7 +125,16 @@ class AiidaLabAppWatch:
 
         self._observer = Observer()
         self._observer.schedule(event_handler, self.app.path, recursive=True)
-        self._observer.start()
+        try:
+            self._observer.start()
+        except OSError as error:
+            if error.errno in (errno.ENOSPC, errno.EMFILE) and 'inotify' in str(error):
+                # We reached the inotify watch limit, using polling-based fallback observer.
+                self._observer = PollingObserver()
+                self._observer.schedule(event_handler, self.app.path, recursive=True)
+                self._observer.start()
+            else:  # reraise unrelated error
+                raise error
 
     def _stop_observer(self):
         """Stop the directory observer thread.
