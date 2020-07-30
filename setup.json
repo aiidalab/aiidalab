@@ -39,5 +39,5 @@
         "requests-cache~=0.5.2",
         "watchdog~=0.10.2",
         "widget_periodictable~=2.1.2"
-    ],
+    ]
 }
