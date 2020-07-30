@@ -23,6 +23,6 @@
     "install_requires": [
         "dulwich~=0.19.15",
         "requests-cache~=0.5.2",
-        "watchdog~=0.10.2",
+        "watchdog~=0.10.2"
     ]
 }
