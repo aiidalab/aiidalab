@@ -22,4 +22,7 @@ if __name__ == '__main__':
             ("etc/jupyter/jupyter_notebook_config.d", ["jupyter-config/jupyter_notebook_config.d/aiidalab.json"])
         ],
         zip_safe=False,
+        entry_points={
+            'console_scripts': ['aiidalab = aiidalab.__main__:cli',],
+        },
         **kwargs)
