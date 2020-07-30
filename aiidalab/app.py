@@ -121,7 +121,7 @@ class AiidaLabAppWatch:
         return f"<{type(self).__name__}(app={self.app!r})>"
 
     def _setup_observer(self, observer):
-        """Schdule the event handler for the given observer."""
+        """Schedule the event handler for the given observer."""
         # Setup the event handler.
         event_handler = self.AppPathFileSystemEventHandler(self.app)
 
@@ -520,7 +520,7 @@ class AiidaLabApp(traitlets.HasTraits):
                 check_output(['git', 'clone', url, self.path], cwd=os.path.dirname(self.path), stderr=STDOUT)
 
             # Switch to desired version
-            yield "Switch to desired version..."
+            yield "Switch to the desired version..."
             rev = self._release_line.resolve_revision(re.sub('git:', '', version))
             check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
 
