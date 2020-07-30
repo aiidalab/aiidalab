@@ -16,11 +16,11 @@ def _valid_jupyter_kernel_name(name):
     return re.fullmatch(r'[a-z0-9\-\_.]+', name)
 
 
-class AppKernelError(RuntimeError):
-    """Indicates issue relating to the AppKernel installation."""
+class AppEnvironmentError(RuntimeError):
+    """Indicates issue relating to the AppEnvironment installation."""
 
 
-class AppKernel:
+class AppEnvironment:
     """Manage Python environment and Jupyter kernel for AiiDA lab app.
 
     Arguments:
@@ -33,7 +33,7 @@ class AppKernel:
         self._app_name = app_name
 
     @property
-    def name(self):
+    def kernel_name(self):
         """Generate unique name for this kernel based on the app name.
 
         The kernel name is guaranteed to be a valid Jupyter kernel name
@@ -68,13 +68,13 @@ class AppKernel:
 
     @property
     def jupyter_kernel_path(self):
-        return Path.home().joinpath('.local', 'share', 'jupyter', 'kernels', self.name)
+        return Path.home().joinpath('.local', 'share', 'jupyter', 'kernels', self.kernel_name)
 
     def install(self, system_site_packages=True, clear=True):
         """Create the Python virtual environment and install the Jupyter kernel."""
         venv.create(self.prefix, system_site_packages=system_site_packages, clear=clear)
         run([self.executable, '-c', 'import reentry; reentry.manager.scan()'], check=True)
-        run([self.executable, '-m', 'ipykernel', 'install', '--user', f'--name={self.name}'], check=True)
+        run([self.executable, '-m', 'ipykernel', 'install', '--user', f'--name={self.kernel_name}'], check=True)
 
     def uninstall(self):
         """Remove both the Python virtual environment and the corresponding Jupyter kernel."""
@@ -88,29 +88,29 @@ class AppKernel:
             pass  # environment was not installed
 
     def installed(self):
-        """Check whether this kernel is (properly) installed.
+        """Check whether this environment is (properly) installed.
 
-        Returns True if kernel is installed, otherwise False.
+        Returns True if environment is installed, otherwise False.
 
-        Raises AppKernelError exception if the installation state
+        Raises AppEnvironmentError exception if the installation state
         is inconistent.
         """
         # First, check the consistency of the installation state:
         if self.prefix.is_dir():
 
             if not self.executable.is_file():
-                raise AppKernelError("The kernel executable ('{self.executable}') is missing.")
+                raise AppEnvironmentError("The environment executable ('{self.executable}') is missing.")
 
             if not self.jupyter_kernel_path.is_dir():
-                raise AppKernelError(
+                raise AppEnvironmentError(
                     f"The app has an app-specific virtual environment ('{self.prefix}'), "
                     f"but the corresponding Jupyter kernel ('{self.jupyter_kernel_path}') is not installed.")
 
         if self.jupyter_kernel_path.is_dir():
 
             if not self.prefix.is_dir():
-                raise AppKernelError(f"The kernel for this app ({self.jupyter_kernel_path}) is installed, "
-                                     f"but the corresponding environment ({self.prefix}) does not exist.")
+                raise AppEnvironmentError(f"The kernel for this app ({self.jupyter_kernel_path}) is installed, "
+                                          f"but the corresponding virtual environment ({self.prefix}) does not exist.")
 
         # Passed consistency check, return installation state:
         return self.prefix.is_dir() and self.jupyter_kernel_path.is_dir()
