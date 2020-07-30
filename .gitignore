@@ -2,6 +2,3 @@
 *.swp
 .ipynb_checkpoints/
 dist/
-Pipfile.lock
-requirements.txt_dev
-requirements.txt_stable

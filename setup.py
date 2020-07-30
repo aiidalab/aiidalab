@@ -9,13 +9,6 @@ if __name__ == '__main__':
     with open('setup.json', 'r') as info:
         kwargs = json.load(info)  # pylint: disable=invalid-name
 
-    with open('requirements.txt', 'r') as rfile:
-        requirements = rfile.read().splitlines()  # pylint: disable=invalid-name
-
-    # -i https://pypi.org/simple not supported in install_requires
-    if requirements[0].startswith('-i'):
-        requirements.pop(0)
-
     setup(
         packages=find_packages(),
         include_package_data=True,
@@ -28,6 +21,5 @@ if __name__ == '__main__':
             # like `jupyter serverextension enable --sys-prefix`
             ("etc/jupyter/jupyter_notebook_config.d", ["jupyter-config/jupyter_notebook_config.d/aiidalab.json"])
         ],
-        install_requires=requirements,
         zip_safe=False,
         **kwargs)
