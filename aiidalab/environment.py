@@ -8,6 +8,8 @@ from pathlib import Path
 from subprocess import run
 from urllib.parse import quote_plus
 
+from jupyter_core.paths import jupyter_data_dir
+
 from .config import AIIDALAB_APPS
 
 
@@ -68,7 +70,7 @@ class AppEnvironment:
 
     @property
     def jupyter_kernel_path(self):
-        return Path.home().joinpath('.local', 'share', 'jupyter', 'kernels', self.kernel_name)
+        return Path(jupyter_data_dir()).joinpath('kernels', self.kernel_name)
 
     def install(self, system_site_packages=True, clear=True):
         """Create the Python virtual environment and install the Jupyter kernel."""
