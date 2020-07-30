@@ -99,7 +99,7 @@ class AppEnvironment:
         if self.prefix.is_dir():
 
             if not self.executable.is_file():
-                raise AppEnvironmentError("The environment executable ('{self.executable}') is missing.")
+                raise AppEnvironmentError(f"The environment executable ('{self.executable}') is missing.")
 
             if not self.jupyter_kernel_path.is_dir():
                 raise AppEnvironmentError(
