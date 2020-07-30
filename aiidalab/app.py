@@ -400,6 +400,8 @@ class AiidaLabApp(traitlets.HasTraits):
 
         self.name = name
         self.path = os.path.join(aiidalab_apps_path, self.name)
+        self._environment = AppEnvironment(self.name)
+
         self.refresh_async()
 
         if watch:
@@ -458,7 +460,7 @@ class AiidaLabApp(traitlets.HasTraits):
     @property
     def environment(self):
         """Return the environment instance for this app."""
-        return AppEnvironment(self.name)
+        return self._environment
 
     def _has_dependencies(self):
         """Return True if this app has dependencies."""
