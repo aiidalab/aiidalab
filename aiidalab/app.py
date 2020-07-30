@@ -493,15 +493,18 @@ class AiidaLabApp(traitlets.HasTraits):
             if not self._has_dependencies():
                 raise RuntimeError("Unable to install app environment, app has no dependencies.")
 
-            yield "Setup app virtual environment..."
+            yield f"Create app virtual environment in {self.environment.prefix} ..."
             self.environment.install()
 
             yield "Install app dependencies..."
             try:
                 self._install_dependencies()
             except CalledProcessError as error:
+                yield "Error during app dependency installation, rolling back..."
                 self.environment.uninstall()  # rollback
-                raise RuntimeError(f"Failed to install app dependencies: {error.stderr.decode()}.")
+                raise RuntimeError(f"Failed to install app dependencies.\n{error.stderr.decode()}.")
+            else:
+                yield "Done."
 
     def install_app(self, version=None):
         """Installing the app."""
