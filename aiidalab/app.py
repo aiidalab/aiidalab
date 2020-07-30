@@ -745,11 +745,13 @@ class AppManagerWidget(ipw.VBox):
         self.update_button = ipw.Button(description='Update', disabled=True)
         self.update_button.on_click(self._update_app)
 
-        self.install_environment_button = ipw.Button(description='Install environment', disabled=True)
+        self.install_environment_button = ipw.Button(
+            description='Install environment',
+            disabled=True,
+            button_style='success',
+            tooltip='Install the app-specific Python environment, Jupyter kernel, and app dependencies.',
+        )
         self.install_environment_button.layout.visilibity = 'hidden'
-        self.install_environment_button.button_style = 'success'
-        self.install_environment_button.tooltip = \
-                'Install the app-specific Python environment, Jupyter kernel, and app dependencies.'
         self.install_environment_button.on_click(self._install_environment)
 
         self.detachment_indicator = ipw.HTML()
