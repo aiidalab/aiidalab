@@ -9,10 +9,10 @@ import errno
 from contextlib import contextmanager
 from enum import Enum, auto
 from time import sleep
+from pathlib import Path
 from threading import Thread
-from subprocess import check_output, STDOUT
+from subprocess import check_output, STDOUT, CalledProcessError, run
 from dataclasses import dataclass, field, asdict
-
 from typing import List, Dict
 
 import traitlets
@@ -26,6 +26,7 @@ from watchdog.events import FileSystemEventHandler
 from .config import AIIDALAB_DEFAULT_GIT_BRANCH
 from .git_util import GitManagedAppRepo as Repo
 from .utils import throttled
+from .environment import AppEnvironment, AppEnvironmentError
 
 
 class AppNotInstalledException(Exception):
@@ -73,6 +74,25 @@ class AiidaLabAppWatch:
     def __repr__(self):
         return f"<{type(self).__name__}(app={self.app!r})>"
 
+    def _setup_observer(self, observer):
+        """Schedule the event handler for the given observer."""
+        # Setup the event handler.
+        event_handler = self.AppPathFileSystemEventHandler(self.app)
+
+        # Create local reference to resolved environment prefix directory for performance.
+        environment_prefix = self.app.environment.prefix.resolve()
+
+        # Monitor Jupyter kernel directory:
+        observer.schedule(event_handler, self.app.environment.jupyter_kernel_path.parent)  # jupyter kernel directory
+
+        # Monitor app top-level directory and all subdirectories recursively.
+        # We only monitor the top-level directory of the virtual environment to for performance.
+        observer.schedule(event_handler, self.app.path, recursive=False)
+        for child in Path(self.app.path).iterdir():
+            if child.is_dir():
+                observer.schedule(event_handler, child, recursive=child.resolve() != environment_prefix)
+        return observer
+
     def _start_observer(self):
         """Start the directory observer thread.
 
@@ -81,17 +101,13 @@ class AiidaLabAppWatch:
         assert os.path.isdir(self.app.path)
         assert self._observer is None or not self._observer.isAlive()
 
-        event_handler = self.AppPathFileSystemEventHandler(self.app)
-
-        self._observer = Observer()
-        self._observer.schedule(event_handler, self.app.path, recursive=True)
+        self._observer = self._setup_observer(Observer())
         try:
             self._observer.start()
         except OSError as error:
             if error.errno in (errno.ENOSPC, errno.EMFILE) and 'inotify' in str(error):
                 # We reached the inotify watch limit, using polling-based fallback observer.
-                self._observer = PollingObserver()
-                self._observer.schedule(event_handler, self.app.path, recursive=True)
+                self._observer = self._setup_observer(PollingObserver())
                 self._observer.start()
             else:  # reraise unrelated error
                 raise error
@@ -184,6 +200,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     busy = traitlets.Bool(readonly=True)
     detached = traitlets.Bool(readonly=True, allow_none=True)
+    environment_message = traitlets.Unicode(readonly=True, allow_none=True)
 
     @dataclass
     class AppRegistryData:
@@ -322,6 +339,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
         super().__init__()
+        self._busy = 0
 
         if app_data is None:
             self._registry_data = None
@@ -336,6 +354,8 @@ class AiidaLabApp(traitlets.HasTraits):
 
         self.name = name
         self.path = os.path.join(aiidalab_apps_path, self.name)
+        self._environment = AppEnvironment(self.name)
+
         self.refresh_async()
 
         if watch:
@@ -367,11 +387,13 @@ class AiidaLabApp(traitlets.HasTraits):
     @contextmanager
     def _show_busy(self):
         """Apply this decorator to indicate that the app is busy during execution."""
-        self.set_trait('busy', True)
+        self._busy += 1
+        self.set_trait('busy', self._busy > 0)
         try:
             yield
         finally:
-            self.set_trait('busy', False)
+            self._busy -= 1
+            self.set_trait('busy', self._busy > 0)
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
@@ -389,6 +411,52 @@ class AiidaLabApp(traitlets.HasTraits):
         except NotGitRepository:
             return False
 
+    @property
+    def environment(self):
+        """Return the environment instance for this app."""
+        return self._environment
+
+    def _has_dependencies(self):
+        """Return True if this app has dependencies."""
+        return any(os.path.isfile(os.path.join(self.path, fn)) for fn in ('setup.py', 'requirements.txt'))
+
+    def _install_dependencies(self):
+        """Install dependencies for this app into the app-specific virtual environment."""
+
+        # Install as editable package if 'setup.py' is present.
+        if os.path.isfile(os.path.join(self.path, 'setup.py')):
+            return run([self.environment.executable, '-m', 'pip', 'install', '-e', '.'],
+                       capture_output=True,
+                       check=True,
+                       cwd=self.path)
+
+        # Otherwise, install from 'requirements.txt' if present.
+        if os.path.isfile(os.path.join(self.path, 'requirements.txt')):
+            return run([self.environment.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'],
+                       capture_output=True,
+                       check=True,
+                       cwd=self.path)
+
+        # Neither 'setup.py' or 'requirements.txt' file present, nothing to do.
+        return None
+
+    def install_environment(self):
+        """Install the app-specific Python environment and app dependencies."""
+        with self._show_busy():
+            assert os.path.isdir(self.path)
+            if not self._has_dependencies():
+                raise RuntimeError("Unable to install app environment, app has no dependencies.")
+
+            yield "Setup app virtual environment..."
+            self.environment.install()
+
+            yield "Install app dependencies..."
+            try:
+                self._install_dependencies()
+            except CalledProcessError as error:
+                self.environment.uninstall()  # rollback
+                raise RuntimeError(f"Failed to install app dependencies: {error.stderr.decode()}.")
+
     def install_app(self, version=None):
         """Installing the app."""
         assert self._registry_data is not None
@@ -403,12 +471,16 @@ class AiidaLabApp(traitlets.HasTraits):
 
             if not os.path.isdir(self.path):  # clone first
                 url = self._registry_data.git_url.split('@')[0]
+                yield "Checking out repository..."
 
                 check_output(['git', 'clone', url, self.path], cwd=os.path.dirname(self.path), stderr=STDOUT)
 
             # Switch to desired version
+            yield "Switch to the desired version..."
             rev = self._release_line.resolve_revision(re.sub('git:', '', version))
             check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
+
+            yield from self.install_environment()
 
             self.refresh()
             return 'git:' + rev
@@ -426,6 +498,10 @@ class AiidaLabApp(traitlets.HasTraits):
         """Perfrom app uninstall."""
         # Perform uninstall process.
         with self._show_busy():
+            try:
+                self.environment.uninstall()
+            except Exception as error:
+                raise RuntimeError(f"Failed to uninstall environment: {error!s}")
             try:
                 shutil.rmtree(self.path)
             except FileNotFoundError:
@@ -472,9 +548,21 @@ class AiidaLabApp(traitlets.HasTraits):
                     self.check_for_updates()
                     modified = self._repo.dirty()
                     self.set_trait('detached', self.installed_version is AppVersion.UNKNOWN or modified)
+                    if self._has_dependencies():
+                        try:
+                            if self.environment.installed():
+                                self.set_trait('environment_message', '')
+                            else:
+                                self.set_trait('environment_message', 'App-specific environment is not installed.')
+                        except AppEnvironmentError as environment_error:
+                            self.set_trait('environment_message', str(environment_error))
+                    else:
+                        self.set_trait('environment_message', '')
+
                 else:
                     self.set_trait('updates_available', None)
                     self.set_trait('detached', None)
+                    self.set_trait('environment_message', None)
 
     def refresh_async(self):
         """Asynchronized (non-blocking) refresh of the app state."""
