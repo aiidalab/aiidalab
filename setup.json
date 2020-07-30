@@ -21,10 +21,12 @@
         ]
     },
     "install_requires": [
+        "click~=7.1.0",
         "dulwich~=0.19.15",
         "ipywidgets<8.0.0",
         "Markdown~=3.2.2",
         "requests-cache~=0.5.2",
+        "tabulate~=0.8.7",
         "watchdog~=0.10.2"
     ]
 }
