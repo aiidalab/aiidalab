@@ -7,7 +7,7 @@ import traitlets
 import ipywidgets as ipw
 
 
-class _StatusWidgetMixin:
+class _StatusWidgetMixin(traitlets.HasTraits):
     """Show temporary messages for example for status updates.
 
     This is a mixin class that is meant to be part of an inheritance
@@ -16,13 +16,15 @@ class _StatusWidgetMixin:
     for examples.
     """
 
+    message = traitlets.Unicode(default_value='', allow_none=True)
+
     def __init__(self, *args, **kwargs):
         self._clear_timer = None
         super().__init__(*args, **kwargs)
 
     def _clear_value(self):
         """Set widget .value to be an empty string."""
-        self.value = ''
+        self.value = '' if self.message is None else self.message
 
     def show_temporary_message(self, value, clear_after=3):
         """Show a temporary message and clear it after the given interval."""
@@ -40,9 +42,21 @@ class _StatusWidgetMixin:
 class StatusLabel(_StatusWidgetMixin, ipw.Label):
     """Show temporary messages for example for status updates."""
 
+    # This method should be part of _StatusWidgetMixin, but that does not work
+    # for an unknown reason.
+    @traitlets.observe('message')
+    def _observe_message(self, change):
+        self.show_temporary_message(change['new'])
+
 
 class StatusHTML(_StatusWidgetMixin, ipw.HTML):
     """Show temporary HTML messages for example for status updates."""
+
+    # This method should be part of _StatusWidgetMixin, but that does not work
+    # for an unknown reason.
+    @traitlets.observe('message')
+    def _observe_message(self, change):
+        self.show_temporary_message(change['new'])
 
 
 class UpdateAvailableInfoWidget(ipw.HTML):
