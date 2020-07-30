@@ -4,8 +4,10 @@ import sys
 import json
 import time
 from os import path
+from pathlib import Path
 from importlib import import_module
 from urllib.parse import urlparse
+from urllib.parse import urlsplit, urlunsplit, parse_qs, urlencode
 from collections import defaultdict
 from functools import wraps
 from threading import Lock
@@ -16,6 +18,7 @@ import ipywidgets as ipw
 from IPython.lib import backgroundjobs as bg
 
 from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
+from .environment import AppEnvironment, AppEnvironmentError
 
 
 def update_cache():
@@ -58,6 +61,27 @@ def load_widget(name):
     return load_start_md(name)
 
 
+def url_for(endpoint):
+    """Generate the fully-qualified URL for a given endpoint."""
+    parsed_url = urlsplit(endpoint)
+    url_path = Path(parsed_url.path)
+    query_string = parse_qs(parsed_url.query)
+
+    try:
+        app_name = url_path.resolve().relative_to(AIIDALAB_APPS).parts[0]
+    except ValueError:
+        raise ValueError("Endpoint argument to url_for() must be relative to the AIIDALAB_APPS path.")
+
+    app_environment = AppEnvironment(app_name)
+
+    if app_environment.installed():
+        query_string.setdefault('kernel_name', app_environment.kernel_name)
+    else:  # Use fallback kernel:
+        query_string.setdefault('kernel_name', 'python3')
+
+    return urlunsplit(parsed_url._replace(query=urlencode(query_string, doseq=True)))
+
+
 def load_start_py(name):
     """Load app appearance from a Python file."""
     try:
@@ -69,6 +93,8 @@ def load_start_py(name):
             return mod.get_start_widget(appbase=appbase, jupbase=jupbase, notebase=notebase)
         except TypeError:
             return mod.get_start_widget(appbase=appbase, jupbase=jupbase)
+    except AppEnvironmentError as error:
+        return ipw.HTML(f"<p>App environment error: {error!s}</p><p>Reinstalling the app might resolve the issue.</p>")
     except Exception:  # pylint: disable=broad-except
         return ipw.HTML("<pre>{}</pre>".format(sys.exc_info()))
 
@@ -88,6 +114,9 @@ def load_start_md(name):
         # downsize headings
         html = html.replace("<h3", "<h4")
         return ipw.HTML(html)
+
+    except AppEnvironmentError as error:
+        return ipw.HTML(f"<p>App environment error: {error!s}</p><p>Reinstalling the app might resolve the issue.</p>")
 
     except Exception as exc:  # pylint: disable=broad-except
         return ipw.HTML("Could not load start.md: {}".format(str(exc)))
