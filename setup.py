@@ -30,4 +30,7 @@ if __name__ == '__main__':
         ],
         install_requires=requirements,
         zip_safe=False,
+        entry_points={
+            'console_scripts': ['aiidalab = aiidalab.__main__:cli',],
+        },
         **kwargs)
