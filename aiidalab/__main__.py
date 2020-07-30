@@ -65,13 +65,22 @@ def environment():
 
 
 @environment.command('install')
-def install_environment():
-    """Install the app's environment."""
+@click.option('--yes', is_flag=True, help="Do not ask for confirmation to replace existing environment.")
+def install_environment(yes):
+    """Install the app's environment.
+
+    WARNING: Any previously existing environment will be replaced.
+    """
     app = _get_app()
+
+    # Check whether to replace existing environment, if present.
+    if app.environment.installed() and not (yes or click.confirm("Replace existing environment?")):
+        return
+
     try:
+
         for msg in app.install_environment():
             click.echo(msg)
-        click.secho("Installed environment.", fg='green')
     except RuntimeError as error:
         raise click.ClickException(str(error))
 
@@ -80,8 +89,11 @@ def install_environment():
 def uninstall_environment():
     """Uninstall the app's environment."""
     app = _get_app()
-    app.environment.uninstall()
-    click.secho("Uninstalled environment.", fg='green')
+    if app.environment.installed():
+        app.environment.uninstall()
+        click.secho("Uninstalled environment.", fg='green')
+    else:
+        click.secho("No environment to uninstall.", fg='yellow')
 
 
 if __name__ == '__main__':
