@@ -14,6 +14,7 @@ from threading import Thread
 from subprocess import check_output, STDOUT, CalledProcessError, run
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict
+from hashlib import sha1
 
 import traitlets
 from dulwich.porcelain import fetch
@@ -418,7 +419,38 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def _has_dependencies(self):
         """Return True if this app has dependencies."""
-        return any(os.path.isfile(os.path.join(self.path, fn)) for fn in ('setup.py', 'requirements.txt'))
+        setup_py = Path(self.path).joinpath('setup.py')
+        requirements_txt = Path(self.path).joinpath('requirements.txt')
+        return setup_py.is_file() or requirements_txt.is_file()
+
+    def _app_dependencies_checksum(self):
+        """Return checksum of the app's dependencies specification."""
+        setup_py = Path(self.path).joinpath('setup.py')
+        requirements_txt = Path(self.path).joinpath('requirements.txt')
+
+        dep_version = sha1()
+        if setup_py.is_file():
+            with setup_py.open('rb') as file:
+                dep_version.update(file.read())
+        elif requirements_txt.is_file():
+            with requirements_txt.open('rb') as file:
+                dep_version.update(file.read())
+        return dep_version.hexdigest()
+
+    @property
+    def _installed_app_dependencies_checksum_file(self):
+        return self.environment.prefix.joinpath('.app_dependencies_checksum')
+
+    def _installed_app_dependencies_checksum(self):
+        """Return the version of dependencies that are currently installed."""
+        try:
+            with self._installed_app_dependencies_checksum_file.open() as file:
+                return file.read().strip()
+        except FileNotFoundError:
+            return None
+
+    def _dependencies_are_current(self):
+        return self._installed_app_dependencies_checksum() == self._app_dependencies_checksum()
 
     def _install_dependencies(self):
         """Install dependencies for this app into the app-specific virtual environment."""
@@ -452,7 +484,13 @@ class AiidaLabApp(traitlets.HasTraits):
 
             yield "Install app dependencies..."
             try:
+                # First, try to install dependencies ...
                 self._install_dependencies()
+
+                # ... then write checksum file.
+                with self._installed_app_dependencies_checksum_file.open('w') as file:
+                    file.write(self._app_dependencies_checksum())
+
             except CalledProcessError as error:
                 self.environment.uninstall()  # rollback
                 raise RuntimeError(f"Failed to install app dependencies: {error.stderr.decode()}.")
@@ -536,6 +574,22 @@ class AiidaLabApp(traitlets.HasTraits):
             return AppVersion.UNKNOWN
         return AppVersion.NOT_INSTALLED
 
+    def _environment_message(self):
+        """Return a message describing an issue with the app's environment.
+
+        Returns an empty string if there is no issue.
+        """
+        if self._has_dependencies():
+            try:
+                if self.environment.installed():
+                    if self._installed_app_dependencies_checksum() != self._app_dependencies_checksum():
+                        return 'Installed dependencies are not current.'
+                else:
+                    return 'App-specific environment is not installed.'
+            except AppEnvironmentError as environment_error:
+                return str(environment_error)
+        return ''
+
     @throttled(calls_per_second=1)
     def refresh(self):
         """Refresh app state."""
@@ -548,16 +602,7 @@ class AiidaLabApp(traitlets.HasTraits):
                     self.check_for_updates()
                     modified = self._repo.dirty()
                     self.set_trait('detached', self.installed_version is AppVersion.UNKNOWN or modified)
-                    if self._has_dependencies():
-                        try:
-                            if self.environment.installed():
-                                self.set_trait('environment_message', '')
-                            else:
-                                self.set_trait('environment_message', 'App-specific environment is not installed.')
-                        except AppEnvironmentError as environment_error:
-                            self.set_trait('environment_message', str(environment_error))
-                    else:
-                        self.set_trait('environment_message', '')
+                    self.set_trait('environment_message', self._environment_message())
 
                 else:
                     self.set_trait('updates_available', None)
