@@ -632,7 +632,8 @@ class AiidaLabApp(traitlets.HasTraits):
             try:
                 if self.environment.installed():
                     if self._installed_app_dependencies_checksum() != self._app_dependencies_checksum():
-                        return 'Installed dependencies are not current.'
+                        return 'Installed dependencies are not current.' \
+                    'Click on "Install environment" button to update them.'
                 else:
                     return 'App-specific environment is not installed.'
             except AppEnvironmentError as environment_error:
