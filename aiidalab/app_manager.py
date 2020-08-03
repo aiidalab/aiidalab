@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Module to manage AiiDA lab apps."""
+"""Module that contains widgets for managing AiiDA lab applications."""
 
 from subprocess import CalledProcessError
 
