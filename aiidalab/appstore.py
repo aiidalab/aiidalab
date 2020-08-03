@@ -5,7 +5,8 @@ import ipywidgets as ipw
 from IPython.display import display
 from jinja2 import Template
 
-from .app import AiidaLabApp, AppManagerWidget
+from .app import AiidaLabApp
+from .app_manager import AppManagerWidget
 from .config import AIIDALAB_APPS
 from .utils import load_app_registry
 
