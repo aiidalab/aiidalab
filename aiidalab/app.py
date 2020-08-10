@@ -473,8 +473,8 @@ class AiidaLabApp(traitlets.HasTraits):
         # Neither 'setup.py' or 'requirements.txt' file present, nothing to do.
         return None
 
-    def _run_post_build_script(self):
-        """Run a postBuild script.
+    def _run_post_install_script(self):
+        """Run a post_install script.
 
         Typically used to execute additional commands after the app dependency installation.
 
@@ -483,8 +483,8 @@ class AiidaLabApp(traitlets.HasTraits):
 
             source .venv/bin/activate
         """
-        assert Path(self.path).joinpath('postBuild').is_file()
-        return run(['/bin/bash', 'postBuild'], check=True, cwd=self.path, stderr=PIPE)
+        assert Path(self.path).joinpath('post_install').is_file()
+        return run(['/bin/bash', 'post_install'], check=True, cwd=self.path, stderr=PIPE)
 
     def install_environment(self):
         """Install the app-specific Python environment and app dependencies."""
@@ -510,13 +510,13 @@ class AiidaLabApp(traitlets.HasTraits):
                 raise RuntimeError(f"Failed to install app dependencies: {error.stderr.decode()}.")
 
             else:
-                # ... then run the postBuild script (if present) ...
-                if Path(self.path).joinpath('postBuild').is_file():
+                # ... then run the post_install script (if present) ...
+                if Path(self.path).joinpath('post_install').is_file():
                     try:
-                        yield "Run postBuild script..."
-                        self._run_post_build_script()
+                        yield "Run post_install script..."
+                        self._run_post_install_script()
                     except CalledProcessError as error:
-                        raise RuntimeError(f"Failed to execute postBuild script.\n{error.stderr.decode()}")
+                        raise RuntimeError(f"Failed to execute post_install script.\n{error.stderr.decode()}")
 
                 yield "Done."
 
