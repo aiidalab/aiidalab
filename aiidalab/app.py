@@ -484,7 +484,7 @@ class AiidaLabApp(traitlets.HasTraits):
             source .venv/bin/activate
         """
         assert Path(self.path).joinpath('post_install').is_file()
-        return run(['/bin/bash', 'post_install'], check=True, cwd=self.path, stderr=PIPE)
+        return run(['./post_install'], check=True, cwd=self.path, stderr=PIPE)
 
     def install_environment(self):
         """Install the app-specific Python environment and app dependencies."""
