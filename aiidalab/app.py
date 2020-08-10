@@ -11,7 +11,7 @@ from enum import Enum, auto
 from time import sleep
 from pathlib import Path
 from threading import Thread
-from subprocess import check_output, STDOUT, CalledProcessError, run
+from subprocess import check_output, STDOUT, CalledProcessError, run, PIPE
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict
 from hashlib import sha1
@@ -472,6 +472,19 @@ class AiidaLabApp(traitlets.HasTraits):
         # Neither 'setup.py' or 'requirements.txt' file present, nothing to do.
         return None
 
+    def _run_post_install_script(self):
+        """Run a post_install script.
+
+        Typically used to execute additional commands after the app dependency installation.
+
+        Note: You must add the following line to the  script if it is supposed to be executed
+        within the app's virtual environment:
+
+            source .venv/bin/activate
+        """
+        assert Path(self.path).joinpath('post_install').is_file()
+        return run(['./post_install'], check=True, cwd=self.path, stderr=PIPE)
+
     def install_environment(self):
         """Install the app-specific Python environment and app dependencies."""
         with self._show_busy():
@@ -494,6 +507,17 @@ class AiidaLabApp(traitlets.HasTraits):
             except CalledProcessError as error:
                 self.environment.uninstall()  # rollback
                 raise RuntimeError(f"Failed to install app dependencies: {error.stderr.decode()}.")
+
+            else:
+                # ... then run the post_install script (if present) ...
+                if Path(self.path).joinpath('post_install').is_file():
+                    try:
+                        yield "Run post_install script..."
+                        self._run_post_install_script()
+                    except CalledProcessError as error:
+                        raise RuntimeError(f"Failed to execute post_install script.\n{error.stderr.decode()}")
+
+                yield "Done."
 
     def install_app(self, version=None):
         """Installing the app."""
