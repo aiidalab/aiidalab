@@ -3,6 +3,7 @@
 
 import re
 import os
+import sys
 import shutil
 import json
 import errno
@@ -23,6 +24,8 @@ from dulwich.objects import Tag, Commit
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
+from pkg_resources import Requirement
+from packaging.utils import canonicalize_name as canon
 
 from .config import AIIDALAB_DEFAULT_GIT_BRANCH
 from .git_util import GitManagedAppRepo as Repo
@@ -200,6 +203,7 @@ class AiidaLabApp(traitlets.HasTraits):
     updates_available = traitlets.Bool(readonly=True, allow_none=True)
 
     busy = traitlets.Bool(readonly=True)
+    compatible = traitlets.Bool(readonly=True)
     detached = traitlets.Bool(readonly=True, allow_none=True)
     environment_message = traitlets.Unicode(readonly=True, allow_none=True)
 
@@ -599,11 +603,47 @@ class AiidaLabApp(traitlets.HasTraits):
             return AppVersion.UNKNOWN
         return AppVersion.NOT_INSTALLED
 
+    def _find_missing_system_prerequisites(self):
+        """Check whether the app dependencies are compatible with the base environment."""
+
+        def fullfills(provided, required):
+            return canon(required.name) == canon(provided.name) and provided.specs[0][1] in required.specifier
+
+        def parse_requirements(requirements, ignore_parse_errors=False):
+            for line in requirements:
+                try:
+                    yield Requirement.parse(line)
+                except ValueError:
+                    if ignore_parse_errors:
+                        continue
+                    raise
+
+        prerequisites = set(parse_requirements(self.metadata.get('prerequisites', [])))
+        if prerequisites:
+
+            # Parse packages available in system environment.
+            working_set = set(
+                parse_requirements(run([sys.executable, '-m', 'pip', 'freeze'],
+                                       check=True,
+                                       capture_output=True,
+                                       encoding='utf-8').stdout.splitlines(),
+                                   ignore_parse_errors=True))
+
+            # Determine which system environment prerequisites are installed
+            installed = {req for req in prerequisites for provided in working_set if fullfills(provided, req)}
+
+            # Yield all missing system prerequisites
+            yield from prerequisites.difference(installed)
+
     def _environment_message(self):
         """Return a message describing an issue with the app's environment.
 
         Returns an empty string if there is no issue.
         """
+        missing_prerequisites = list(self._find_missing_system_prerequisites())
+        if missing_prerequisites:
+            return "Missing prerequisite(s) in AiiDA lab environment: " + "; ".join(map(str, missing_prerequisites))
+
         if self._has_dependencies():
             try:
                 if self.environment.installed():
@@ -613,6 +653,7 @@ class AiidaLabApp(traitlets.HasTraits):
                     return 'App-specific environment is not installed.'
             except AppEnvironmentError as environment_error:
                 return str(environment_error)
+
         return ''
 
     @throttled(calls_per_second=1)
@@ -622,16 +663,15 @@ class AiidaLabApp(traitlets.HasTraits):
             with self.hold_trait_notifications():
                 self.available_versions = list(self._available_versions())
                 self.installed_version = self._installed_version()
+                self.set_trait('compatible', not any(self._find_missing_system_prerequisites()))
+                self.set_trait('environment_message', self._environment_message())
                 if self.is_installed() and self._has_git_repo():
                     self.check_for_updates()
                     modified = self._repo.dirty()
                     self.set_trait('detached', self.installed_version is AppVersion.UNKNOWN or modified)
-                    self.set_trait('environment_message', self._environment_message())
-
                 else:
                     self.set_trait('updates_available', None)
                     self.set_trait('detached', None)
-                    self.set_trait('environment_message', None)
 
     def refresh_async(self):
         """Asynchronized (non-blocking) refresh of the app state."""
