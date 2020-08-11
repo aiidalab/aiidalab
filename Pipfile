@@ -34,9 +34,10 @@ aiida-zeopp = "~=1.1"
 cookiecutter = "~=1.6.0"
 dulwich = "~=0.19.15"
 Markdown = "~=3.1.1"
-pip = "~=20.0"
+notebook = "~=5.7.0"
 requests-cache = "~=0.5.2"
 watchdog = "~=0.10.2"
+ipywidgets = "<8.0.0" # Version 8.0.0 introduces some backwards-incompatible changes
 
 [requires]
 python_version = "3.7"
