@@ -543,7 +543,8 @@ class AiidaLabApp(traitlets.HasTraits):
             rev = self._release_line.resolve_revision(re.sub('git:', '', version))
             check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
 
-            yield from self.install_environment()
+            if self._has_dependencies():
+                yield from self.install_environment()
 
             self.refresh()
             return 'git:' + rev
