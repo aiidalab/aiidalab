@@ -41,7 +41,6 @@ bqplot = "~=0.12.1"
 cookiecutter = "~=1.6.0"
 dulwich = "~=0.19.15"
 lxml = "~=4.5.0"
-notebook = "~=5.7.0"
 Markdown = "~=3.1.1"
 packaging = "~=20.1"
 pip = "~=20.0"
@@ -50,7 +49,6 @@ pysmiles = "~=1.0.0"
 requests-cache = "~=0.5.2"
 watchdog = "~=0.10.2"
 widget_periodictable = "~=2.0"
-ipywidgets = "<8.0.0" # Version 8.0.0 introduces some backwards-incompatible changes
 
 [requires]
 python_version = "3.7"
