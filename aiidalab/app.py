@@ -624,7 +624,6 @@ class AiidaLabApp(traitlets.HasTraits):
                 self.available_versions = list(self._available_versions())
                 self.installed_version = self._installed_version()
                 if self.is_installed() and self._has_git_repo():
-                    self.installed_version = self._installed_version()
                     self.check_for_updates()
                     modified = self._repo.dirty()
                     self.set_trait('detached', self.installed_version is self.AppVersion.UNKNOWN or modified)
