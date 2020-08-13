@@ -11,7 +11,7 @@ from enum import Enum, auto
 from time import sleep
 from threading import Thread
 from subprocess import check_output, STDOUT
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 
 from typing import List, Dict
 
@@ -23,9 +23,9 @@ from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 
-from .config import AIIDALAB_DEFAULT_GIT_BRANCH
+from .config import AIIDALAB_DEFAULT_GIT_BRANCH, AIIDALAB_APPS
 from .git_util import GitManagedAppRepo as Repo
-from .utils import throttled
+from .utils import throttled, load_app_registry
 
 
 class AppNotInstalledException(Exception):
@@ -167,10 +167,6 @@ class AiidaLabApp(traitlets.HasTraits):
 
         name (str):
             Name of the Aiida lab app.
-        app_data (dict):
-            Dictionary containing the app metadata.
-        aiidalab_apps_path (str):
-            Path to directory at which the app is expected to be installed.
         watch (bool):
             If true (default), automatically watch the repository for changes.
     """
@@ -320,9 +316,10 @@ class AiidaLabApp(traitlets.HasTraits):
 
             return None  # current revision not on the release line
 
-    def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
+    def __init__(self, name, watch=True):
         super().__init__()
 
+        app_data = load_app_registry()['apps'].get(name)
         if app_data is None:
             self._registry_data = None
             self._release_line = None
@@ -335,7 +332,7 @@ class AiidaLabApp(traitlets.HasTraits):
                 self._release_line = self._GitReleaseLine(self, AIIDALAB_DEFAULT_GIT_BRANCH)
 
         self.name = name
-        self.path = os.path.join(aiidalab_apps_path, self.name)
+        self.path = os.path.join(AIIDALAB_APPS, self.name)
         self.refresh_async()
 
         if watch:
@@ -345,9 +342,7 @@ class AiidaLabApp(traitlets.HasTraits):
             self._watch = None
 
     def __repr__(self):
-        app_data_argument = None if self._registry_data is None else asdict(self._registry_data)
-        return (f"AiidaLabApp(name={self.name!r}, app_data={app_data_argument!r}, "
-                f"aiidalab_apps_path={os.path.dirname(self.path)!r})")
+        return f"AiidaLabApp(name={self.name!r})"
 
     @traitlets.default('detached')
     def _default_detached(self):
