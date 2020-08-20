@@ -4,6 +4,29 @@ on: [push, pull_request]
 
 jobs:
 
+  test-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+
+      - name: Install package
+        run: |
+          which python
+          python -m pip install -e .[tests]
+          python -m pip freeze
+
+      - name: Run tests
+        run: python -m pytest -v
+
   test-app:
 
     runs-on: ubuntu-latest
