@@ -30,9 +30,9 @@ jobs:
       - name: Copy aiidalab into app directory
         run: cp -r "${GITHUB_WORKSPACE}/aiidalab-package/aiidalab" "${GITHUB_WORKSPACE}/aiidalab"
 
-      - name: Test app
+      - name: Test home app
         uses: aiidalab/aiidalab-test-app-action@v2
         with:
           image: aiidalab/aiidalab-docker-stack:${{ matrix.tag }}
           browser: ${{ matrix.browser }}
-          notebooks: appstore.ipynb,start.ipynb
+          name: home
