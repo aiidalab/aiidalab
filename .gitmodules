@@ -1,0 +1,3 @@
+[submodule "tests/data/aiidalab-hello-world"]
+	path = tests/data/aiidalab-hello-world
+	url = https://github.com/aiidalab/aiidalab-hello-world.git

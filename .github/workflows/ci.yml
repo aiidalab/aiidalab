@@ -17,10 +17,9 @@ jobs:
 
     steps:
 
-      - name: Checkout home app
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         with:
-          repository: aiidalab/aiidalab-home
+          submodules: true
 
       - name: Check out the aiidalab repository
         uses: actions/checkout@v2
