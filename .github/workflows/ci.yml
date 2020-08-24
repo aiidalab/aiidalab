@@ -4,35 +4,25 @@ on: [push, pull_request]
 
 jobs:
 
-  test-app:
-
+  test-package:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    strategy:
-      matrix:
-        tag: [ stable, latest ]
-        browser: [ chrome, firefox ]
-      fail-fast: false
+    timeout-minutes: 5
 
     steps:
 
-      - name: Checkout home app
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         with:
-          repository: aiidalab/aiidalab-home
+          submodules: true
 
-      - name: Check out the aiidalab repository
-        uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
         with:
-          path: aiidalab-package
+          python-version: 3.7
 
-      - name: Copy aiidalab into app directory
-        run: cp -r "${GITHUB_WORKSPACE}/aiidalab-package/aiidalab" "${GITHUB_WORKSPACE}/aiidalab"
+      - name: Install package
+        run: |
+          which python
+          python -m pip install -e .[tests]
+          python -m pip freeze
 
-      - name: Test app
-        uses: aiidalab/aiidalab-test-app-action@v2
-        with:
-          image: aiidalab/aiidalab-docker-stack:${{ matrix.tag }}
-          browser: ${{ matrix.browser }}
-          notebooks: appstore.ipynb,start.ipynb
+      - name: Run tests
+        run: python -m pytest -v
