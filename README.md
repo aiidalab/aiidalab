@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/aiidalab/aiidalab-metapkg.svg?branch=master)](https://travis-ci.org/aiidalab/aiidalab-metapkg)
-
+[![Documentation Status](https://readthedocs.org/projects/aiidalab/badge/)](https://aiidalab.readthedocs.io/)
 # aiidalab-metapkg
 
 The `aiidalab` metapackage sets up the python environment found on the 
