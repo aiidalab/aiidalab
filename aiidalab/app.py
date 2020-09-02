@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from enum import Enum, auto
 from time import sleep
 from threading import Thread
-from subprocess import check_output, STDOUT
+from subprocess import check_output, STDOUT, CalledProcessError
 from dataclasses import dataclass, field, asdict
 
 from typing import List, Dict
@@ -235,6 +235,11 @@ class AiidaLabApp(traitlets.HasTraits):
             This function returns None if the short-ref cannot be resolved
             to a full reference.
             """
+            # Check if short-ref is among the remote refs:
+            for ref in self._repo.refs.allkeys():
+                if re.match(r'refs\/remotes\/(.*)?\/' + short_ref, ref.decode()):
+                    return ref
+
             # Check if short-ref is a head (branch):
             if f'refs/heads/{short_ref}'.encode() in self._repo.refs.allkeys():
                 return f'refs/heads/{short_ref}'.encode()
@@ -242,11 +247,6 @@ class AiidaLabApp(traitlets.HasTraits):
             # Check if short-ref is a tag:
             if f'refs/tags/{short_ref}'.encode() in self._repo.refs.allkeys():
                 return f'refs/tags/{short_ref}'.encode()
-
-            # Check if short-ref is among the remote refs:
-            for ref in self._repo.refs.allkeys():
-                if re.match(r'refs\/remotes\/(.*)?\/' + short_ref, ref.decode()):
-                    return ref
 
             return None
 
@@ -273,7 +273,7 @@ class AiidaLabApp(traitlets.HasTraits):
                     return obj.object[1] if isinstance(obj, Tag) else obj.id
 
                 # The release line is a head (branch).
-                if ref.startswith(b'refs/heads/'):
+                if ref.startswith(b'refs/remotes/'):
                     ref_commit = self._repo.get_peeled(ref)
                     all_tags = {ref for ref in self._repo.get_refs() if ref.startswith(b'refs/tags')}
                     tags_lookup = {get_sha(self._repo[ref]): ref for ref in all_tags}
@@ -408,7 +408,17 @@ class AiidaLabApp(traitlets.HasTraits):
 
             # Switch to desired version
             rev = self._release_line.resolve_revision(re.sub('git:', '', version).encode())
-            check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
+            try:
+                self._repo.get_tracked_branch()
+            except RuntimeError:  # detached HEAD state
+                check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
+            else:  # is tracking branch
+                try:
+                    check_output(['git', 'reset', '--hard', rev], cwd=self.path, stderr=STDOUT)
+                except CalledProcessError as error:
+                    if error.returncode != 128:
+                        raise
+                    check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
 
             self.refresh()
             return 'git:' + rev.decode()
