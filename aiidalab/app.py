@@ -407,11 +407,11 @@ class AiidaLabApp(traitlets.HasTraits):
                 check_output(['git', 'clone', url, self.path], cwd=os.path.dirname(self.path), stderr=STDOUT)
 
             # Switch to desired version
-            rev = self._release_line.resolve_revision(re.sub('git:', '', version))
+            rev = self._release_line.resolve_revision(re.sub('git:', '', version).encode())
             check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
 
             self.refresh()
-            return 'git:' + rev
+            return 'git:' + rev.decode()
 
     def update_app(self, _=None):
         """Perform app update."""
