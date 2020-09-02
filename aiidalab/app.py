@@ -426,11 +426,13 @@ class AiidaLabApp(traitlets.HasTraits):
     def update_app(self, _=None):
         """Perform app update."""
         assert self._registry_data is not None
-        with self._show_busy():
-            fetch(repo=self._repo, remote_location=self._registry_data.git_url.split('@')[0])
-            tracked_branch = self._repo.get_tracked_branch()
-            check_output(['git', 'reset', '--hard', tracked_branch], cwd=self.path, stderr=STDOUT)
-            self.refresh_async()
+        try:
+            if self._remote_update_available():
+                self._fetch_from_remote()
+        except (AssertionError, RuntimeError):
+            pass
+        available_versions = list(self._available_versions())
+        self.install_app(version=available_versions[0])
 
     def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
@@ -442,17 +444,29 @@ class AiidaLabApp(traitlets.HasTraits):
                 raise RuntimeError("App was already uninstalled!")
             self.refresh()
 
+    def _remote_update_available(self):
+        """Check whether there are more commits at the origin (based on the registry)."""
+        branch_ref = 'refs/heads/' + self._repo.branch().decode()
+        local_remote_ref = 'refs/remotes/origin/' + self._repo.branch().decode()
+        local_remote_sha = self._repo.refs[local_remote_ref.encode()].decode()
+        remote_sha = self._registry_data.gitinfo.get(branch_ref)
+        return remote_sha is not None and remote_sha != local_remote_sha
+
+    def _fetch_from_remote(self):
+        with self._show_busy():
+            fetch(repo=self._repo, remote_location=self._registry_data.git_url.split('@')[0])
+
     def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""
         try:
-            assert self._registry_data is not None
-            branch_ref = 'refs/heads/' + self._repo.branch().decode()
-            assert self._repo.get_tracked_branch() is not None
-            remote_ref = self._registry_data.gitinfo.get(branch_ref)
-            remote_update_available = remote_ref is not None and remote_ref != self._repo.head().decode()
-            self.set_trait('updates_available', remote_update_available or self._repo.update_available())
+            remote_update_available = self._remote_update_available()
         except (AssertionError, RuntimeError):
             self.set_trait('updates_available', None)
+        else:
+            available_versions = list(self._available_versions())
+            on_release_line = self.installed_version in available_versions
+            latest = self.installed_version == available_versions[0]
+            self.set_trait('updates_available', remote_update_available or (on_release_line and not latest))
 
     def _available_versions(self):
         if self.is_installed() and self._release_line is not None:

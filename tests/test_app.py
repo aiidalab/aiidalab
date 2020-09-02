@@ -6,6 +6,7 @@ from subprocess import run, CalledProcessError
 from urllib.parse import urlsplit
 
 import pytest
+from dulwich.repo import Repo
 
 import aiidalab
 from aiidalab.app import AiidaLabApp
@@ -57,18 +58,20 @@ def _hello_world_app_remote_origin(environment):
     except CalledProcessError as error:
         pytest.skip(f"missing submodules to run this test: {error}")
     else:
-        run([
-            'git', '-c', 'user.name=pytest', '-c', 'user.email=pytest@example.com', 'commit', '-m', 'latest',
-            '--allow-empty'
-        ],
+        run(
+            [  # create an empty commit so that the latest commit is not tagged
+                'git', '-c', 'user.name=pytest', '-c', 'user.email=pytest@example.com', 'commit', '-m', 'latest',
+                '--allow-empty'
+            ],
             cwd=str(origin),
             check=True)
         run(['git', 'branch', TESTING_BRANCH], cwd=str(origin), check=True)
         run(['git', 'tag', 'test-tag', 'HEAD~~'], cwd=str(origin), check=True)
+
     yield origin
 
 
-def _register_hello_world_app(url):
+def _register_hello_world_app(url, head):
     """Register the hello world app with the given url in the app registry."""
     app_data = json.loads(HELLO_WORLD_APP_DIR.joinpath('metadata.json').read_text())
     app_registry_data = {
@@ -76,7 +79,10 @@ def _register_hello_world_app(url):
         "meta_url": "https://raw.githubusercontent.com/aiidalab/aiidalab-hello-world/master/metadata.json",
         "categories": ["Utilities"],
         "groups": ["utilities"],
-        "metainfo": app_data
+        "metainfo": app_data,
+        "gitinfo": {
+            "refs/heads/master": head.decode(),
+        },
     }
     assert aiidalab.config.AIIDALAB_REGISTRY.startswith('file://')
     registry_path = Path(aiidalab.config.AIIDALAB_REGISTRY[len('file://'):])
@@ -91,7 +97,8 @@ def _register_hello_world_app(url):
 def hello_world_app(_hello_world_app_remote_origin, request):
     """Return a AiidaLabApp fixture based on the hello-world-app."""
     url = f"{_hello_world_app_remote_origin}{request.param}"
-    app_registry_data = _register_hello_world_app(url)
+    head = Repo(_hello_world_app_remote_origin).head()
+    app_registry_data = _register_hello_world_app(url, head)
     apps_path = Path(aiidalab.config.AIIDALAB_APPS)
     yield AiidaLabApp('hello-world', app_registry_data, apps_path, watch=False)
 
@@ -100,7 +107,8 @@ def hello_world_app(_hello_world_app_remote_origin, request):
 def hello_world_app_v1(_hello_world_app_remote_origin):
     """Return a AiidaLabapp fixture based on the hello-world-app pinned to v1.0.0."""
     url = f"{_hello_world_app_remote_origin}@v1.0.0"
-    app_registry_data = _register_hello_world_app(url)
+    head = Repo(_hello_world_app_remote_origin).head()
+    app_registry_data = _register_hello_world_app(url, head)
     apps_path = Path(aiidalab.config.AIIDALAB_APPS)
     yield AiidaLabApp('hello-world', app_registry_data, apps_path, watch=False)
 
@@ -190,6 +198,27 @@ def test_hello_world_app_update_available(hello_world_app):
     assert app.installed_version == original_version
     assert tracked_branch == app._repo.get_tracked_branch()
     assert not app.updates_available
+
+
+def test_hello_world_app_remote_update_available(hello_world_app):
+    """Test the update_available trait for remote updates."""
+    # Check the remote updates
+    app = hello_world_app
+
+    app.install_app()
+    assert not app.updates_available
+
+    # First reset the local branch.
+    run(['git', 'reset', '--hard', 'HEAD~'], cwd=app.path, check=True)
+    app.refresh()
+    assert app.updates_available
+
+    # Next also reset the local ref to the remote branch.
+    # However, the app should still know about the update, because of the gitinfo in the
+    # registry data.
+    run(['git', 'update-ref', 'refs/remotes/origin/master', 'HEAD'], cwd=app.path, check=True)
+    app.refresh()
+    assert app.updates_available
 
 
 def test_hello_world_app_update(hello_world_app):
