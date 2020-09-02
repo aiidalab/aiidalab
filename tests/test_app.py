@@ -96,6 +96,15 @@ def hello_world_app(_hello_world_app_remote_origin, request):
     yield AiidaLabApp('hello-world', app_registry_data, apps_path, watch=False)
 
 
+@pytest.fixture
+def hello_world_app_v1(_hello_world_app_remote_origin):
+    """Return a AiidaLabapp fixture based on the hello-world-app pinned to v1.0.0."""
+    url = f"{_hello_world_app_remote_origin}@v1.0.0"
+    app_registry_data = _register_hello_world_app(url)
+    apps_path = Path(aiidalab.config.AIIDALAB_APPS)
+    yield AiidaLabApp('hello-world', app_registry_data, apps_path, watch=False)
+
+
 def test_environment_configuration(environment):
     """Basic checks of the AiiDAlab environment fixture."""
     assert Path(aiidalab.config.AIIDALAB_HOME).is_dir()
@@ -130,3 +139,96 @@ def test_hello_world_app_install_uninstall(hello_world_app):
     assert not app.is_installed()
     assert not Path(app.path).exists()
     assert app.installed_version is aiidalab.app.AppVersion.NOT_INSTALLED
+
+
+@pytest.mark.parametrize(
+    'desired_version,corresponding_tag',
+    [
+        # tags on the default branch:
+        ('git:refs/tags/v1.0.0', 'git:refs/tags/v1.0.0'),
+        ('git:refs/tags/test-tag', 'git:refs/tags/test-tag'),
+        # commits on the default branch (tagged)
+        ('git:c5349173dbdac1644be7bb676d4f1040bf5d745c', 'git:refs/tags/v1.0.0'),
+        ('git:c5349173dbdac1644be', 'git:refs/tags/v1.0.0'),
+    ])
+def test_hello_world_app_switch_version(hello_world_app, desired_version, corresponding_tag):
+    """Test that we can switch the app's version and back."""
+    app = hello_world_app
+
+    app.install_app()
+    assert app.is_installed()
+    original_version = app.installed_version
+    tracked_branch = app._repo.get_tracked_branch()
+
+    app.install_app(version=desired_version)
+    assert app.installed_version == corresponding_tag
+    assert tracked_branch == app._repo.get_tracked_branch()
+    assert app.updates_available
+
+    app.install_app(version=original_version)
+    assert app.installed_version == original_version
+    assert tracked_branch == app._repo.get_tracked_branch()
+
+
+def test_hello_world_app_update_available(hello_world_app):
+    """Test the update_available trait."""
+    app = hello_world_app
+
+    app.install_app()
+    assert app.is_installed()
+    assert not app.updates_available
+    original_version = app.installed_version
+    tracked_branch = app._repo.get_tracked_branch()
+
+    v1 = 'git:refs/tags/v1.0.0'
+    app.install_app(version=v1)
+    assert app.installed_version == v1
+    assert tracked_branch == app._repo.get_tracked_branch()
+    assert app.updates_available
+
+    app.install_app(version=original_version)
+    assert app.installed_version == original_version
+    assert tracked_branch == app._repo.get_tracked_branch()
+    assert not app.updates_available
+
+
+def test_hello_world_app_update(hello_world_app):
+    """Test the update_available trait."""
+    app = hello_world_app
+
+    app.install_app()
+    assert app.is_installed()
+    assert not app.updates_available
+    original_version = app.installed_version
+    tracked_branch = app._repo.get_tracked_branch()
+
+    v1 = 'git:refs/tags/v1.0.0'
+    app.install_app(version=v1)
+    assert app.installed_version == v1
+    assert tracked_branch == app._repo.get_tracked_branch()
+    assert app.updates_available
+
+    app.update_app()
+    assert app.installed_version == original_version
+    assert tracked_branch == app._repo.get_tracked_branch()
+    assert not app.updates_available
+
+
+def test_hello_world_app_v1_switch_version(hello_world_app_v1):
+    """Test that we can switch the app's version and back."""
+    app = hello_world_app_v1
+    assert app._release_line.line == 'v1.0.0'
+
+    app.install_app()
+    assert app.is_installed()
+    original_version = app.installed_version
+    assert original_version == 'git:refs/tags/v1.0.0'
+    assert not app.updates_available
+
+    app.install_app(version='git:refs/tags/test-tag')
+    assert app.installed_version == aiidalab.app.AppVersion.UNKNOWN
+    assert not app.updates_available
+
+    app.install_app(version=original_version)
+    assert app.installed_version == original_version
+    assert not app.updates_available
