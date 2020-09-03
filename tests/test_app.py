@@ -113,6 +113,14 @@ def hello_world_app_v1(_hello_world_app_remote_origin):
     yield AiidaLabApp('hello-world', app_registry_data, apps_path, watch=False)
 
 
+@pytest.fixture
+def hello_world_app_unregistered(_hello_world_app_remote_origin):
+    """Return an unregistered AiidaLabApp fixture based on the hello-world-app."""
+    apps_path = Path(aiidalab.config.AIIDALAB_APPS)
+    clone(_hello_world_app_remote_origin, apps_path / 'hello-world')  # manual install
+    yield AiidaLabApp('hello-world', None, apps_path, watch=False)
+
+
 def test_environment_configuration(environment):
     """Basic checks of the AiiDAlab environment fixture."""
     assert Path(aiidalab.config.AIIDALAB_HOME).is_dir()
@@ -261,3 +269,16 @@ def test_hello_world_app_v1_switch_version(hello_world_app_v1):
     app.install_app(version=original_version)
     assert app.installed_version == original_version
     assert not app.updates_available
+
+
+def test_hello_world_app_unregistered(hello_world_app_unregistered):
+    """Test behavior of an unregistered app."""
+    app = hello_world_app_unregistered
+
+    assert app.is_installed()
+    assert app.installed_version is aiidalab.app.AppVersion.UNKNOWN
+    assert app.updates_available is None
+    app.uninstall_app()
+    assert not app.is_installed()
+    assert app.installed_version is aiidalab.app.AppVersion.NOT_INSTALLED
+    assert app.updates_available is None
