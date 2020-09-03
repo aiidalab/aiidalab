@@ -81,7 +81,8 @@ def _register_hello_world_app(url, head):
         "groups": ["utilities"],
         "metainfo": app_data,
         "gitinfo": {
-            "refs/heads/master": head.decode(),
+            f"refs/heads/{DEFAULT_BRANCH}": head.decode(),
+            f"refs/heads/{TESTING_BRANCH}": head.decode(),
         },
     }
     assert aiidalab.config.AIIDALAB_REGISTRY.startswith('file://')
