@@ -32,6 +32,10 @@ class AppNotInstalledException(Exception):
     pass
 
 
+class AppRemoteUpdateError(RuntimeError):
+    pass
+
+
 # A version is usually of type str, but it can also be a value
 # of this Enum to indicate special app states in which the
 # version cannot be determined, e.g., because the app is in a
@@ -429,7 +433,7 @@ class AiidaLabApp(traitlets.HasTraits):
         try:
             if self._remote_update_available():
                 self._fetch_from_remote()
-        except (AssertionError, RuntimeError):
+        except AppRemoteUpdateError:
             pass
         available_versions = list(self._available_versions())
         self.install_app(version=available_versions[0])
@@ -446,10 +450,26 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def _remote_update_available(self):
         """Check whether there are more commits at the origin (based on the registry)."""
-        branch_ref = 'refs/heads/' + self._repo.branch().decode()
-        local_remote_ref = 'refs/remotes/origin/' + self._repo.branch().decode()
-        local_remote_sha = self._repo.refs[local_remote_ref.encode()].decode()
-        remote_sha = self._registry_data.gitinfo.get(branch_ref)
+        error_message_prefix = "Unable to determine whether remote update is available: "
+        try:
+            repo = self._repo
+        except NotGitRepository as error:
+            raise AppRemoteUpdateError(f"{error_message_prefix}{error}")
+        try:
+            branch_ref = 'refs/heads/' + repo.branch().decode()
+            local_remote_ref = 'refs/remotes/origin/' + repo.branch().decode()
+        except RuntimeError as error:
+            raise AppRemoteUpdateError(f"{error_message_prefix}{error}")  # likely detached HEAD state
+        try:
+            local_remote_sha = repo.refs[local_remote_ref.encode()].decode()
+        except KeyError:
+            raise AppRemoteUpdateError(f"{error_message_prefix}{local_remote_ref} not found")
+        try:
+            remote_sha = self._registry_data.gitinfo.get(branch_ref)
+        except AttributeError:
+            raise AppRemoteUpdateError(f"{error_message_prefix}app is not registered")
+        except KeyError:
+            raise AppRemoteUpdateError(f"{error_message_prefix}{branch_ref} not found")
         return remote_sha is not None and remote_sha != local_remote_sha
 
     def _fetch_from_remote(self):
@@ -460,7 +480,7 @@ class AiidaLabApp(traitlets.HasTraits):
         """Check whether there is an update available for the installed release line."""
         try:
             remote_update_available = self._remote_update_available()
-        except (AssertionError, RuntimeError):
+        except AppRemoteUpdateError:
             self.set_trait('updates_available', None)
         else:
             available_versions = list(self._available_versions())
