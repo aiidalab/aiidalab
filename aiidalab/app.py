@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from enum import Enum, auto
 from time import sleep
 from threading import Thread
-from subprocess import check_output, STDOUT
+from subprocess import check_output, STDOUT, CalledProcessError
 from dataclasses import dataclass, field, asdict
 
 from typing import List, Dict
@@ -29,6 +29,10 @@ from .utils import throttled
 
 
 class AppNotInstalledException(Exception):
+    pass
+
+
+class AppRemoteUpdateError(RuntimeError):
     pass
 
 
@@ -235,6 +239,11 @@ class AiidaLabApp(traitlets.HasTraits):
             This function returns None if the short-ref cannot be resolved
             to a full reference.
             """
+            # Check if short-ref is among the remote refs:
+            for ref in self._repo.refs.allkeys():
+                if re.match(r'refs\/remotes\/(.*)?\/' + short_ref, ref.decode()):
+                    return ref
+
             # Check if short-ref is a head (branch):
             if f'refs/heads/{short_ref}'.encode() in self._repo.refs.allkeys():
                 return f'refs/heads/{short_ref}'.encode()
@@ -242,11 +251,6 @@ class AiidaLabApp(traitlets.HasTraits):
             # Check if short-ref is a tag:
             if f'refs/tags/{short_ref}'.encode() in self._repo.refs.allkeys():
                 return f'refs/tags/{short_ref}'.encode()
-
-            # Check if short-ref is among the remote refs:
-            for ref in self._repo.refs.allkeys():
-                if re.match(r'refs\/remotes\/(.*)?\/' + short_ref, ref.decode()):
-                    return ref
 
             return None
 
@@ -273,7 +277,7 @@ class AiidaLabApp(traitlets.HasTraits):
                     return obj.object[1] if isinstance(obj, Tag) else obj.id
 
                 # The release line is a head (branch).
-                if ref.startswith(b'refs/heads/'):
+                if ref.startswith(b'refs/remotes/'):
                     ref_commit = self._repo.get_peeled(ref)
                     all_tags = {ref for ref in self._repo.get_refs() if ref.startswith(b'refs/tags')}
                     tags_lookup = {get_sha(self._repo[ref]): ref for ref in all_tags}
@@ -407,20 +411,32 @@ class AiidaLabApp(traitlets.HasTraits):
                 check_output(['git', 'clone', url, self.path], cwd=os.path.dirname(self.path), stderr=STDOUT)
 
             # Switch to desired version
-            rev = self._release_line.resolve_revision(re.sub('git:', '', version))
-            check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
+            rev = self._release_line.resolve_revision(re.sub('git:', '', version).encode())
+            try:
+                self._repo.get_tracked_branch()
+            except RuntimeError:  # detached HEAD state
+                check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
+            else:  # is tracking branch
+                try:
+                    check_output(['git', 'reset', '--hard', rev], cwd=self.path, stderr=STDOUT)
+                except CalledProcessError as error:
+                    if error.returncode != 128:
+                        raise
+                    check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
 
             self.refresh()
-            return 'git:' + rev
+            return 'git:' + rev.decode()
 
     def update_app(self, _=None):
         """Perform app update."""
         assert self._registry_data is not None
-        with self._show_busy():
-            fetch(repo=self._repo, remote_location=self._registry_data.git_url.split('@')[0])
-            tracked_branch = self._repo.get_tracked_branch()
-            check_output(['git', 'reset', '--hard', tracked_branch], cwd=self.path, stderr=STDOUT)
-            self.refresh_async()
+        try:
+            if self._remote_update_available():
+                self._fetch_from_remote()
+        except AppRemoteUpdateError:
+            pass
+        available_versions = list(self._available_versions())
+        self.install_app(version=available_versions[0])
 
     def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
@@ -432,17 +448,45 @@ class AiidaLabApp(traitlets.HasTraits):
                 raise RuntimeError("App was already uninstalled!")
             self.refresh()
 
+    def _remote_update_available(self):
+        """Check whether there are more commits at the origin (based on the registry)."""
+        error_message_prefix = "Unable to determine whether remote update is available: "
+        try:
+            repo = self._repo
+        except NotGitRepository as error:
+            raise AppRemoteUpdateError(f"{error_message_prefix}{error}")
+        try:
+            branch_ref = 'refs/heads/' + repo.branch().decode()
+            local_remote_ref = 'refs/remotes/origin/' + repo.branch().decode()
+        except RuntimeError as error:
+            raise AppRemoteUpdateError(f"{error_message_prefix}{error}")  # likely detached HEAD state
+        try:
+            local_remote_sha = repo.refs[local_remote_ref.encode()].decode()
+        except KeyError:
+            raise AppRemoteUpdateError(f"{error_message_prefix}{local_remote_ref} not found")
+        try:
+            remote_sha = self._registry_data.gitinfo.get(branch_ref)
+        except AttributeError:
+            raise AppRemoteUpdateError(f"{error_message_prefix}app is not registered")
+        except KeyError:
+            raise AppRemoteUpdateError(f"{error_message_prefix}{branch_ref} not found")
+        return remote_sha is not None and remote_sha != local_remote_sha
+
+    def _fetch_from_remote(self):
+        with self._show_busy():
+            fetch(repo=self._repo, remote_location=self._registry_data.git_url.split('@')[0])
+
     def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""
         try:
-            assert self._registry_data is not None
-            branch_ref = 'refs/heads/' + self._repo.branch().decode()
-            assert self._repo.get_tracked_branch() is not None
-            remote_ref = self._registry_data.gitinfo.get(branch_ref)
-            remote_update_available = remote_ref is not None and remote_ref != self._repo.head().decode()
-            self.set_trait('updates_available', remote_update_available or self._repo.update_available())
-        except (AssertionError, RuntimeError):
+            remote_update_available = self._remote_update_available()
+        except AppRemoteUpdateError:
             self.set_trait('updates_available', None)
+        else:
+            available_versions = list(self._available_versions())
+            on_release_line = self.installed_version in available_versions
+            latest = self.installed_version == available_versions[0]
+            self.set_trait('updates_available', remote_update_available or (on_release_line and not latest))
 
     def _available_versions(self):
         if self.is_installed() and self._release_line is not None:
@@ -452,11 +496,12 @@ class AiidaLabApp(traitlets.HasTraits):
     def _installed_version(self):
         """Determine the currently installed version."""
         if self.is_installed():
-            modified = self._repo.dirty()
-            if not (self._release_line is None or modified):
-                revision = self._release_line.current_revision()
-                if revision is not None:
-                    return f'git:{revision.decode()}'
+            if self._has_git_repo():
+                modified = self._repo.dirty()
+                if not (self._release_line is None or modified):
+                    revision = self._release_line.current_revision()
+                    if revision is not None:
+                        return f'git:{revision.decode()}'
             return AppVersion.UNKNOWN
         return AppVersion.NOT_INSTALLED
 
