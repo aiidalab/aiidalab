@@ -476,11 +476,12 @@ class AiidaLabApp(traitlets.HasTraits):
     def _installed_version(self):
         """Determine the currently installed version."""
         if self.is_installed():
-            modified = self._repo.dirty()
-            if not (self._release_line is None or modified):
-                revision = self._release_line.current_revision()
-                if revision is not None:
-                    return f'git:{revision.decode()}'
+            if self._has_git_repo():
+                modified = self._repo.dirty()
+                if not (self._release_line is None or modified):
+                    revision = self._release_line.current_revision()
+                    if revision is not None:
+                        return f'git:{revision.decode()}'
             return AppVersion.UNKNOWN
         return AppVersion.NOT_INSTALLED
 
