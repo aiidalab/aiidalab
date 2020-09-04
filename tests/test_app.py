@@ -210,6 +210,24 @@ def test_hello_world_app_switch_version(hello_world_app, desired_version, corres
     assert tracked_branch == app._repo.get_tracked_branch()
 
 
+def test_hello_world_app_detached_head_state(hello_world_app):
+    """Test whether the app recovers from a detached HEAD state after version switch."""
+    app = hello_world_app
+
+    app.install_app()
+    assert app.is_installed()
+    original_version = app.installed_version
+    tracked_branch = app._repo.get_tracked_branch()
+
+    checkout(app.path, 'HEAD~')  # switch to detached HEAD state
+    with pytest.raises(RuntimeError):
+        assert tracked_branch == app._repo.get_tracked_branch()
+
+    app.install_app(version=original_version)
+    assert app.installed_version == original_version
+    assert tracked_branch == app._repo.get_tracked_branch()
+
+
 def test_hello_world_app_update_available(hello_world_app):
     """Test the update_available trait."""
     app = hello_world_app
