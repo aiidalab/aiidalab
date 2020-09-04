@@ -451,26 +451,28 @@ class AiidaLabApp(traitlets.HasTraits):
     def _remote_update_available(self):
         """Check whether there are more commits at the origin (based on the registry)."""
         error_message_prefix = "Unable to determine whether remote update is available: "
-        try:
+
+        try:  # Obtain reference to git repository.
             repo = self._repo
         except NotGitRepository as error:
             raise AppRemoteUpdateError(f"{error_message_prefix}{error}")
-        try:
-            branch_ref = 'refs/heads/' + repo.branch().decode()
-            local_remote_ref = 'refs/remotes/origin/' + repo.branch().decode()
-        except RuntimeError as error:
-            raise AppRemoteUpdateError(f"{error_message_prefix}{error}")  # likely detached HEAD state
-        try:
-            local_remote_sha = repo.refs[local_remote_ref.encode()].decode()
-        except KeyError:
-            raise AppRemoteUpdateError(f"{error_message_prefix}{local_remote_ref} not found")
-        try:
-            remote_sha = self._registry_data.gitinfo.get(branch_ref)
+
+        try:  # Determine sha of remote-tracking branch from registry.
+            branch = self._release_line.line
+            branch_ref = 'refs/heads/' + branch
+            local_remote_ref = 'refs/remotes/origin/' + branch
+            remote_sha = self._registry_data.gitinfo[branch_ref]
         except AttributeError:
             raise AppRemoteUpdateError(f"{error_message_prefix}app is not registered")
         except KeyError:
-            raise AppRemoteUpdateError(f"{error_message_prefix}{branch_ref} not found")
-        return remote_sha is not None and remote_sha != local_remote_sha
+            raise AppRemoteUpdateError(f"{error_message_prefix}no data about this release line in registry")
+
+        try:  # Determine sha of remote-tracking branch from repository.
+            local_remote_sha = repo.refs[local_remote_ref.encode()].decode()
+        except KeyError:
+            return False  # remote ref not found, release line likely not a branch
+
+        return remote_sha != local_remote_sha
 
     def _fetch_from_remote(self):
         with self._show_busy():
