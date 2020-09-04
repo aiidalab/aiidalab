@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from enum import Enum, auto
 from time import sleep
 from threading import Thread
-from subprocess import check_output, STDOUT, CalledProcessError
+from subprocess import check_output, STDOUT
 from dataclasses import dataclass, field, asdict
 
 from typing import List, Dict
@@ -324,6 +324,10 @@ class AiidaLabApp(traitlets.HasTraits):
 
             return None  # current revision not on the release line
 
+        def is_branch(self):
+            """Return True if release line is a branch."""
+            return f'refs/remotes/origin/{self.line}'.encode() in self._repo.refs
+
     def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
         super().__init__()
 
@@ -412,17 +416,12 @@ class AiidaLabApp(traitlets.HasTraits):
 
             # Switch to desired version
             rev = self._release_line.resolve_revision(re.sub('git:', '', version).encode())
-            try:
-                self._repo.get_tracked_branch()
-            except RuntimeError:  # detached HEAD state
+            if self._release_line.is_branch():
+                branch = self._release_line.line
+                check_output(['git', 'checkout', '--force', branch], cwd=self.path, stderr=STDOUT)
+                check_output(['git', 'reset', '--hard', rev], cwd=self.path, stderr=STDOUT)
+            else:
                 check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
-            else:  # is tracking branch
-                try:
-                    check_output(['git', 'reset', '--hard', rev], cwd=self.path, stderr=STDOUT)
-                except CalledProcessError as error:
-                    if error.returncode != 128:
-                        raise
-                    check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
 
             self.refresh()
             return 'git:' + rev.decode()
