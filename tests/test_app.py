@@ -21,6 +21,26 @@ def clone(source, target):
     run(['git', 'clone', str(source), str(target)], check=True)
 
 
+def checkout(repo, ref):
+    """Checkout ref."""
+    run(['git', 'checkout', ref], cwd=repo, check=True)
+
+
+def commit(repo, message):
+    git = ['git', '-c', 'user.name=pytest', '-c', 'user.email=pytest@example.com']
+    run(git + ['commit', '--allow-empty', '-m', message], cwd=str(repo), check=True)
+
+
+def tag(repo, name, head='HEAD'):
+    git = ['git', '-c', 'user.name=pytest', '-c', 'user.email=pytest@example.com']
+    run(git + ['tag', name, head], cwd=str(repo), check=True)
+
+
+def reset_hard(repo, commit):
+    git = ['git', '-c', 'user.name=pytest', '-c', 'user.email=pytest@example.com']
+    run(git + ['reset', '--hard', commit], cwd=str(repo), check=True)
+
+
 @pytest.fixture
 def empty_registry():
     return dict(apps=dict(), categories=dict())
@@ -58,15 +78,17 @@ def _hello_world_app_remote_origin(environment):
     except CalledProcessError as error:
         pytest.skip(f"missing submodules to run this test: {error}")
     else:
-        run(
-            [  # create an empty commit so that the latest commit is not tagged
-                'git', '-c', 'user.name=pytest', '-c', 'user.email=pytest@example.com', 'commit', '-m', 'latest',
-                '--allow-empty'
-            ],
-            cwd=str(origin),
-            check=True)
+        # Create orphaned tag
+        commit(origin, 'orphaned')
+        tag(origin, 'orphaned-tag')
+        reset_hard(origin, 'HEAD~')
+
+        # Create two empty commits.
+        for message in ('first', 'second'):
+            commit(origin, message)
+        # Create a second branch that is identical to the default branch.
         run(['git', 'branch', TESTING_BRANCH], cwd=str(origin), check=True)
-        run(['git', 'tag', 'test-tag', 'HEAD~~'], cwd=str(origin), check=True)
+        run(['git', 'tag', 'test-tag', 'HEAD~'], cwd=str(origin), check=True)
 
     yield origin
 
@@ -104,11 +126,12 @@ def hello_world_app(_hello_world_app_remote_origin, request):
     yield AiidaLabApp('hello-world', app_registry_data, apps_path, watch=False)
 
 
-@pytest.fixture
-def hello_world_app_v1(_hello_world_app_remote_origin):
-    """Return a AiidaLabapp fixture based on the hello-world-app pinned to v1.0.0."""
-    url = f"{_hello_world_app_remote_origin}@v1.0.0"
-    head = Repo(_hello_world_app_remote_origin).head()
+@pytest.fixture(params=['v1.0.0', 'orphaned-tag'])
+def hello_world_app_tagged(_hello_world_app_remote_origin, request):
+    """Return a AiidaLabapp fixture based on the hello-world-app pinned to a specific version."""
+    tag = request.param
+    url = f"{_hello_world_app_remote_origin}@{tag}"
+    head = Repo(_hello_world_app_remote_origin).refs[f'refs/tags/{tag}'.encode()]
     app_registry_data = _register_hello_world_app(url, head)
     apps_path = Path(aiidalab.config.AIIDALAB_APPS)
     yield AiidaLabApp('hello-world', app_registry_data, apps_path, watch=False)
@@ -252,15 +275,15 @@ def test_hello_world_app_update(hello_world_app):
     assert not app.updates_available
 
 
-def test_hello_world_app_v1_switch_version(hello_world_app_v1):
+def test_hello_world_app_tagged_switch_version(hello_world_app_tagged):
     """Test that we can switch the app's version and back."""
-    app = hello_world_app_v1
-    assert app._release_line.line == 'v1.0.0'
+    app = hello_world_app_tagged
+    assert app._release_line.line in ('v1.0.0', 'orphaned-tag')
 
     app.install_app()
     assert app.is_installed()
     original_version = app.installed_version
-    assert original_version == 'git:refs/tags/v1.0.0'
+    assert original_version in ('git:refs/tags/v1.0.0', 'git:refs/tags/orphaned-tag')
     assert not app.updates_available
 
     app.install_app(version='git:refs/tags/test-tag')
