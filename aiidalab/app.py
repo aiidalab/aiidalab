@@ -12,6 +12,7 @@ from time import sleep
 from threading import Thread
 from subprocess import check_output, STDOUT
 from dataclasses import dataclass, field, asdict
+from urllib.parse import urlsplit, urldefrag
 
 from typing import List, Dict
 
@@ -203,7 +204,7 @@ class AiidaLabApp(traitlets.HasTraits):
     class _GitReleaseLine:
         """Utility class to operate on the release line of the app.
 
-        A release line is specified via the app url as the part after the '@'.
+        A release line is specified via the app url as part of the fragment (after '#').
 
         A release line can be specified either as
             a) a commit denoted by a hexadecimal number with either 20 or 40 digits, or
@@ -336,11 +337,8 @@ class AiidaLabApp(traitlets.HasTraits):
             self._release_line = None
         else:
             self._registry_data = self.AppRegistryData(**app_data)
-
-            if '@' in self._registry_data.git_url:
-                self._release_line = self._GitReleaseLine(self, self._registry_data.git_url.split('@')[1])
-            else:
-                self._release_line = self._GitReleaseLine(self, AIIDALAB_DEFAULT_GIT_BRANCH)
+            parsed_url = urlsplit(self._registry_data.git_url)
+            self._release_line = self._GitReleaseLine(self, parsed_url.fragment or AIIDALAB_DEFAULT_GIT_BRANCH)
 
         self.name = name
         self.path = os.path.join(aiidalab_apps_path, self.name)
@@ -410,8 +408,7 @@ class AiidaLabApp(traitlets.HasTraits):
                 raise ValueError(f"Unknown version format: '{version}'")
 
             if not os.path.isdir(self.path):  # clone first
-                url = self._registry_data.git_url.split('@')[0]
-
+                url = urldefrag(self._registry_data.git_url).url
                 check_output(['git', 'clone', url, self.path], cwd=os.path.dirname(self.path), stderr=STDOUT)
 
             # Switch to desired version
@@ -475,7 +472,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def _fetch_from_remote(self):
         with self._show_busy():
-            fetch(repo=self._repo, remote_location=self._registry_data.git_url.split('@')[0])
+            fetch(repo=self._repo, remote_location=urldefrag(self._registry_data.git_url).url)
 
     def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""

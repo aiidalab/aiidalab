@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 from subprocess import run, CalledProcessError
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urldefrag
 
 import pytest
 from dulwich.repo import Repo
@@ -18,7 +18,7 @@ TESTING_BRANCH = 'testing-3926140692'  # we expect that this branch does not exi
 
 def clone(source, target):
     """Git clone source at target."""
-    run(['git', 'clone', str(source), str(target)], check=True)
+    run(['git', 'clone', urldefrag(str(source)).url, str(target)], check=True)
 
 
 def checkout(repo, ref):
@@ -116,7 +116,7 @@ def _register_hello_world_app(url, head):
     return app_registry_data
 
 
-@pytest.fixture(params=['', f'@{DEFAULT_BRANCH}', f'@{TESTING_BRANCH}'])
+@pytest.fixture(params=['', f'#{DEFAULT_BRANCH}', f'#{TESTING_BRANCH}'])
 def hello_world_app(_hello_world_app_remote_origin, request):
     """Return a AiidaLabApp fixture based on the hello-world-app."""
     url = f"{_hello_world_app_remote_origin}{request.param}"
@@ -130,7 +130,7 @@ def hello_world_app(_hello_world_app_remote_origin, request):
 def hello_world_app_tagged(_hello_world_app_remote_origin, request):
     """Return a AiidaLabapp fixture based on the hello-world-app pinned to a specific version."""
     tag = request.param
-    url = f"{_hello_world_app_remote_origin}@{tag}"
+    url = f"{_hello_world_app_remote_origin}#{tag}"
     head = Repo(_hello_world_app_remote_origin).refs[f'refs/tags/{tag}'.encode()]
     app_registry_data = _register_hello_world_app(url, head)
     apps_path = Path(aiidalab.config.AIIDALAB_APPS)
