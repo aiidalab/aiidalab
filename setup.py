@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-"""Setting up base widgets for base package for AiiDA lab."""
+"""Setting up base widgets for base package for AiiDAlab."""
 import json
 
 from setuptools import setup, find_packages

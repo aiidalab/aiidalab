@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Module to manage AiiDA lab apps."""
+"""Module to manage AiiDAlab apps."""
 
 import re
 import os
@@ -50,7 +50,7 @@ class AiidaLabAppWatch:
     """Watch to monitor the app installation status.
 
     Create a watch instance to monitor the installation status of an
-    AiiDA lab app. This is achieved by monitoring the app repository
+    AiiDAlab app. This is achieved by monitoring the app repository
     for existance and changes.
 
     Arguments:
@@ -166,7 +166,7 @@ class AiidaLabAppWatch:
 
 
 class AiidaLabApp(traitlets.HasTraits):
-    """Manage installation status of an AiiDA lab app.
+    """Manage installation status of an AiiDAlab app.
 
     Arguments:
 

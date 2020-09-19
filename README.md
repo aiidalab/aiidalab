@@ -1,14 +1,14 @@
-[![Build Status](https://travis-ci.org/aiidalab/aiidalab-metapkg.svg?branch=master)](https://travis-ci.org/aiidalab/aiidalab-metapkg)
+[![Build Status](https://travis-ci.org/aiidalab/aiidalab.svg?branch=master)](https://travis-ci.org/aiidalab/aiidalab)
 [![Documentation Status](https://readthedocs.org/projects/aiidalab/badge/)](https://aiidalab.readthedocs.io/)
-# aiidalab-metapkg
+# AiiDAlab package
 
-The `aiidalab` metapackage sets up the python environment found on the 
-[AiiDA lab](https://aiidalab.materialscloud.org).
+The `aiidalab` package sets up the python environment found on the
+[AiiDAlab](https://aiidalab.materialscloud.org).
 Amongst others, this includes
 
- * aiida-core
  * a wide range of aiida plugins
  * jupyter
+ * AiiDAlab base widgets
  * ...
 
 The relevant jupyter notebook extensions are enabled automatically.

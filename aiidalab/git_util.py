@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Utility module for git-managed AiiDA lab apps."""
+"""Utility module for git-managed AiiDAlab apps."""
 import re
 from enum import Enum
 
