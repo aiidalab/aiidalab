@@ -1,4 +1,4 @@
-"""Helpful utilities for the AiiDA lab tools."""
+"""Helpful utilities for the AiiDAlab tools."""
 
 import json
 import time
@@ -34,7 +34,7 @@ except ImportError:
 
 
 def load_app_registry():
-    """Load apps' information from the AiiDA lab registry."""
+    """Load apps' information from the AiiDAlab registry."""
     parsed_url = urlparse(AIIDALAB_REGISTRY)
     if parsed_url.scheme == 'file':
         with open(parsed_url.path) as file:
