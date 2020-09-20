@@ -26,6 +26,9 @@ jupyter nbextension install --sys-prefix --py fileupload
 [1] See the [jupyter-notebook documentation](http://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Distributing%20Jupyter%20Extensions%20as%20Python%20Packages.html#Automatically-enabling-a-server-extension-and-nbextension)  
 [2] http://jupyter-contrib-nbextensions.readthedocs.io/en/latest/install.html
 
+## Documentation
+The documentation can be found on the [following web page](https://aiidalab.readthedocs.io).
+
 ## Testing
 
 ```
