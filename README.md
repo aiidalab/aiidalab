@@ -1,14 +1,14 @@
-[![Build Status](https://travis-ci.org/aiidalab/aiidalab-metapkg.svg?branch=master)](https://travis-ci.org/aiidalab/aiidalab-metapkg)
+[![Build Status](https://travis-ci.org/aiidalab/aiidalab.svg?branch=master)](https://travis-ci.org/aiidalab/aiidalab)
 [![Documentation Status](https://readthedocs.org/projects/aiidalab/badge/)](https://aiidalab.readthedocs.io/)
-# aiidalab-metapkg
+# AiiDAlab package
 
-The `aiidalab` metapackage sets up the python environment found on the 
-[AiiDA lab](https://aiidalab.materialscloud.org).
+The `aiidalab` package sets up the python environment found on the
+[AiiDAlab](https://aiidalab.materialscloud.org).
 Amongst others, this includes
 
- * aiida-core
  * a wide range of aiida plugins
  * jupyter
+ * AiiDAlab base widgets
  * ...
 
 The relevant jupyter notebook extensions are enabled automatically.
@@ -25,6 +25,9 @@ jupyter nbextension install --sys-prefix --py fileupload
 ```
 [1] See the [jupyter-notebook documentation](http://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Distributing%20Jupyter%20Extensions%20as%20Python%20Packages.html#Automatically-enabling-a-server-extension-and-nbextension)  
 [2] http://jupyter-contrib-nbextensions.readthedocs.io/en/latest/install.html
+
+## Documentation
+The documentation can be found on the [following web page](https://aiidalab.readthedocs.io).
 
 ## Testing
 

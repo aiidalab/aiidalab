@@ -1,4 +1,4 @@
-"""Module to manange AiiDA lab configuration."""
+"""Module to manange AiiDAlab configuration."""
 from os import getenv
 
 AIIDALAB_HOME = getenv('AIIDALAB_HOME', '/project')
