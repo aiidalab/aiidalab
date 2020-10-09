@@ -527,17 +527,18 @@ class AiidaLabApp(traitlets.HasTraits):
     @property
     def metadata(self):
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
+        if self._registry_data is not None and self._registry_data.metainfo:
+            return dict(self._registry_data.metainfo)
+
         if self.is_installed():
             try:
                 with open(os.path.join(self.path, 'metadata.json')) as json_file:
                     return json.load(json_file)
             except IOError:
                 return dict()
-        elif self._registry_data is not None and self._registry_data.metainfo:
-            return dict(self._registry_data.metainfo)
-        else:
-            raise RuntimeError(
-                f"Requested app '{self.name}' is not installed and is also not registered on the app registry.")
+
+        raise RuntimeError(
+            f"Requested app '{self.name}' is not installed and is also not registered on the app registry.")
 
     def _get_from_metadata(self, what):
         """Get information from metadata."""
