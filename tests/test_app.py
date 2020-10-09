@@ -56,6 +56,7 @@ def environment(tmp_path, monkeypatch, empty_registry):
     monkeypatch.setattr(aiidalab.config, 'AIIDALAB_APPS', str(root / 'project/apps'))
     monkeypatch.setattr(aiidalab.config, 'AIIDALAB_SCRIPTS', str(root / 'opt'))
     monkeypatch.setattr(aiidalab.config, 'AIIDALAB_REGISTRY', f'file://{registry_path}')
+    monkeypatch.setattr(aiidalab.config, 'AIIDALAB_ENVIRONMENT_VERSION', '1.2.3')
 
     Path(aiidalab.config.AIIDALAB_HOME).mkdir()
     Path(aiidalab.config.AIIDALAB_APPS).mkdir()
@@ -96,6 +97,10 @@ def _hello_world_app_remote_origin(environment):
 def _register_hello_world_app(url, head):
     """Register the hello world app with the given url in the app registry."""
     app_data = json.loads(HELLO_WORLD_APP_DIR.joinpath('metadata.json').read_text())
+    app_data['aiidalab_environment_version'] = {
+        '<1.0.0': '<1.0.0',  # should not match any available version
+        '~=1.0': '~=1.0.0',  # the current release version
+    }
     app_registry_data = {
         "git_url": url,
         "meta_url": "https://raw.githubusercontent.com/aiidalab/aiidalab-hello-world/master/metadata.json",
@@ -324,3 +329,13 @@ def test_hello_world_app_unregistered(hello_world_app_unregistered):
     assert not app.is_installed()
     assert app.installed_version is aiidalab.app.AppVersion.NOT_INSTALLED
     assert app.updates_available is None
+
+
+def test_hello_world_app_compatibility(hello_world_app_tagged):
+    """Test whether the app environment compatibility is correctly determined."""
+    app = hello_world_app_tagged
+
+    assert 'aiidalab_environment_version' in app.metadata
+    assert app.compatible is None  # not installed yet
+    app.install_app()
+    assert app.compatible is ('v1.0.0' in app.installed_version)
