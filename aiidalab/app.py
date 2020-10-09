@@ -6,6 +6,7 @@ import os
 import shutil
 import json
 import errno
+from collections import defaultdict
 from contextlib import contextmanager
 from enum import Enum, auto
 from time import sleep
@@ -20,7 +21,7 @@ import traitlets
 from dulwich.porcelain import fetch
 from dulwich.errors import NotGitRepository
 from dulwich.objects import Tag, Commit
-from packaging.specifiers import SpecifierSet
+from packaging.specifiers import SpecifierSet, InvalidSpecifier
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
@@ -284,17 +285,23 @@ class AiidaLabApp(traitlets.HasTraits):
                 if ref.startswith(b'refs/remotes/'):
                     ref_commit = self._repo.get_peeled(ref)
                     all_tags = {ref for ref in self._repo.get_refs() if ref.startswith(b'refs/tags')}
-                    tags_lookup = {get_sha(self._repo[ref]): ref for ref in all_tags}
+
+                    # Create lookup table from commit -> tags
+                    tags_lookup = defaultdict(set)
+                    for tag in all_tags:
+                        tags_lookup[get_sha(self._repo[tag])].add(tag)
+
+                    # Determine all the tagged commits on the branch (HEAD)
                     commits_on_head = self._repo.get_walker(self._repo.refs[ref])
                     tagged_commits_on_head = [c.commit.id for c in commits_on_head if c.commit.id in tags_lookup]
 
                     # Always yield the tip of the branch (HEAD), i.e., the latest commit on the branch.
-                    yield tags_lookup.get(ref_commit, ref)
+                    yield from tags_lookup.get(ref_commit, (ref,))
 
                     # Yield all other tagged commits on the branch:
                     for commit in tagged_commits_on_head:
                         if commit != ref_commit:
-                            yield tags_lookup[commit]
+                            yield from tags_lookup[commit]
 
                 # The release line is a tag.
                 elif ref.startswith(b'refs/tags/'):
@@ -309,8 +316,10 @@ class AiidaLabApp(traitlets.HasTraits):
 
         def resolve_revision(self, commit):
             """Map a given commit to a named version (branch/tag) if possible."""
-            lookup = {self._resolve_commit(version): version for version in self.find_versions()}
-            return lookup.get(commit, commit)
+            lookup = defaultdict(set)
+            for version in self.find_versions():
+                lookup[self._resolve_commit(version)].add(version)
+            return lookup.get(commit, {commit})
 
         def _on_release_line(self, rev):
             """Determine whether the release line contains the provided version."""
@@ -324,7 +333,7 @@ class AiidaLabApp(traitlets.HasTraits):
             current_commit = self._repo.head()
             on_release_line = self._on_release_line(current_commit)
             if on_release_line:
-                return self.resolve_revision(current_commit)
+                return list(sorted(self.resolve_revision(current_commit)))[0]
 
             return None  # current revision not on the release line
 
@@ -398,14 +407,12 @@ class AiidaLabApp(traitlets.HasTraits):
         except NotGitRepository:
             return False
 
-    def install_app(self, version=None):
-        """Installing the app."""
+    def _install_app_version(self, version):
+        """Install a specific app version."""
         assert self._registry_data is not None
         assert self._release_line is not None
 
         with self._show_busy():
-            if version is None:
-                version = f'git:{self._release_line.line}'
 
             if not re.fullmatch(r'git:((?P<commit>([0-9a-fA-F]{20}){1,2})|(?P<short_ref>.+))', version):
                 raise ValueError(f"Unknown version format: '{version}'")
@@ -415,7 +422,7 @@ class AiidaLabApp(traitlets.HasTraits):
                 check_output(['git', 'clone', url, self.path], cwd=os.path.dirname(self.path), stderr=STDOUT)
 
             # Switch to desired version
-            rev = self._release_line.resolve_revision(re.sub('git:', '', version).encode())
+            rev = self._release_line.resolve_revision(re.sub('git:', '', version)).pop().encode()
             if self._release_line.is_branch():
                 branch = self._release_line.line
                 check_output(['git', 'checkout', '--force', branch], cwd=self.path, stderr=STDOUT)
@@ -425,6 +432,19 @@ class AiidaLabApp(traitlets.HasTraits):
 
             self.refresh()
             return 'git:' + rev.decode()
+
+    def install_app(self, version=None):
+        """Installing the app."""
+        if version is None:  # initial installation
+            self._install_app_version(f'git:{self._release_line.line}')
+
+            # switch to compatible version if possible
+            available_versions = list(self._available_versions())
+            if available_versions:
+                self._install_app_version(version=available_versions[0])
+
+        else:  # app already installed, switch version
+            self._install_app_version(version=version)
 
     def update_app(self, _=None):
         """Perform app update."""
@@ -486,13 +506,20 @@ class AiidaLabApp(traitlets.HasTraits):
         else:
             available_versions = list(self._available_versions())
             on_release_line = self.installed_version in available_versions
-            latest = self.installed_version == available_versions[0]
-            self.set_trait('updates_available', remote_update_available or (on_release_line and not latest))
+            if len(available_versions) > 0:
+                latest = (self.installed_version == available_versions[0])
+                local_update_available = on_release_line and not latest
+            else:
+                local_update_available = None
+            self.set_trait('updates_available', remote_update_available or local_update_available)
 
     def _available_versions(self):
+        """Return all available and compatible versions."""
         if self.is_installed() and self._release_line is not None:
-            for version in self._release_line.find_versions():
-                yield 'git:' + version.decode()
+            for _version in self._release_line.find_versions():
+                version = 'git:' + _version.decode()
+                if self._is_compatible(version):
+                    yield version
 
     def _installed_version(self):
         """Determine the currently installed version."""
@@ -510,29 +537,48 @@ class AiidaLabApp(traitlets.HasTraits):
     def _default_compatible(self):  # pylint: disable=no-self-use
         return None
 
-    def _is_compatible(self):
+    def _is_compatible(self, app_version=None):
         """Determine whether the currently installed version is compatible."""
-        app_version = self.installed_version
+        if app_version is None:
+            app_version = self.installed_version
+
+        def get_version_identifier(version):
+            "Get version identifier from version (e.g. git:refs/tags/v1.0.0 -> v1.0.0)."
+            if version.startswith('git:refs/tags/'):
+                return version[len('git:refs/tags/'):]
+            if version.startswith('git:refs/heads/'):
+                return version[len('git:refs/heads/'):]
+            if version.startswith('git:refs/remotes/'):  # remote branch
+                return re.sub(r'git:refs\/remotes\/(.+?)\/', '', version)
+            return version
+
+        class RegexMatchSpecifierSet:
+            """Interpret 'invalid' specifier sets as regular expression pattern."""
+
+            def __init__(self, specifiers=''):
+                self.specifiers = specifiers
+
+            def __contains__(self, version):
+                return re.match(self.specifiers, version) is not None
+
+        def specifier_set(specifiers=''):
+            try:
+                return SpecifierSet(specifiers=specifiers, prereleases=True)
+            except InvalidSpecifier:
+                return RegexMatchSpecifierSet(specifiers=specifiers)
 
         if isinstance(app_version, str):
             # Retrieve and convert the compatibility map from the app metadata.
             compat_map = self.metadata.get('aiidalab_environment_version', {'': '~=1.0'})
-            compat_map = {SpecifierSet(a): SpecifierSet(b) for a, b in compat_map.items()}
+            compat_map = {'': compat_map} if isinstance(compat_map, str) else compat_map
+            compat_map = {specifier_set(a): specifier_set(b) for a, b in compat_map.items()}
 
-            def format_version(version):
-                if version.startswith('git:refs/tags/'):
-                    return version[len('git:refs/tags/'):]
-                if version.startswith('git:refs/heads/'):
-                    return version[len('git:refs/heads/'):]
-                if version.startswith('git:refs/remotes/'):  # remote branch
-                    return re.sub(r'git:refs\/remotes\/(.+?)\/', '', version)
-                return version
+            app_version_identifier = get_version_identifier(app_version)
+            matching_specs = [app_spec for app_spec in compat_map if app_version_identifier in app_spec]
 
-            app_version = format_version(self.installed_version)
-            matching_specs = [app_spec for app_spec in compat_map if app_version in app_spec]
             return any(AIIDALAB_ENVIRONMENT_VERSION in compat_map[spec] for spec in matching_specs)
 
-        return None  # indetermined since the app is not installed
+        return None  # compatibility indetermined since the app is not installed
 
     @throttled(calls_per_second=1)
     def refresh(self):

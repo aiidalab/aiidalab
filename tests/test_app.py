@@ -31,6 +31,10 @@ def commit(repo, message):
     run(git + ['commit', '--allow-empty', '-m', message], cwd=str(repo), check=True)
 
 
+def branch(repo, name):
+    run(['git', 'branch', name], cwd=str(repo), check=True)
+
+
 def tag(repo, name, head='HEAD'):
     git = ['git', '-c', 'user.name=pytest', '-c', 'user.email=pytest@example.com']
     run(git + ['tag', name, head], cwd=str(repo), check=True)
@@ -52,11 +56,13 @@ def environment(tmp_path, monkeypatch, empty_registry):
     root = Path(tmp_path)
     registry_path = root / 'apps_meta.json'
 
+    monkeypatch.setenv('AIIDALAB_ENVIRONMENT_VERSION', '1.2.3')
+    monkeypatch.setattr(aiidalab.config, 'AIIDALAB_ENVIRONMENT_VERSION', '1.2.3')
+    monkeypatch.setattr(aiidalab.app, 'AIIDALAB_ENVIRONMENT_VERSION', '1.2.3')
     monkeypatch.setattr(aiidalab.config, 'AIIDALAB_HOME', str(root / 'project'))
     monkeypatch.setattr(aiidalab.config, 'AIIDALAB_APPS', str(root / 'project/apps'))
     monkeypatch.setattr(aiidalab.config, 'AIIDALAB_SCRIPTS', str(root / 'opt'))
     monkeypatch.setattr(aiidalab.config, 'AIIDALAB_REGISTRY', f'file://{registry_path}')
-    monkeypatch.setattr(aiidalab.config, 'AIIDALAB_ENVIRONMENT_VERSION', '1.2.3')
 
     Path(aiidalab.config.AIIDALAB_HOME).mkdir()
     Path(aiidalab.config.AIIDALAB_APPS).mkdir()
@@ -69,7 +75,17 @@ def environment(tmp_path, monkeypatch, empty_registry):
 
 @pytest.fixture
 def _hello_world_app_remote_origin(environment):
-    """Create and configure a temporary remote origin for the hello world app."""
+    """Create and configure a temporary remote origin for the hello world app.
+
+    The app has the following version history:
+
+        * d2b4a69 (HEAD -> master, testing-3926140692) third
+        * e53b989 (tag: v1.1.1, tag: test-tag) second
+        * da0bed1 first
+        | * f8bd8f2 (tag: orphaned-tag) orphaned
+        |/
+        * c534917 (tag: v1.0.0, origin/master, origin/HEAD) Upload screenshots as artifacts.
+    """
     # Clone the hello-world-app repository into a local path that will
     # serve as the "remote" origin.
     origin = Path(aiidalab.config.AIIDALAB_HOME).joinpath('local', 'aiidalab-hello-world').resolve()
@@ -85,11 +101,14 @@ def _hello_world_app_remote_origin(environment):
         reset_hard(origin, 'HEAD~')
 
         # Create two empty commits.
-        for message in ('first', 'second'):
+        for message, version in (('first', None), ('second', 'v1.1.1'), ('third', None)):
             commit(origin, message)
+            if version:
+                tag(origin, version)
+
         # Create a second branch that is identical to the default branch.
-        run(['git', 'branch', TESTING_BRANCH], cwd=str(origin), check=True)
-        run(['git', 'tag', 'test-tag', 'HEAD~'], cwd=str(origin), check=True)
+        branch(origin, TESTING_BRANCH)
+        tag(origin, 'test-tag', 'HEAD~')
 
     yield origin
 
@@ -99,7 +118,10 @@ def _register_hello_world_app(url, head):
     app_data = json.loads(HELLO_WORLD_APP_DIR.joinpath('metadata.json').read_text())
     app_data['aiidalab_environment_version'] = {
         '<1.0.0': '<1.0.0',  # should not match any available version
-        '~=1.0': '~=1.0.0',  # the current release version
+        '~=1.0': '~=1.2',  # the current release version
+        # need to add branch names explicitly to keep the heads compatible:
+        'master': '~=1.2',
+        'testing-3926140692': '~=1.2',
     }
     app_registry_data = {
         "git_url": url,
@@ -178,8 +200,8 @@ def test_hello_world_app_install_uninstall(hello_world_app):
     app.install_app()
     assert Path(app.path).is_dir()
     assert app.is_installed()
+    assert app.compatible
     assert app.installed_version is not aiidalab.app.AppVersion.NOT_INSTALLED
-    assert app._release_line.line in app.installed_version
     app.uninstall_app()
     assert not app.is_installed()
     assert not Path(app.path).exists()
@@ -208,7 +230,7 @@ def test_hello_world_app_switch_version(hello_world_app, desired_version, corres
     app.install_app(version=desired_version)
     assert app.installed_version == corresponding_tag
     assert tracked_branch == app._repo.get_tracked_branch()
-    assert app.updates_available
+    assert app.updates_available is (app.installed_version == 'git:refs/tags/v1.0.0')
 
     app.install_app(version=original_version)
     assert app.installed_version == original_version
@@ -264,7 +286,7 @@ def test_hello_world_app_remote_update_available(hello_world_app):
     assert not app.updates_available
 
     # First reset the local branch.
-    run(['git', 'reset', '--hard', 'HEAD~'], cwd=app.path, check=True)
+    reset_hard(app.path, 'v1.0.0')
     app.refresh()
     assert app.updates_available
 
@@ -282,6 +304,7 @@ def test_hello_world_app_update(hello_world_app):
 
     app.install_app()
     assert app.is_installed()
+    assert app.compatible
     assert not app.updates_available
     original_version = app.installed_version
     tracked_branch = app._repo.get_tracked_branch()
