@@ -20,11 +20,13 @@ import traitlets
 from dulwich.porcelain import fetch
 from dulwich.errors import NotGitRepository
 from dulwich.objects import Tag, Commit
+from packaging.specifiers import SpecifierSet
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 
 from .config import AIIDALAB_DEFAULT_GIT_BRANCH
+from .config import AIIDALAB_ENVIRONMENT_VERSION
 from .git_util import GitManagedAppRepo as Repo
 from .utils import throttled
 
@@ -189,6 +191,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     busy = traitlets.Bool(readonly=True)
     detached = traitlets.Bool(readonly=True, allow_none=True)
+    compatible = traitlets.Bool(readonly=True, allow_none=True)
 
     @dataclass
     class AppRegistryData:
@@ -503,6 +506,34 @@ class AiidaLabApp(traitlets.HasTraits):
             return AppVersion.UNKNOWN
         return AppVersion.NOT_INSTALLED
 
+    @traitlets.default('compatible')
+    def _default_compatible(self):  # pylint: disable=no-self-use
+        return None
+
+    def _is_compatible(self):
+        """Determine whether the currently installed version is compatible."""
+        app_version = self.installed_version
+
+        if isinstance(app_version, str):
+            # Retrieve and convert the compatibility map from the app metadata.
+            compat_map = self.metadata.get('aiidalab_environment_version', {'': '~=1.0'})
+            compat_map = {SpecifierSet(a): SpecifierSet(b) for a, b in compat_map.items()}
+
+            def format_version(version):
+                if version.startswith('git:refs/tags/'):
+                    return version[len('git:refs/tags/'):]
+                if version.startswith('git:refs/heads/'):
+                    return version[len('git:refs/heads/'):]
+                if version.startswith('git:refs/remotes/'):  # remote branch
+                    return re.sub(r'git:refs\/remotes\/(.+?)\/', '', version)
+                return version
+
+            app_version = format_version(self.installed_version)
+            matching_specs = [app_spec for app_spec in compat_map if app_version in app_spec]
+            return any(AIIDALAB_ENVIRONMENT_VERSION in compat_map[spec] for spec in matching_specs)
+
+        return None  # indetermined since the app is not installed
+
     @throttled(calls_per_second=1)
     def refresh(self):
         """Refresh app state."""
@@ -510,6 +541,7 @@ class AiidaLabApp(traitlets.HasTraits):
             with self.hold_trait_notifications():
                 self.available_versions = list(self._available_versions())
                 self.installed_version = self._installed_version()
+                self.set_trait('compatible', self._is_compatible())
                 if self.is_installed() and self._has_git_repo():
                     self.installed_version = self._installed_version()
                     self.check_for_updates()
