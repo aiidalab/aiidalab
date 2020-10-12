@@ -13,10 +13,10 @@ aiida-lsmo==1.0.0
 aiida-nanotech-empa==0.1.0a3
 aiida-optimize==0.3.2
 aiida-qeq==1.0.0a1
-aiida-quantumespresso==3.1.0
+aiida-quantumespresso==3.2.0
 aiida-raspa==1.2.0
 aiida-siesta==1.1.0
-aiida-tbmodels==0.4.0rc1
+aiida-tbmodels==0.4.0rc2
 aiida-tools==0.3.3
 aiida-vasp==0.2.4
 aiida-wannier90==2.0.1
@@ -43,8 +43,9 @@ binaryornot==0.4.4
 bleach==3.2.1
 bokeh==1.4.0
 bqplot==0.12.17
-bump2version==1.0.0
+bump2version==1.0.1
 cachecontrol[filecache]==0.12.6
+cached-property==1.5.2
 calc-pe==1.0.1
 certifi==2020.6.20
 cffi==1.14.3
@@ -81,8 +82,8 @@ fsc.export==1.2.0
 fsc.hdf5-io==1.0.0
 furl==2.1.0
 future==0.18.2
-graphviz==0.14.1
-h5py==2.10.0
+graphviz==0.14.2
+h5py==3.0.0rc1
 idna==2.10
 imagesize==1.2.0
 importlib-metadata==2.0.0 ; python_version < '3.8'
@@ -115,7 +116,7 @@ lxml==4.5.2
 mako==1.1.3
 markdown==3.1.1
 markupsafe==2.0.0a1
-masci-tools==0.3.12.dev4
+masci-tools==0.3.12.dev5
 matplotlib==3.3.2
 mistune==0.8.4
 monty==4.0.0
@@ -131,7 +132,7 @@ networkx==2.5
 nglview==2.7.7
 nose==1.3.7
 notebook==5.7.10
-numpy==1.19.2
+numpy==1.19.2 ; python_version == '3.7'
 optimade-client==2020.10.2
 optimade==0.12.1
 orderedmultidict==1.0.1
@@ -146,7 +147,7 @@ pathlib2==2.3.5
 pathtools==0.1.2
 pbr==5.5.0
 pexpect==4.8.0 ; sys_platform != 'win32'
-pg8000==1.16.5
+pg8000==1.16.6
 pgsu==0.1.0
 pgtest==1.3.2
 pickleshare==0.7.5
@@ -168,7 +169,7 @@ pydantic==1.6.1
 pydata-sphinx-theme==0.3.2
 pygments==2.7.1
 pyiast==1.4.3
-pymatgen==2020.9.14
+pymatgen==2020.10.9.1
 pymysql==0.9.3
 pynacl==1.4.0
 pyparsing==2.4.7
@@ -176,7 +177,8 @@ pyrsistent==0.17.3
 pysmiles==1.0.1
 pytest-cov==2.10.1
 pytest-mpl==0.11
-pytest==6.0.2
+pytest-tornasync==0.6.0.post2
+pytest==6.1.1
 python-dateutil==2.8.1
 python-editor==1.0.4
 python-memcached==1.59
@@ -184,7 +186,7 @@ pythreejs==2.1.1
 pytz==2019.3
 pyyaml==5.1.2
 pyzmq==19.0.2
-qe-tools==1.1.4
+qe-tools==2.0.0rc1
 reentry==1.3.1
 requests-cache==0.5.2
 requests==2.24.0
@@ -214,7 +216,7 @@ sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
 sqlalchemy-utils==0.34.2
 sqlalchemy==1.3.19
-sqlparse==0.3.1
+sqlparse==0.4.1
 starlette==0.13.6
 subprocess32==3.5.4
 symmetry-representation==0.3.3
@@ -227,7 +229,7 @@ threadpoolctl==2.1.0
 toml==0.10.1
 topika==0.2.1
 tornado==4.5.3
-tqdm==4.50.0
+tqdm==4.50.2
 traitlets==5.0.4
 traittypes==0.2.1
 typing-extensions==3.7.4.3
