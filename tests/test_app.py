@@ -230,7 +230,7 @@ def test_hello_world_app_switch_version(hello_world_app, desired_version, corres
     app.install_app(version=desired_version)
     assert app.installed_version == corresponding_tag
     assert tracked_branch == app._repo.get_tracked_branch()
-    assert app.updates_available is (app.installed_version == 'git:refs/tags/v1.0.0')
+    assert app.updates_available is (app.installed_version in ('git:refs/tags/test-tag', 'git:refs/tags/v1.0.0'))
 
     app.install_app(version=original_version)
     assert app.installed_version == original_version

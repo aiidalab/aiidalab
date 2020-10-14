@@ -22,6 +22,7 @@ from dulwich.porcelain import fetch
 from dulwich.errors import NotGitRepository
 from dulwich.objects import Tag, Commit
 from packaging.specifiers import SpecifierSet, InvalidSpecifier
+from packaging.version import parse
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
@@ -436,15 +437,17 @@ class AiidaLabApp(traitlets.HasTraits):
     def install_app(self, version=None):
         """Installing the app."""
         if version is None:  # initial installation
-            self._install_app_version(f'git:{self._release_line.line}')
+            version = self._install_app_version(f'git:{self._release_line.line}')
 
             # switch to compatible version if possible
             available_versions = list(self._available_versions())
             if available_versions:
-                self._install_app_version(version=available_versions[0])
+                return self._install_app_version(version=available_versions[0])
 
-        else:  # app already installed, switch version
-            self._install_app_version(version=version)
+            return version
+
+        # app already installed, just switch version
+        return self._install_app_version(version=version)
 
     def update_app(self, _=None):
         """Perform app update."""
@@ -455,7 +458,7 @@ class AiidaLabApp(traitlets.HasTraits):
         except AppRemoteUpdateError:
             pass
         available_versions = list(self._available_versions())
-        self.install_app(version=available_versions[0])
+        return self.install_app(version=available_versions[0])
 
     def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
@@ -516,10 +519,27 @@ class AiidaLabApp(traitlets.HasTraits):
     def _available_versions(self):
         """Return all available and compatible versions."""
         if self.is_installed() and self._release_line is not None:
-            for _version in self._release_line.find_versions():
-                version = 'git:' + _version.decode()
-                if self._is_compatible(version):
-                    yield version
+            versions = ['git:' + ref.decode() for ref in self._release_line.find_versions()]
+        elif self._registry_data is not None:
+
+            def is_tag(ref):
+                return ref.startswith('refs/tags') and '^{}' not in ref
+
+            def sort_key(ref):
+                version = parse(ref[len('refs/tags/'):])
+                return (not is_tag(ref), version, ref)
+
+            versions = [
+                'git:' + ref
+                for ref in reversed(sorted(self._registry_data.gitinfo, key=sort_key))
+                if is_tag(ref) or ref == f'refs/heads/{self._release_line.line}'
+            ]
+        else:
+            versions = []
+
+        for version in versions:
+            if self._is_compatible(version):
+                yield version
 
     def _installed_version(self):
         """Determine the currently installed version."""
@@ -567,16 +587,19 @@ class AiidaLabApp(traitlets.HasTraits):
             except InvalidSpecifier:
                 return RegexMatchSpecifierSet(specifiers=specifiers)
 
-        if isinstance(app_version, str):
-            # Retrieve and convert the compatibility map from the app metadata.
+        # Retrieve and convert the compatibility map from the app metadata.
+        try:
             compat_map = self.metadata.get('aiidalab_environment_version', {'': '~=1.0'})
             compat_map = {'': compat_map} if isinstance(compat_map, str) else compat_map
             compat_map = {specifier_set(a): specifier_set(b) for a, b in compat_map.items()}
+        except RuntimeError:  # not registered
+            return None  # unable to determine compatibility
+        else:
+            if isinstance(app_version, str):
+                app_version_identifier = get_version_identifier(app_version)
+                matching_specs = [app_spec for app_spec in compat_map if app_version_identifier in app_spec]
 
-            app_version_identifier = get_version_identifier(app_version)
-            matching_specs = [app_spec for app_spec in compat_map if app_version_identifier in app_spec]
-
-            return any(AIIDALAB_ENVIRONMENT_VERSION in compat_map[spec] for spec in matching_specs)
+                return any(AIIDALAB_ENVIRONMENT_VERSION in compat_map[spec] for spec in matching_specs)
 
         return None  # compatibility indetermined since the app is not installed
 
