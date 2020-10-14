@@ -9,7 +9,6 @@ verify_ssl = true
 #aiida-gudhi = "==0.1.0a3"
 #aiida-nwchem = "~=1.0.2"
 #aiida-phtools = "==0.1.0a1"
-optimade-client = "~=2020.10"
 
 [packages]
 aiida-core = {extras = ['rest', 'atomic_tools'],version = "~=1.2"}
@@ -43,6 +42,7 @@ dulwich = "~=0.19.15"
 lxml = "~=4.5.0"
 notebook = "~=5.7"
 Markdown = "~=3.1.1"
+optimade-client = "~=2020.10"
 packaging = "~=20.1"
 pip = "~=20.0"
 pythreejs = "~=2.1.1"
