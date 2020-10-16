@@ -503,15 +503,14 @@ class AiidaLabApp(traitlets.HasTraits):
     def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""
         try:
+            assert not self.detached
             remote_update_available = self._remote_update_available()
-        except AppRemoteUpdateError:
+        except (AssertionError, AppRemoteUpdateError):
             self.set_trait('updates_available', None)
         else:
             available_versions = list(self._available_versions())
-            on_release_line = self.installed_version in available_versions
             if len(available_versions) > 0:
-                latest = (self.installed_version == available_versions[0])
-                local_update_available = on_release_line and not latest
+                local_update_available = self.installed_version != available_versions[0]
             else:
                 local_update_available = None
             self.set_trait('updates_available', remote_update_available or local_update_available)
@@ -613,9 +612,9 @@ class AiidaLabApp(traitlets.HasTraits):
                 self.set_trait('compatible', self._is_compatible())
                 if self.is_installed() and self._has_git_repo():
                     self.installed_version = self._installed_version()
-                    self.check_for_updates()
                     modified = self._repo.dirty()
                     self.set_trait('detached', self.installed_version is AppVersion.UNKNOWN or modified)
+                    self.check_for_updates()
                 else:
                     self.set_trait('updates_available', None)
                     self.set_trait('detached', None)
