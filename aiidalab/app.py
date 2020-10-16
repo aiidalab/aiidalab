@@ -260,6 +260,12 @@ class AiidaLabApp(traitlets.HasTraits):
 
             return None
 
+        @staticmethod
+        def _get_sha(obj):
+            """Determine the SHA for a given commit object."""
+            assert isinstance(obj, (Tag, Commit))
+            return obj.object[1] if isinstance(obj, Tag) else obj.id
+
         def find_versions(self):
             """Find versions available for this release line.
 
@@ -278,10 +284,6 @@ class AiidaLabApp(traitlets.HasTraits):
                     raise ValueError(f"Unable to resolve {self.short_ref!r}. "
                                      "Are you sure this is a valid git branch or tag?")
 
-                def get_sha(obj):
-                    assert isinstance(obj, (Tag, Commit))
-                    return obj.object[1] if isinstance(obj, Tag) else obj.id
-
                 # The release line is a head (branch).
                 if ref.startswith(b'refs/remotes/'):
                     ref_commit = self._repo.get_peeled(ref)
@@ -290,7 +292,7 @@ class AiidaLabApp(traitlets.HasTraits):
                     # Create lookup table from commit -> tags
                     tags_lookup = defaultdict(set)
                     for tag in all_tags:
-                        tags_lookup[get_sha(self._repo[tag])].add(tag)
+                        tags_lookup[self._get_sha(self._repo[tag])].add(tag)
 
                     # Determine all the tagged commits on the branch (HEAD)
                     commits_on_head = self._repo.get_walker(self._repo.refs[ref])
@@ -313,7 +315,7 @@ class AiidaLabApp(traitlets.HasTraits):
             if len(rev) in (20, 40) and rev in self._repo.object_store:
                 return rev
 
-            return self._repo.get_peeled(rev)
+            return self._get_sha(self._repo[rev])
 
         def resolve_revision(self, commit):
             """Map a given commit to a named version (branch/tag) if possible."""
