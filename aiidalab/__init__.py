@@ -1,3 +1,6 @@
 """AiiDAlab core tools."""
+from .config import _DEVELOP_MODE as DEVELOP_MODE
 
-__version__ = "20.10.0b0"
+__all__ = ['DEVELOP_MODE']
+
+__version__ = "20.10.0b1"
