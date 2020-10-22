@@ -11,6 +11,7 @@ from dulwich.repo import Repo
 import aiidalab
 from aiidalab.app import AiidaLabApp
 from aiidalab.config import AIIDALAB_DEFAULT_GIT_BRANCH as DEFAULT_BRANCH
+from aiidalab.utils import Package
 
 HELLO_WORLD_APP_DIR = Path(__file__).parent.joinpath('data', 'aiidalab-hello-world').resolve()
 TESTING_BRANCH = 'testing-3926140692'  # we expect that this branch does not exist
@@ -56,9 +57,8 @@ def environment(tmp_path, monkeypatch, empty_registry):
     root = Path(tmp_path)
     registry_path = root / 'apps_meta.json'
 
-    monkeypatch.setenv('AIIDALAB_ENVIRONMENT_VERSION', '1.2.3')
-    monkeypatch.setattr(aiidalab.config, 'AIIDALAB_ENVIRONMENT_VERSION', '1.2.3')
-    monkeypatch.setattr(aiidalab.app, 'AIIDALAB_ENVIRONMENT_VERSION', '1.2.3')
+    monkeypatch.setattr(aiidalab.utils, 'find_installed_packages', lambda: [Package(name='foo', version='1.2.3')])
+    monkeypatch.setattr(aiidalab.app, 'find_installed_packages', lambda: [Package(name='foo', version='1.2.3')])
     monkeypatch.setattr(aiidalab.config, 'AIIDALAB_HOME', str(root / 'project'))
     monkeypatch.setattr(aiidalab.config, 'AIIDALAB_APPS', str(root / 'project/apps'))
     monkeypatch.setattr(aiidalab.config, 'AIIDALAB_SCRIPTS', str(root / 'opt'))
@@ -116,12 +116,12 @@ def _hello_world_app_remote_origin(environment):
 def _register_hello_world_app(url, head):
     """Register the hello world app with the given url in the app registry."""
     app_data = json.loads(HELLO_WORLD_APP_DIR.joinpath('metadata.json').read_text())
-    app_data['aiidalab_environment_version'] = {
-        '<1.0.0': '<1.0.0',  # should not match any available version
-        '~=1.0': '~=1.2',  # the current release version
+    app_data['requires'] = {
+        '<1.0.0': ['foo<1.0.0'],  # should not match any available version
+        '~=1.0': ['foo~=1.2'],  # the current release version
         # need to add branch names explicitly to keep the heads compatible:
-        'master': '~=1.2',
-        'testing-3926140692': '~=1.2',
+        'master': ['foo~=1.2'],
+        'testing-3926140692': ['foo~=1.2'],
     }
     app_registry_data = {
         "git_url": url,
@@ -358,7 +358,7 @@ def test_hello_world_app_compatibility(hello_world_app_tagged):
     """Test whether the app environment compatibility is correctly determined."""
     app = hello_world_app_tagged
 
-    assert 'aiidalab_environment_version' in app.metadata
+    assert 'requires' in app.metadata
     assert app.compatible is None  # not installed yet
     app.install_app()
     assert app.compatible is ('v1.0.0' in app.installed_version)

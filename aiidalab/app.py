@@ -21,6 +21,7 @@ import traitlets
 from dulwich.porcelain import fetch
 from dulwich.errors import NotGitRepository
 from dulwich.objects import Tag, Commit
+from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet, InvalidSpecifier
 from packaging.version import parse
 from watchdog.observers import Observer
@@ -28,9 +29,9 @@ from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 
 from .config import AIIDALAB_DEFAULT_GIT_BRANCH
-from .config import AIIDALAB_ENVIRONMENT_VERSION
 from .git_util import GitManagedAppRepo as Repo
 from .utils import throttled
+from .utils import find_installed_packages
 
 
 class AppNotInstalledException(Exception):
@@ -588,11 +589,19 @@ class AiidaLabApp(traitlets.HasTraits):
             except InvalidSpecifier:
                 return RegexMatchSpecifierSet(specifiers=specifiers)
 
+        def fulfilled(requirements, packages):
+            for requirement in requirements:
+                if not any(package.fulfills(requirement) for package in packages):
+                    return False
+            return True
+
         # Retrieve and convert the compatibility map from the app metadata.
+
         try:
-            compat_map = self.metadata.get('aiidalab_environment_version', {'': '~=1.0'})
-            compat_map = {'': compat_map} if isinstance(compat_map, str) else compat_map
-            compat_map = {specifier_set(a): specifier_set(b) for a, b in compat_map.items()}
+            compat_map = self.metadata.get('requires', {'': []})
+            compat_map = {
+                specifier_set(app_version): [Requirement(r) for r in reqs] for app_version, reqs in compat_map.items()
+            }
         except RuntimeError:  # not registered
             return None  # unable to determine compatibility
         else:
@@ -600,7 +609,8 @@ class AiidaLabApp(traitlets.HasTraits):
                 app_version_identifier = get_version_identifier(app_version)
                 matching_specs = [app_spec for app_spec in compat_map if app_version_identifier in app_spec]
 
-                return any(AIIDALAB_ENVIRONMENT_VERSION in compat_map[spec] for spec in matching_specs)
+                packages = find_installed_packages()
+                return any(fulfilled(compat_map[spec], packages) for spec in matching_specs)
 
         return None  # compatibility indetermined since the app is not installed
 
