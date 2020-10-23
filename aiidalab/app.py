@@ -6,6 +6,7 @@ import os
 import shutil
 import json
 import errno
+import logging
 from collections import defaultdict
 from contextlib import contextmanager
 from enum import Enum, auto
@@ -592,6 +593,7 @@ class AiidaLabApp(traitlets.HasTraits):
         def fulfilled(requirements, packages):
             for requirement in requirements:
                 if not any(package.fulfills(requirement) for package in packages):
+                    logging.debug(f"{self.name}({app_version}): missing requirement '{requirement}'")  # pylint: disable=logging-fstring-interpolation
                     return False
             return True
 
