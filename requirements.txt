@@ -43,6 +43,7 @@ bqplot==0.12.18
 bump2version==1.0.1
 cachecontrol[filecache]==0.12.6
 cached-property==1.5.2
+cachetools==4.1.1
 calc-pe==1.0.1
 certifi==2020.6.20
 cffi==1.14.3
