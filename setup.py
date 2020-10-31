@@ -16,6 +16,10 @@ if __name__ == '__main__':
     if requirements[0].startswith('-i'):
         requirements.pop(0)
 
+    print(requirements)
+
+    kwargs['extras_require']['aiida'] = requirements
+
     setup(
         packages=find_packages(),
         include_package_data=True,
@@ -28,6 +32,5 @@ if __name__ == '__main__':
             # like `jupyter serverextension enable --sys-prefix`
             ("etc/jupyter/jupyter_notebook_config.d", ["jupyter-config/jupyter_notebook_config.d/aiidalab.json"])
         ],
-        install_requires=requirements,
         zip_safe=False,
         **kwargs)
