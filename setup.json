@@ -12,6 +12,29 @@
         "Framework :: AiiDA",
         "Development Status :: 4 - Beta"
     ],
+    "install_requires": [
+        "aiidalab-widgets-base~=1.0.0b12",
+        "arrow~=0.15.5",
+        "binaryornot~=0.4.4",
+        "bokeh~=1.4",
+        "bqplot~=0.12",
+        "cachetools~=4.1",
+        "cookiecutter~=1.6.0",
+        "dulwich~=0.19.15",
+        "lxml~=4.5.0",
+        "notebook~=5.7",
+        "Markdown~=3.1.1",
+        "optimade-client~=2020.10",
+        "packaging~=20.1",
+        "pip~=20.0",
+        "pythreejs~=2.1.1",
+        "pysmiles~=1.0.0",
+        "requests-cache~=0.5.2",
+        "scikit-learn~=0.23.2",
+        "watchdog~=0.10.2",
+        "widget_periodictable~=2.0",
+        "ipywidgets<8.0.0"
+    ],
     "extras_require": {
         "docs": [
             "sphinx",
