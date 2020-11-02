@@ -10,7 +10,6 @@ with open('setup.json', 'r') as info:
 setup(
     packages=find_packages(),
     include_package_data=True,
-    reentry_register=True,
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     data_files=[
