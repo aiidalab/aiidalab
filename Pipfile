@@ -31,11 +31,6 @@ aiida-zeopp = "~=1.1"
 
 [requires]
 python_version = "3.7"
-#[pipenv]
-# Note: For some reason, the atomic_tools extra breaks locking with
-# allow_prereleases = True. You can still use prereleases by providing an exact
-# version.
-#allow_prereleases = true
 
 [pipenv]
 allow_prereleases = true
