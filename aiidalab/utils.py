@@ -1,14 +1,18 @@
 """Helpful utilities for the AiiDAlab tools."""
 
+import sys
 import json
 import time
 from urllib.parse import urlparse
 from collections import defaultdict
 from functools import wraps
+from subprocess import check_output
 from threading import Lock
 
 import requests
+from cachetools import cached, TTLCache
 from IPython.lib import backgroundjobs as bg
+from packaging.utils import canonicalize_name
 
 from .config import AIIDALAB_REGISTRY
 
@@ -85,3 +89,26 @@ class throttled:  # pylint: disable=invalid-name
             return func(instance, *args, **kwargs)
 
         return wrapped
+
+
+class Package:
+    """Helper class to check whether a given package fulfills a requirement."""
+
+    def __init__(self, name, version):
+        self.name = name
+        self.version = version
+
+    def __str__(self):
+        return f"{type(self).__name__}({self.name, self.version})"
+
+    def fulfills(self, requirement):
+        """Returns True if this entry fullfills the requirement."""
+        return canonicalize_name(self.name) == canonicalize_name(requirement.name) \
+                and self.version in requirement.specifier
+
+
+@cached(cache=TTLCache(maxsize=32, ttl=60))
+def find_installed_packages():
+    """Return all currently installed packages."""
+    output = check_output([sys.executable, '-m', 'pip', 'list', '--format=json'], encoding='utf-8')
+    return [Package(**package) for package in json.loads(output)]

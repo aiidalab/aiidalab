@@ -6,6 +6,7 @@ import os
 import shutil
 import json
 import errno
+import logging
 from collections import defaultdict
 from contextlib import contextmanager
 from enum import Enum, auto
@@ -21,15 +22,17 @@ import traitlets
 from dulwich.porcelain import fetch
 from dulwich.errors import NotGitRepository
 from dulwich.objects import Tag, Commit
+from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet, InvalidSpecifier
+from packaging.version import parse
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 
 from .config import AIIDALAB_DEFAULT_GIT_BRANCH
-from .config import AIIDALAB_ENVIRONMENT_VERSION
 from .git_util import GitManagedAppRepo as Repo
 from .utils import throttled
+from .utils import find_installed_packages
 
 
 class AppNotInstalledException(Exception):
@@ -259,6 +262,12 @@ class AiidaLabApp(traitlets.HasTraits):
 
             return None
 
+        @staticmethod
+        def _get_sha(obj):
+            """Determine the SHA for a given commit object."""
+            assert isinstance(obj, (Tag, Commit))
+            return obj.object[1] if isinstance(obj, Tag) else obj.id
+
         def find_versions(self):
             """Find versions available for this release line.
 
@@ -277,10 +286,6 @@ class AiidaLabApp(traitlets.HasTraits):
                     raise ValueError(f"Unable to resolve {self.short_ref!r}. "
                                      "Are you sure this is a valid git branch or tag?")
 
-                def get_sha(obj):
-                    assert isinstance(obj, (Tag, Commit))
-                    return obj.object[1] if isinstance(obj, Tag) else obj.id
-
                 # The release line is a head (branch).
                 if ref.startswith(b'refs/remotes/'):
                     ref_commit = self._repo.get_peeled(ref)
@@ -289,7 +294,7 @@ class AiidaLabApp(traitlets.HasTraits):
                     # Create lookup table from commit -> tags
                     tags_lookup = defaultdict(set)
                     for tag in all_tags:
-                        tags_lookup[get_sha(self._repo[tag])].add(tag)
+                        tags_lookup[self._get_sha(self._repo[tag])].add(tag)
 
                     # Determine all the tagged commits on the branch (HEAD)
                     commits_on_head = self._repo.get_walker(self._repo.refs[ref])
@@ -312,7 +317,7 @@ class AiidaLabApp(traitlets.HasTraits):
             if len(rev) in (20, 40) and rev in self._repo.object_store:
                 return rev
 
-            return self._repo.get_peeled(rev)
+            return self._get_sha(self._repo[rev])
 
         def resolve_revision(self, commit):
             """Map a given commit to a named version (branch/tag) if possible."""
@@ -436,15 +441,17 @@ class AiidaLabApp(traitlets.HasTraits):
     def install_app(self, version=None):
         """Installing the app."""
         if version is None:  # initial installation
-            self._install_app_version(f'git:{self._release_line.line}')
+            version = self._install_app_version(f'git:{self._release_line.line}')
 
             # switch to compatible version if possible
             available_versions = list(self._available_versions())
             if available_versions:
-                self._install_app_version(version=available_versions[0])
+                return self._install_app_version(version=available_versions[0])
 
-        else:  # app already installed, switch version
-            self._install_app_version(version=version)
+            return version
+
+        # app already installed, just switch version
+        return self._install_app_version(version=version)
 
     def update_app(self, _=None):
         """Perform app update."""
@@ -455,7 +462,7 @@ class AiidaLabApp(traitlets.HasTraits):
         except AppRemoteUpdateError:
             pass
         available_versions = list(self._available_versions())
-        self.install_app(version=available_versions[0])
+        return self.install_app(version=available_versions[0])
 
     def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
@@ -500,15 +507,14 @@ class AiidaLabApp(traitlets.HasTraits):
     def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""
         try:
+            assert not self.detached
             remote_update_available = self._remote_update_available()
-        except AppRemoteUpdateError:
+        except (AssertionError, AppRemoteUpdateError):
             self.set_trait('updates_available', None)
         else:
             available_versions = list(self._available_versions())
-            on_release_line = self.installed_version in available_versions
             if len(available_versions) > 0:
-                latest = (self.installed_version == available_versions[0])
-                local_update_available = on_release_line and not latest
+                local_update_available = self.installed_version != available_versions[0]
             else:
                 local_update_available = None
             self.set_trait('updates_available', remote_update_available or local_update_available)
@@ -516,10 +522,27 @@ class AiidaLabApp(traitlets.HasTraits):
     def _available_versions(self):
         """Return all available and compatible versions."""
         if self.is_installed() and self._release_line is not None:
-            for _version in self._release_line.find_versions():
-                version = 'git:' + _version.decode()
-                if self._is_compatible(version):
-                    yield version
+            versions = ['git:' + ref.decode() for ref in self._release_line.find_versions()]
+        elif self._registry_data is not None:
+
+            def is_tag(ref):
+                return ref.startswith('refs/tags') and '^{}' not in ref
+
+            def sort_key(ref):
+                version = parse(ref[len('refs/tags/'):])
+                return (not is_tag(ref), version, ref)
+
+            versions = [
+                'git:' + ref
+                for ref in reversed(sorted(self._registry_data.gitinfo, key=sort_key))
+                if is_tag(ref) or ref == f'refs/heads/{self._release_line.line}'
+            ]
+        else:
+            versions = []
+
+        for version in versions:
+            if self._is_compatible(version):
+                yield version
 
     def _installed_version(self):
         """Determine the currently installed version."""
@@ -567,16 +590,29 @@ class AiidaLabApp(traitlets.HasTraits):
             except InvalidSpecifier:
                 return RegexMatchSpecifierSet(specifiers=specifiers)
 
-        if isinstance(app_version, str):
-            # Retrieve and convert the compatibility map from the app metadata.
-            compat_map = self.metadata.get('aiidalab_environment_version', {'': '~=1.0'})
-            compat_map = {'': compat_map} if isinstance(compat_map, str) else compat_map
-            compat_map = {specifier_set(a): specifier_set(b) for a, b in compat_map.items()}
+        def fulfilled(requirements, packages):
+            for requirement in requirements:
+                if not any(package.fulfills(requirement) for package in packages):
+                    logging.debug(f"{self.name}({app_version}): missing requirement '{requirement}'")  # pylint: disable=logging-fstring-interpolation
+                    return False
+            return True
 
-            app_version_identifier = get_version_identifier(app_version)
-            matching_specs = [app_spec for app_spec in compat_map if app_version_identifier in app_spec]
+        # Retrieve and convert the compatibility map from the app metadata.
 
-            return any(AIIDALAB_ENVIRONMENT_VERSION in compat_map[spec] for spec in matching_specs)
+        try:
+            compat_map = self.metadata.get('requires', {'': []})
+            compat_map = {
+                specifier_set(app_version): [Requirement(r) for r in reqs] for app_version, reqs in compat_map.items()
+            }
+        except RuntimeError:  # not registered
+            return None  # unable to determine compatibility
+        else:
+            if isinstance(app_version, str):
+                app_version_identifier = get_version_identifier(app_version)
+                matching_specs = [app_spec for app_spec in compat_map if app_version_identifier in app_spec]
+
+                packages = find_installed_packages()
+                return any(fulfilled(compat_map[spec], packages) for spec in matching_specs)
 
         return None  # compatibility indetermined since the app is not installed
 
@@ -590,9 +626,9 @@ class AiidaLabApp(traitlets.HasTraits):
                 self.set_trait('compatible', self._is_compatible())
                 if self.is_installed() and self._has_git_repo():
                     self.installed_version = self._installed_version()
-                    self.check_for_updates()
                     modified = self._repo.dirty()
                     self.set_trait('detached', self.installed_version is AppVersion.UNKNOWN or modified)
+                    self.check_for_updates()
                 else:
                     self.set_trait('updates_available', None)
                     self.set_trait('detached', None)
