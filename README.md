@@ -39,21 +39,6 @@ jupyter nbextension install --sys-prefix --py fileupload
 
 Note: `pip install -e .` does *not* process the `data_files` and thus does not enable the jupyter extensions.
 
-## Updating requirements.txt
-
-First make sure you have python 3.7 available in your system.
-If that is the case, then adjust the [`Pipfile`](Pipfile) according to the latest releases.
-Then do:
-```
-pip install pipenv # If it is already installed, make sure it is the latest version.
-pipenv lock --python 3.7 # To generate Pipfile.lock (takes 1-2 minutes).
-pipenv lock --requirements > requirements.txt_stable # To extract the dependencies of the stable packages.
-pipenv lock --dev --requirements > requirements.txt_dev # To extract the dependencies of the development packages.
-cat requirements.txt_stable requirements.txt_dev | sort | uniq | sed '/-e \./d' > requirements.txt
-```
-
-Note: We try to keep the number of explicit dependencies in the `Pipfile` to a minimum.
-Consider using [pipdeptree](https://pypi.org/project/pipdeptree/) to figure out the dependency tree and which dependencies are actually needed.
 
 ## License
 
