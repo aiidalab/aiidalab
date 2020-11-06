@@ -1,6 +1,6 @@
 {
     "name": "aiidalab",
-    "version": "20.11.0b0",
+    "version": "20.11.0b1",
     "author": "The AiiDAlab team",
     "author_email": "aiidalab@materialscloud.org",
     "description": "Meta package for the AiiDAlab python environment.",
