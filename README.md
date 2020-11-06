@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/aiidalab/aiidalab.svg?branch=master)](https://travis-ci.org/aiidalab/aiidalab)
 [![Documentation Status](https://readthedocs.org/projects/aiidalab/badge/)](https://aiidalab.readthedocs.io/)
 # AiiDAlab package
 
