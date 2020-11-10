@@ -21,7 +21,7 @@
         "pip~=20.0",
         "requests-cache~=0.5.2",
         "toml~=0.10",
-        "traitlets~=5.0",
+        "traitlets~=4.0",
         "urllib3~=1.24",
         "watchdog~=0.10.2"
     ],
