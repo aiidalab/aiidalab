@@ -43,6 +43,13 @@ Note: `pip install -e .` does *not* process the `data_files` and thus does not e
 
 MIT
 
+## Citation
+
+Users of AiiDAlab are kindly asked to cite the following publication in their own work:
+
+A. V. Yakutovich et al., Comp. Mat. Sci. 188, 110165 (2021).
+[DOI:10.1016/j.commatsci.2020.110165](https://doi.org/10.1016/j.commatsci.2020.110165)
+
 ## Contact
 
 aiidalab@materialscloud.org
