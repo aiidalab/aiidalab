@@ -519,30 +519,60 @@ class AiidaLabApp(traitlets.HasTraits):
                 local_update_available = None
             self.set_trait('updates_available', remote_update_available or local_update_available)
 
+    def _collect_available_versions_for_release_line(self):
+        """Collect all available versions for this release line (local and remote)."""
+        if self.is_installed():
+            for ref in self._release_line.find_versions():
+                yield f'git:{ref.decode()}'
+
+        if self._registry_data is not None:
+
+            def determine_tags(sha):
+                for ref, sha_ in self._registry_data.gitinfo.items():
+                    if sha_ == sha and ref.startswith('refs/tags/'):
+                        yield ref
+
+            if self._release_line.short_ref:
+                # The short ref must refer to either a tag or a head (branch).
+                tag = f'refs/tags/{self._release_line.short_ref}'
+                head = f'refs/heads/{self._release_line.short_ref}'
+
+                if tag in self._registry_data.gitinfo:
+                    yield f'git:{tag}'
+
+                elif head in self._registry_data.gitinfo:
+                    sha = self._registry_data.gitinfo[head]
+                    # Try to resolve to a tag:
+                    tags = list(reversed(sorted(determine_tags(sha))))
+                    yield f'git:{tags[0]}' if tags else f'git:{head}'
+
+                else:
+                    pass  # likely an orphaned tag or branch (ignore)
+
+            elif self._release_line.commit:
+                # The release line directly points at a specific commit sha.
+                # Try to resolve to a tag:
+                tags = list(reversed(sorted(determine_tags(self._release_line.commit))))
+                yield f'git:{tags[0]}' if tags else f'git:{self._release_line.commit}'
+
+            else:
+                raise RuntimeError("Unable to resolve release line with provided registy data.")
+
     def _available_versions(self):
         """Return all available and compatible versions."""
-        if self.is_installed() and self._release_line is not None:
-            versions = ['git:' + ref.decode() for ref in self._release_line.find_versions()]
-        elif self._registry_data is not None:
 
-            def is_tag(ref):
-                return ref.startswith('refs/tags') and '^{}' not in ref
+        def is_tag(version):
+            return version.startswith('git:refs/tags') and '^{}' not in version
 
-            def sort_key(ref):
-                version = parse(ref[len('refs/tags/'):])
-                return (not is_tag(ref), version, ref)
+        def sort_key(version):
+            parsed_version = parse(version[len('git:refs/tags/'):])
+            return (not is_tag(version), parsed_version, version)
 
-            versions = [
-                'git:' + ref
-                for ref in reversed(sorted(self._registry_data.gitinfo, key=sort_key))
-                if is_tag(ref) or ref == f'refs/heads/{self._release_line.line}'
-            ]
-        else:
-            versions = []
-
-        for version in versions:
-            if self._is_compatible(version):
-                yield version
+        if self._release_line is not None:
+            available_versions = self._collect_available_versions_for_release_line()
+            for version in reversed(sorted(set(available_versions), key=sort_key)):
+                if self._is_compatible(version):
+                    yield version
 
     def _installed_version(self):
         """Determine the currently installed version."""
