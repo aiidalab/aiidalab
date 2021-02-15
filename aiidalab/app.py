@@ -196,6 +196,7 @@ class AiidaLabApp(traitlets.HasTraits):
     busy = traitlets.Bool(readonly=True)
     detached = traitlets.Bool(readonly=True, allow_none=True)
     compatible = traitlets.Bool(readonly=True, allow_none=True)
+    compatibility_info = traitlets.Dict()
 
     @dataclass
     class AppRegistryData:
@@ -590,15 +591,13 @@ class AiidaLabApp(traitlets.HasTraits):
             except InvalidSpecifier:
                 return RegexMatchSpecifierSet(specifiers=specifiers)
 
-        def fulfilled(requirements, packages):
+        def find_missing_requirements(requirements, packages):
             for requirement in requirements:
                 if not any(package.fulfills(requirement) for package in packages):
                     logging.debug(f"{self.name}({app_version}): missing requirement '{requirement}'")  # pylint: disable=logging-fstring-interpolation
-                    return False
-            return True
+                    yield requirement  # missing requirement
 
         # Retrieve and convert the compatibility map from the app metadata.
-
         try:
             compat_map = self.metadata.get('requires', {'': []})
             compat_map = {
@@ -608,11 +607,26 @@ class AiidaLabApp(traitlets.HasTraits):
             return None  # unable to determine compatibility
         else:
             if isinstance(app_version, str):
+                # Determine version identifier (i.e. 'git:refs/tags/v1.2' is translated to 'v1.2')
                 app_version_identifier = get_version_identifier(app_version)
+
+                # Determine all specs that match the given version identifier.
                 matching_specs = [app_spec for app_spec in compat_map if app_version_identifier in app_spec]
 
+                # Find all packages installed within in this environment.
                 packages = find_installed_packages()
-                return any(fulfilled(compat_map[spec], packages) for spec in matching_specs)
+
+                # Determine whether any matching specifiers are compatible with the environment.
+                missing_requirements = {
+                    spec: list(find_missing_requirements(compat_map[spec], packages)) for spec in matching_specs
+                }
+
+                # Store missing requirements in compatibility_info trait to make reasons for
+                # compatibility available to subscribers:
+                self.compatibility_info.update(missing_requirements)
+
+                # Return whether the app is at all compatible:
+                return any(not any(missing_reqs) for missing_reqs in missing_requirements.values())
 
         return None  # compatibility indetermined since the app is not installed
 
