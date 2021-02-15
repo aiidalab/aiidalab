@@ -49,5 +49,5 @@ def _get_config_value(key, default=None):
 AIIDALAB_HOME = _get_config_value('home', '/project')
 AIIDALAB_APPS = _get_config_value('apps', '/project/apps')
 AIIDALAB_SCRIPTS = _get_config_value('scripts', '/opt')
-AIIDALAB_REGISTRY = _get_config_value('registry', 'https://aiidalab.materialscloud.org/appsdata/apps_meta.json')
+AIIDALAB_REGISTRY = _get_config_value('registry', 'https://aiidalab.github.io/aiidalab-registry/apps_meta.json')
 AIIDALAB_DEFAULT_GIT_BRANCH = _get_config_value('default_git_branch', 'master')
