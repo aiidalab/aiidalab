@@ -6,7 +6,7 @@ Develop AiiDAlab applications
 Variant A: Quickstart using the AiiDAlab application cutter
 ############################################################
 
-Open the terminal from the AiiDalab home page.
+Open the terminal from the AiiDAlab home page.
 On the terminal type:
 
    .. code-block:: console
@@ -37,7 +37,7 @@ This section is kept only to clarify for you what would happen if you would laun
 Step 1: create a folder
 =======================
 
-This is all you need to do in order to make your app listed on your AiiDalab home page.
+This is all you need to do in order to make your app listed on your AiiDAlab home page.
 Go to the terminal, enter the apps folder and then type:
 
    .. code-block:: console
@@ -95,9 +95,9 @@ If you want to add a logo to your app, the only thing you need to do is to add t
 Step 4: make the app do something.
 ==================================
 
-So far we have being working on make the app look nice and recognizable by the AiiDalab.
+So far we have being working on make the app look nice and recognizable by the AiiDAlab.
 However, it was not doing any useful things.
-To fix that we first go to the AiiDalab home page and we notice that our app is still missing `start.md` file.
+To fix that we first go to the AiiDAlab home page and we notice that our app is still missing `start.md` file.
 At this point we actually have a choice: we can either create a static `start.md` file or a dynamic `start.py`.
 We will take the first approach.
 Here is the minimal template:
@@ -106,7 +106,7 @@ Here is the minimal template:
 
        - [My App](./print_hello_world.ipynb)
 
-Once you have done this, you can close the text editor and update the AiiDalab home page.
+Once you have done this, you can close the text editor and update the AiiDAlab home page.
 You will notice that it now has My App link that will bring you to a NON-existing page (because we haven't create one yet).
 To fix this click on the `File Manager` icon, go to the :file:`apps/my_app` folder and click on the `New` button.
 Select the `Python 3` option and make the following modifications:
@@ -115,11 +115,11 @@ Select the `Python 3` option and make the following modifications:
 - add a line `print ("Hello world!")` in the code cell.
 - save the notebook and close it.
 
-Now go back to AiiDalab Home page and click on the `My App` link again - it should bring you to a page that says "Hello wrold!"
+Now go back to AiiDAlab Home page and click on the `My App` link again - it should bring you to a page that says "Hello wrold!"
 
 
 ##########################################
-Publish your app on the AiiDalab registry.
+Publish your app on the AiiDAlab registry.
 ##########################################
 To make your application available for the other AiiDAlab users, please register it on the `AiiDAlab registry <https://github.com/aiidalab/aiidalab-registry>`__.
 You should first clone the repository, add the following text to the :file:`apps.json` and make a `pull request <https://github.com/aiidalab/aiidalab-registry/compare>`__ to the AiiDAlab registry:
