@@ -2,7 +2,7 @@
 Deploy AiiDAlab
 ===============
 
-There are several ways one can deploy AiiDAlab: locally for onself, on a server for multiple users, or on a Kubernetes cluster for many users and high availability and scalability.
+There are several ways one can deploy AiiDAlab: locally for oneself, on a server for multiple users, or on a Kubernetes cluster for many users and high availability and scalability.
 All these approaches rely on the fact that AiiDAlab is served as a Docker image.
 
 
