@@ -6,7 +6,8 @@ Develop AiiDAlab applications
 Variant A: Quickstart using the AiiDAlab application cutter
 ############################################################
 
-Open the terminal from the AiiDalab home page. On the terminal type:
+Open the terminal from the AiiDalab home page.
+On the terminal type:
 
    .. code-block:: console
 
@@ -36,7 +37,8 @@ This section is kept only to clarify for you what would happen if you would laun
 Step 1: create a folder
 =======================
 
-This is all you need to do in order to make your app listed on your AiiDalab home page. Go to the terminal, enter the apps folder and then type:
+This is all you need to do in order to make your app listed on your AiiDalab home page.
+Go to the terminal, enter the apps folder and then type:
 
    .. code-block:: console
 
@@ -54,7 +56,8 @@ However, one could see that the app still misses some things: it is not yet mana
 
 Step 2: initialize a git repo
 =============================
-To fix the first problem we go to the command line as well. We enter the app folder and initialize the git repo:
+To fix the first problem we go to the command line as well.
+We enter the app folder and initialize the git repo:
 
    .. code-block:: console
 
@@ -96,7 +99,8 @@ So far we have being working on make the app look nice and recognizable by the A
 However, it was not doing any useful things.
 To fix that we first go to the AiiDalab home page and we notice that our app is still missing `start.md` file.
 At this point we actually have a choice: we can either create a static `start.md` file or a dynamic `start.py`.
-We will take the first approach. Here is the minimal template:
+We will take the first approach.
+Here is the minimal template:
 
    .. code-block:: md
 
