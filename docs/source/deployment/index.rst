@@ -20,18 +20,18 @@ Then, start AiiDAlab by running:
 
 Feel free to choose a different port and directory.
 
-You should wait untill the starup procedure is completed.
+You should wait until the start-up procedure is completed.
 Once it is done, you can open the link that has been prompted for you at the end of the execution in your browser.
 
 
-**********************
-Deploy AiiDAlab server
-**********************
+*************************
+Deploy an AiiDAlab server
+*************************
 
-Deploying AiiDAlab server requires installing several packages such as `JupyterHub <https://jupyter.org/hub>`__, `DockerSpawner <https://github.com/jupyterhub/dockerspawner>`__, `Apache HTTP Server <https://www.apache.org/>`__, and `Docker <http://www.docker.com>`__.
+Deploying an AiiDAlab server requires installing several packages such as `JupyterHub <https://jupyter.org/hub>`__, `DockerSpawner <https://github.com/jupyterhub/dockerspawner>`__, `Apache HTTP Server <https://www.apache.org/>`__, and `Docker <http://www.docker.com>`__.
 Further, one needs to configure the interactions between those services.
 The final step is to download the `aiidalab-docker-stack <https://hub.docker.com/repository/docker/aiidalab/aiidalab-docker-stack>`__ Docker image and tag it as `aiidalab-docker-stack:latest`.
-All of these steps can be either done manually, or one could employ `Ansible <https://www.ansible.com/>`__ for these purposes.
+All of these steps can be either done manually or one could employ `Ansible <https://www.ansible.com/>`__ for these purposes.
 We have prepared an automated `Ansible role <https://github.com/aiidalab/ansible-role-aiidalab-server>`__ for you to use, which does all the aforementioned steps automatically.
 
 
@@ -39,5 +39,5 @@ We have prepared an automated `Ansible role <https://github.com/aiidalab/ansible
 Deploy AiiDAlab on a Kubernetes cluster
 ***************************************
 
-If you are expecting to have a big number of users users, a good idea would be to deploy AiiDAlab on a scalable Kubenetes cluster.
+If you are expecting to have a big number of users users, a good idea would be to deploy AiiDAlab on a scalable Kubernetes cluster.
 To deploy AiiDAlab in a Kubernetes environment, you might want to follow the `instructions <https://github.com/aiidalab/aiidalab-k8s>`__ that we have prepared to simplify the setup process.
