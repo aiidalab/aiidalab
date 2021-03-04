@@ -21,15 +21,15 @@ The newly created app will show up with a rendered banner on the start page afte
 
 .. note::
     
-    AiiDAlab expects that app source code is managed with `git <https://git-scm.com/>__`.
-To start tracking the app development with git, open the terminal once more, and execute:
+    AiiDAlab expects that app source code is managed with `git <https://git-scm.com/>`__.
+    To start tracking the app development with git, open the terminal once more, and execute:
 
-   .. code-block:: console
+    .. code-block:: console
 
-       ~$ cd apps/my-app/                              # enter the app directory
-       ~/apps/my-app$ git init                         # initialize git repository
-       ~/apps/my-app$ git add -A                       # add all files
-       ~/apps/my-app$ git commit -m "initial commit"   # create initial commit
+        ~$ cd apps/my-app/                              # enter the app directory
+        ~/apps/my-app$ git init                         # initialize git repository
+        ~/apps/my-app$ git add -A                       # add all files
+        ~/apps/my-app$ git commit -m "initial commit"   # create initial commit
 
 #################################################
 Variant B: Create app from scratch (step-by-step)
