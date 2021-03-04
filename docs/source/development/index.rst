@@ -7,14 +7,13 @@ Develop AiiDAlab
 Key AiiDAlab components
 ***********************
 
-The key components of the AiiDA lab are the following:
+The key components of AiiDAlab are:
 
 - `AiiDAlab package <https://github.com/aiidalab/aiidalab>`__ provides the core functionality of the service.
-- `AiiDAlab Home app <https://github.com/aiidalab/aiidalab-home>`__ provides the web-interface to the service
-- `AiiDAlab Docker Stack <https://github.com/aiidalab/aiidalab-docker-stack>`__ is the repository containing the required info to build the `AiiDAlab docker container <https://hub.docker.com/repository/docker/aiidalab/aiidalab-docker-stack>`__.
-- `AiiDAlab App Registry <https://github.com/aiidalab/aiidalab-registry>`__  collects applications shared by the AiiDAlab community.
+- `AiiDAlab home app <https://github.com/aiidalab/aiidalab-home>`__ provides the web-interface to the service
+- `AiiDAlab docker stack <https://github.com/aiidalab/aiidalab-docker-stack>`__ is the repository containing the source code to build the `AiiDAlab docker image <https://hub.docker.com/repository/docker/aiidalab/aiidalab-docker-stack>`__.
+- `AiiDAlab app registry <https://github.com/aiidalab/aiidalab-registry>`__  registry for apps shared by the AiiDAlab community.
 
-Now let's have a closer look at each component.
 
 ****************
 AiiDAlab package
