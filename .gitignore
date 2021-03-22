@@ -4,7 +4,7 @@ __pycache__/
 .ipynb_checkpoints/
 .tox/
 dist/
-docs/
+docs/_build/
 apps_meta.sqlite
 Pipfile.lock
 requirements.txt_dev
