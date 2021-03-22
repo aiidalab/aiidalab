@@ -39,5 +39,3 @@ AiiDAlab App Registry
 *********************
 
 [TODO]
-
-

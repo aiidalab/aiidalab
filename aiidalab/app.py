@@ -99,7 +99,7 @@ class AiidaLabAppWatch:
         try:
             self._observer.start()
         except OSError as error:
-            if error.errno in (errno.ENOSPC, errno.EMFILE) and 'inotify' in str(error):
+            if error.errno in (errno.ENOSPC, errno.EMFILE) and "inotify" in str(error):
                 # We reached the inotify watch limit, using polling-based fallback observer.
                 self._observer = PollingObserver()
                 self._observer.schedule(event_handler, self.app.path, recursive=True)
@@ -121,7 +121,9 @@ class AiidaLabAppWatch:
         The app state is refreshed automatically for all events.
         """
         if self._started:
-            raise RuntimeError(f"Instances of {type(self).__name__} can only be started once.")
+            raise RuntimeError(
+                f"Instances of {type(self).__name__} can only be started once."
+            )
 
         if self._monitor_thread is None:
 
@@ -190,7 +192,9 @@ class AiidaLabApp(traitlets.HasTraits):
     install_info = traitlets.Unicode()
 
     available_versions = traitlets.List(traitlets.Unicode)
-    installed_version = traitlets.Union([traitlets.Unicode(), traitlets.UseEnum(AppVersion)])
+    installed_version = traitlets.Union(
+        [traitlets.Unicode(), traitlets.UseEnum(AppVersion)]
+    )
     updates_available = traitlets.Bool(readonly=True, allow_none=True)
 
     busy = traitlets.Bool(readonly=True)
@@ -201,6 +205,7 @@ class AiidaLabApp(traitlets.HasTraits):
     @dataclass
     class AppRegistryData:
         """Dataclass that contains the app data from the app registry."""
+
         git_url: str
         meta_url: str
         categories: List[str]
@@ -226,12 +231,14 @@ class AiidaLabApp(traitlets.HasTraits):
             self.app = app
             self.line = line
 
-            match = re.fullmatch(r'(?P<commit>([0-9a-fA-F]{20}){1,2})|(?P<short_ref>.+)', line)
+            match = re.fullmatch(
+                r"(?P<commit>([0-9a-fA-F]{20}){1,2})|(?P<short_ref>.+)", line
+            )
             if not match:
                 raise ValueError(f"Illegal release line: {line}")
 
-            self.commit = match.groupdict()['commit']
-            self.short_ref = match.groupdict()['short_ref']
+            self.commit = match.groupdict()["commit"]
+            self.short_ref = match.groupdict()["short_ref"]
             assert self.commit or self.short_ref
 
         @property
@@ -250,16 +257,16 @@ class AiidaLabApp(traitlets.HasTraits):
             """
             # Check if short-ref is among the remote refs:
             for ref in self._repo.refs.allkeys():
-                if re.match(r'refs\/remotes\/(.*)?\/' + short_ref, ref.decode()):
+                if re.match(r"refs\/remotes\/(.*)?\/" + short_ref, ref.decode()):
                     return ref
 
             # Check if short-ref is a head (branch):
-            if f'refs/heads/{short_ref}'.encode() in self._repo.refs.allkeys():
-                return f'refs/heads/{short_ref}'.encode()
+            if f"refs/heads/{short_ref}".encode() in self._repo.refs.allkeys():
+                return f"refs/heads/{short_ref}".encode()
 
             # Check if short-ref is a tag:
-            if f'refs/tags/{short_ref}'.encode() in self._repo.refs.allkeys():
-                return f'refs/tags/{short_ref}'.encode()
+            if f"refs/tags/{short_ref}".encode() in self._repo.refs.allkeys():
+                return f"refs/tags/{short_ref}".encode()
 
             return None
 
@@ -284,13 +291,19 @@ class AiidaLabApp(traitlets.HasTraits):
             else:
                 ref = self._resolve_short_ref(self.short_ref)
                 if ref is None:
-                    raise ValueError(f"Unable to resolve {self.short_ref!r}. "
-                                     "Are you sure this is a valid git branch or tag?")
+                    raise ValueError(
+                        f"Unable to resolve {self.short_ref!r}. "
+                        "Are you sure this is a valid git branch or tag?"
+                    )
 
                 # The release line is a head (branch).
-                if ref.startswith(b'refs/remotes/'):
+                if ref.startswith(b"refs/remotes/"):
                     ref_commit = self._repo.get_peeled(ref)
-                    all_tags = {ref for ref in self._repo.get_refs() if ref.startswith(b'refs/tags')}
+                    all_tags = {
+                        ref
+                        for ref in self._repo.get_refs()
+                        if ref.startswith(b"refs/tags")
+                    }
 
                     # Create lookup table from commit -> tags
                     tags_lookup = defaultdict(set)
@@ -299,7 +312,11 @@ class AiidaLabApp(traitlets.HasTraits):
 
                     # Determine all the tagged commits on the branch (HEAD)
                     commits_on_head = self._repo.get_walker(self._repo.refs[ref])
-                    tagged_commits_on_head = [c.commit.id for c in commits_on_head if c.commit.id in tags_lookup]
+                    tagged_commits_on_head = [
+                        c.commit.id
+                        for c in commits_on_head
+                        if c.commit.id in tags_lookup
+                    ]
 
                     # Always yield the tip of the branch (HEAD), i.e., the latest commit on the branch.
                     yield from tags_lookup.get(ref_commit, (ref,))
@@ -310,7 +327,7 @@ class AiidaLabApp(traitlets.HasTraits):
                             yield from tags_lookup[commit]
 
                 # The release line is a tag.
-                elif ref.startswith(b'refs/tags/'):
+                elif ref.startswith(b"refs/tags/"):
                     yield ref
 
         def _resolve_commit(self, rev):
@@ -329,7 +346,9 @@ class AiidaLabApp(traitlets.HasTraits):
 
         def _on_release_line(self, rev):
             """Determine whether the release line contains the provided version."""
-            return rev in [self._resolve_commit(version) for version in self.find_versions()]
+            return rev in [
+                self._resolve_commit(version) for version in self.find_versions()
+            ]
 
         def current_revision(self):
             """Return the version currently installed on the release line.
@@ -345,7 +364,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
         def is_branch(self):
             """Return True if release line is a branch."""
-            return f'refs/remotes/origin/{self.line}'.encode() in self._repo.refs
+            return f"refs/remotes/origin/{self.line}".encode() in self._repo.refs
 
     def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
         super().__init__()
@@ -356,7 +375,9 @@ class AiidaLabApp(traitlets.HasTraits):
         else:
             self._registry_data = self.AppRegistryData(**app_data)
             parsed_url = urlsplit(self._registry_data.git_url)
-            self._release_line = self._GitReleaseLine(self, parsed_url.fragment or AIIDALAB_DEFAULT_GIT_BRANCH)
+            self._release_line = self._GitReleaseLine(
+                self, parsed_url.fragment or AIIDALAB_DEFAULT_GIT_BRANCH
+            )
 
         self.name = name
         self.path = os.path.join(aiidalab_apps_path, self.name)
@@ -369,11 +390,15 @@ class AiidaLabApp(traitlets.HasTraits):
             self._watch = None
 
     def __repr__(self):
-        app_data_argument = None if self._registry_data is None else asdict(self._registry_data)
-        return (f"AiidaLabApp(name={self.name!r}, app_data={app_data_argument!r}, "
-                f"aiidalab_apps_path={os.path.dirname(self.path)!r})")
+        app_data_argument = (
+            None if self._registry_data is None else asdict(self._registry_data)
+        )
+        return (
+            f"AiidaLabApp(name={self.name!r}, app_data={app_data_argument!r}, "
+            f"aiidalab_apps_path={os.path.dirname(self.path)!r})"
+        )
 
-    @traitlets.default('detached')
+    @traitlets.default("detached")
     def _default_detached(self):
         """Provide default value for detached traitlet."""
         if self.is_installed():
@@ -384,18 +409,18 @@ class AiidaLabApp(traitlets.HasTraits):
             return True
         return None
 
-    @traitlets.default('busy')
+    @traitlets.default("busy")
     def _default_busy(self):  # pylint: disable=no-self-use
         return False
 
     @contextmanager
     def _show_busy(self):
         """Apply this decorator to indicate that the app is busy during execution."""
-        self.set_trait('busy', True)
+        self.set_trait("busy", True)
         try:
             yield
         finally:
-            self.set_trait('busy', False)
+            self.set_trait("busy", False)
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
@@ -420,29 +445,45 @@ class AiidaLabApp(traitlets.HasTraits):
 
         with self._show_busy():
 
-            if not re.fullmatch(r'git:((?P<commit>([0-9a-fA-F]{20}){1,2})|(?P<short_ref>.+))', version):
+            if not re.fullmatch(
+                r"git:((?P<commit>([0-9a-fA-F]{20}){1,2})|(?P<short_ref>.+))", version
+            ):
                 raise ValueError(f"Unknown version format: '{version}'")
 
             if not os.path.isdir(self.path):  # clone first
                 url = urldefrag(self._registry_data.git_url).url
-                check_output(['git', 'clone', url, self.path], cwd=os.path.dirname(self.path), stderr=STDOUT)
+                check_output(
+                    ["git", "clone", url, self.path],
+                    cwd=os.path.dirname(self.path),
+                    stderr=STDOUT,
+                )
 
             # Switch to desired version
-            rev = self._release_line.resolve_revision(re.sub('git:', '', version)).pop().encode()
+            rev = (
+                self._release_line.resolve_revision(re.sub("git:", "", version))
+                .pop()
+                .encode()
+            )
             if self._release_line.is_branch():
                 branch = self._release_line.line
-                check_output(['git', 'checkout', '--force', branch], cwd=self.path, stderr=STDOUT)
-                check_output(['git', 'reset', '--hard', rev], cwd=self.path, stderr=STDOUT)
+                check_output(
+                    ["git", "checkout", "--force", branch], cwd=self.path, stderr=STDOUT
+                )
+                check_output(
+                    ["git", "reset", "--hard", rev], cwd=self.path, stderr=STDOUT
+                )
             else:
-                check_output(['git', 'checkout', '--force', rev], cwd=self.path, stderr=STDOUT)
+                check_output(
+                    ["git", "checkout", "--force", rev], cwd=self.path, stderr=STDOUT
+                )
 
             self.refresh()
-            return 'git:' + rev.decode()
+            return "git:" + rev.decode()
 
     def install_app(self, version=None):
         """Installing the app."""
         if version is None:  # initial installation
-            version = self._install_app_version(f'git:{self._release_line.line}')
+            version = self._install_app_version(f"git:{self._release_line.line}")
 
             # switch to compatible version if possible
             available_versions = list(self._available_versions())
@@ -477,7 +518,9 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def _remote_update_available(self):
         """Check whether there are more commits at the origin (based on the registry)."""
-        error_message_prefix = "Unable to determine whether remote update is available: "
+        error_message_prefix = (
+            "Unable to determine whether remote update is available: "
+        )
 
         try:  # Obtain reference to git repository.
             repo = self._repo
@@ -486,13 +529,15 @@ class AiidaLabApp(traitlets.HasTraits):
 
         try:  # Determine sha of remote-tracking branch from registry.
             branch = self._release_line.line
-            branch_ref = 'refs/heads/' + branch
-            local_remote_ref = 'refs/remotes/origin/' + branch
+            branch_ref = "refs/heads/" + branch
+            local_remote_ref = "refs/remotes/origin/" + branch
             remote_sha = self._registry_data.gitinfo[branch_ref]
         except AttributeError:
             raise AppRemoteUpdateError(f"{error_message_prefix}app is not registered")
         except KeyError:
-            raise AppRemoteUpdateError(f"{error_message_prefix}no data about this release line in registry")
+            raise AppRemoteUpdateError(
+                f"{error_message_prefix}no data about this release line in registry"
+            )
 
         try:  # Determine sha of remote-tracking branch from repository.
             local_remote_sha = repo.refs[local_remote_ref.encode()].decode()
@@ -503,7 +548,10 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def _fetch_from_remote(self):
         with self._show_busy():
-            fetch(repo=self._repo, remote_location=urldefrag(self._registry_data.git_url).url)
+            fetch(
+                repo=self._repo,
+                remote_location=urldefrag(self._registry_data.git_url).url,
+            )
 
     def check_for_updates(self):
         """Check whether there is an update available for the installed release line."""
@@ -511,32 +559,36 @@ class AiidaLabApp(traitlets.HasTraits):
             assert not self.detached
             remote_update_available = self._remote_update_available()
         except (AssertionError, AppRemoteUpdateError):
-            self.set_trait('updates_available', None)
+            self.set_trait("updates_available", None)
         else:
             available_versions = list(self._available_versions())
             if len(available_versions) > 0:
                 local_update_available = self.installed_version != available_versions[0]
             else:
                 local_update_available = None
-            self.set_trait('updates_available', remote_update_available or local_update_available)
+            self.set_trait(
+                "updates_available", remote_update_available or local_update_available
+            )
 
     def _available_versions(self):
         """Return all available and compatible versions."""
         if self.is_installed() and self._release_line is not None:
-            versions = ['git:' + ref.decode() for ref in self._release_line.find_versions()]
+            versions = [
+                "git:" + ref.decode() for ref in self._release_line.find_versions()
+            ]
         elif self._registry_data is not None:
 
             def is_tag(ref):
-                return ref.startswith('refs/tags') and '^{}' not in ref
+                return ref.startswith("refs/tags") and "^{}" not in ref
 
             def sort_key(ref):
-                version = parse(ref[len('refs/tags/'):])
+                version = parse(ref[len("refs/tags/") :])
                 return (not is_tag(ref), version, ref)
 
             versions = [
-                'git:' + ref
+                "git:" + ref
                 for ref in reversed(sorted(self._registry_data.gitinfo, key=sort_key))
-                if is_tag(ref) or ref == f'refs/heads/{self._release_line.line}'
+                if is_tag(ref) or ref == f"refs/heads/{self._release_line.line}"
             ]
         else:
             versions = []
@@ -553,11 +605,11 @@ class AiidaLabApp(traitlets.HasTraits):
                 if not (self._release_line is None or modified):
                     revision = self._release_line.current_revision()
                     if revision is not None:
-                        return f'git:{revision.decode()}'
+                        return f"git:{revision.decode()}"
             return AppVersion.UNKNOWN
         return AppVersion.NOT_INSTALLED
 
-    @traitlets.default('compatible')
+    @traitlets.default("compatible")
     def _default_compatible(self):  # pylint: disable=no-self-use
         return None
 
@@ -568,24 +620,24 @@ class AiidaLabApp(traitlets.HasTraits):
 
         def get_version_identifier(version):
             "Get version identifier from version (e.g. git:refs/tags/v1.0.0 -> v1.0.0)."
-            if version.startswith('git:refs/tags/'):
-                return version[len('git:refs/tags/'):]
-            if version.startswith('git:refs/heads/'):
-                return version[len('git:refs/heads/'):]
-            if version.startswith('git:refs/remotes/'):  # remote branch
-                return re.sub(r'git:refs\/remotes\/(.+?)\/', '', version)
+            if version.startswith("git:refs/tags/"):
+                return version[len("git:refs/tags/") :]
+            if version.startswith("git:refs/heads/"):
+                return version[len("git:refs/heads/") :]
+            if version.startswith("git:refs/remotes/"):  # remote branch
+                return re.sub(r"git:refs\/remotes\/(.+?)\/", "", version)
             return version
 
         class RegexMatchSpecifierSet:
             """Interpret 'invalid' specifier sets as regular expression pattern."""
 
-            def __init__(self, specifiers=''):
+            def __init__(self, specifiers=""):
                 self.specifiers = specifiers
 
             def __contains__(self, version):
                 return re.match(self.specifiers, version) is not None
 
-        def specifier_set(specifiers=''):
+        def specifier_set(specifiers=""):
             try:
                 return SpecifierSet(specifiers=specifiers, prereleases=True)
             except InvalidSpecifier:
@@ -594,14 +646,17 @@ class AiidaLabApp(traitlets.HasTraits):
         def find_missing_requirements(requirements, packages):
             for requirement in requirements:
                 if not any(package.fulfills(requirement) for package in packages):
-                    logging.debug(f"{self.name}({app_version}): missing requirement '{requirement}'")  # pylint: disable=logging-fstring-interpolation
+                    logging.debug(
+                        f"{self.name}({app_version}): missing requirement '{requirement}'"
+                    )  # pylint: disable=logging-fstring-interpolation
                     yield requirement  # missing requirement
 
         # Retrieve and convert the compatibility map from the app metadata.
         try:
-            compat_map = self.metadata.get('requires', {'': []})
+            compat_map = self.metadata.get("requires", {"": []})
             compat_map = {
-                specifier_set(app_version): [Requirement(r) for r in reqs] for app_version, reqs in compat_map.items()
+                specifier_set(app_version): [Requirement(r) for r in reqs]
+                for app_version, reqs in compat_map.items()
             }
         except RuntimeError:  # not registered
             return None  # unable to determine compatibility
@@ -611,14 +666,19 @@ class AiidaLabApp(traitlets.HasTraits):
                 app_version_identifier = get_version_identifier(app_version)
 
                 # Determine all specs that match the given version identifier.
-                matching_specs = [app_spec for app_spec in compat_map if app_version_identifier in app_spec]
+                matching_specs = [
+                    app_spec
+                    for app_spec in compat_map
+                    if app_version_identifier in app_spec
+                ]
 
                 # Find all packages installed within in this environment.
                 packages = find_installed_packages()
 
                 # Determine whether any matching specifiers are compatible with the environment.
                 missing_requirements = {
-                    spec: list(find_missing_requirements(compat_map[spec], packages)) for spec in matching_specs
+                    spec: list(find_missing_requirements(compat_map[spec], packages))
+                    for spec in matching_specs
                 }
 
                 # Store missing requirements in compatibility_info trait to make reasons for
@@ -626,7 +686,10 @@ class AiidaLabApp(traitlets.HasTraits):
                 self.compatibility_info.update(missing_requirements)
 
                 # Return whether the app is at all compatible:
-                return any(not any(missing_reqs) for missing_reqs in missing_requirements.values())
+                return any(
+                    not any(missing_reqs)
+                    for missing_reqs in missing_requirements.values()
+                )
 
         return None  # compatibility indetermined since the app is not installed
 
@@ -637,15 +700,18 @@ class AiidaLabApp(traitlets.HasTraits):
             with self.hold_trait_notifications():
                 self.available_versions = list(self._available_versions())
                 self.installed_version = self._installed_version()
-                self.set_trait('compatible', self._is_compatible())
+                self.set_trait("compatible", self._is_compatible())
                 if self.is_installed() and self._has_git_repo():
                     self.installed_version = self._installed_version()
                     modified = self._repo.dirty()
-                    self.set_trait('detached', self.installed_version is AppVersion.UNKNOWN or modified)
+                    self.set_trait(
+                        "detached",
+                        self.installed_version is AppVersion.UNKNOWN or modified,
+                    )
                     self.check_for_updates()
                 else:
-                    self.set_trait('updates_available', None)
-                    self.set_trait('detached', None)
+                    self.set_trait("updates_available", None)
+                    self.set_trait("detached", None)
 
     def refresh_async(self):
         """Asynchronized (non-blocking) refresh of the app state."""
@@ -660,13 +726,14 @@ class AiidaLabApp(traitlets.HasTraits):
 
         if self.is_installed():
             try:
-                with open(os.path.join(self.path, 'metadata.json')) as json_file:
+                with open(os.path.join(self.path, "metadata.json")) as json_file:
                     return json.load(json_file)
             except IOError:
                 return dict()
 
         raise RuntimeError(
-            f"Requested app '{self.name}' is not installed and is also not registered on the app registry.")
+            f"Requested app '{self.name}' is not installed and is also not registered on the app registry."
+        )
 
     def _get_from_metadata(self, what):
         """Get information from metadata."""
@@ -674,21 +741,21 @@ class AiidaLabApp(traitlets.HasTraits):
         try:
             return "{}".format(self.metadata[what])
         except KeyError:
-            if not os.path.isfile(os.path.join(self.path, 'metadata.json')):
-                return '({}) metadata.json file is not present'.format(what)
+            if not os.path.isfile(os.path.join(self.path, "metadata.json")):
+                return "({}) metadata.json file is not present".format(what)
             return 'the field "{}" is not present in metadata.json file'.format(what)
 
     @property
     def authors(self):
-        return self._get_from_metadata('authors')
+        return self._get_from_metadata("authors")
 
     @property
     def description(self):
-        return self._get_from_metadata('description')
+        return self._get_from_metadata("description")
 
     @property
     def title(self):
-        return self._get_from_metadata('title')
+        return self._get_from_metadata("title")
 
     @property
     def url(self):

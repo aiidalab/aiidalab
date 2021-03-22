@@ -1,20 +1,25 @@
-# # Install pre-commit hooks via
-# pre-commit install
+repos:
 
-- repo: local
-  hooks:
-  # yapf = yet another python formatter
-  - id: yapf
-    name: yapf
-    entry: yapf
-    language: system
-    types: [python]
-    args: ["-i"]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.3.0
+    hooks:
+    - id: check-json
+    - id: check-yaml
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
 
-  # prospector: collection of linters
-  - id: prospector
-    language: system
-    types: [file, python]
-    name: prospector
-    description: "This hook runs Prospector: https://github.com/landscapeio/prospector"
-    entry: prospector
+  - repo: https://github.com/mgedmin/check-manifest
+    rev: "0.44"
+    hooks:
+    - id: check-manifest
+
+  - repo: https://github.com/psf/black
+    rev: 20.8b1
+    hooks:
+    - id: black
+
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.4
+    hooks:
+    - id: flake8
+      additional_dependencies: [flake8-bugbear==21.3.1]
