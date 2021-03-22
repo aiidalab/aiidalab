@@ -10,9 +10,17 @@ Overview of the separate in-depth sections in this part of the documentation:
     :maxdepth: 1
 
     create.rst
+    first_app.rst
     publish.rst
 
-Below is a short overview of each section.
+To get an idea of how proper apps may be built and used, you can check out these examples:
+
+.. toctree::
+    :maxdepth: 1
+
+    example_qebands.rst
+
+Below is a short overview of each main section.
 It is recommended to follow the sections step-by-step when creating your first AiiDAlab app.
 
 Create app
@@ -31,6 +39,15 @@ The first utilizes the `app cookiecutter <https://github.com/aiidalab/aiidalab-a
 
 The other option is to create the app from scratch.
 This is more cumbersome, but provides a more in-depth understanding of how AiiDAlab interfaces with an app.
+
+Build app
+=========
+
+:ref:`Go directly to section<develop-apps:first-app>`
+
+A very simplistic example of how your first AiiDAlab app may be set up and built.
+
+For more advanced examples see :ref:`develop-apps:example-qe_bands`.
 
 Publish app
 ===========

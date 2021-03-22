@@ -66,5 +66,7 @@ About the AiiDAlab registry
 
 .. TODO: Insert reference to section on AiiDAlab App Registry
 
+**Next (app examples):** :ref:`develop-apps:example-qe_bands`
+
 .. _AiiDAlab registry: https://github.com/aiidalab/aiidalab-registry
 .. _AiiDAlab registry webpage: http://aiidalab.github.io/aiidalab-registry

@@ -34,7 +34,7 @@ The newly created app will show up with a rendered banner on the start page afte
         ~/apps/my-app$ git add -A                       - add all files
         ~/apps/my-app$ git commit -m "initial commit"   - create initial commit
 
-**Next:** :ref:`develop-apps:publish-app`
+**Next:** :ref:`develop-apps:first-app`
 
 .. _develop-apps:create-app:variant-b_from-scratch:
 
@@ -135,4 +135,4 @@ Rename the file to ``main`` and then add the following line into the first cell:
 Save the notebook and close it.
 Now go back to AiiDAlab start page and click on the ``My App`` link again - it should bring you to a page that says "Welcome to my app!"
 
-**Next:** :ref:`develop-apps:publish-app`
+**Next:** :ref:`develop-apps:first-app`
