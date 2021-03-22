@@ -35,6 +35,8 @@ The newly created app will show up with a rendered banner on the start page afte
         ~/apps/my-app$ git add -A                       - add all files
         ~/apps/my-app$ git commit -m "initial commit"   - create initial commit
 
+**Next:** :ref:`develop-apps:publish-app`
+
 .. _develop-apps:create-app:variant-b_from-scratch:
 
 *************************************************
@@ -79,12 +81,12 @@ For the latter:
    .. code-block:: json
 
        {
-           "description": "Example app that I just created",
            "title": "Example App",
+           "description": "Example app that I just created",
            "authors": "X.Y. Author1, A.B. Author2"
        }
 
-  1. Save the file by clicking on "File" and then "Save".
+#. Save the file by clicking on "File" and then "Save".
 
 To add a logo for your app, place the logo file within the app directory and add the filename to the :file:`metadata.json` file:
 
@@ -134,3 +136,5 @@ Rename the file to ``main`` and then add the following line into the first cell:
 
 Save the notebook and close it.
 Now go back to AiiDAlab start page and click on the ``My App`` link again - it should bring you to a page that says "Welcome to my app!"
+
+**Next:** :ref:`develop-apps:publish-app`

@@ -41,5 +41,5 @@ Publish app
 
 After creating the app, you need to register it with the `AiiDAlab registry <https://github.com/aiidalab/aiidalab-registry>`__ in order for other users to benefit from it.
 
-To learn more about this, please see :ref:`develop-apps:publish-app:`
+To learn more about this, please see :ref:`develop-apps:publish-app`.
 
