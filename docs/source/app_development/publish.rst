@@ -1,12 +1,11 @@
 .. _develop-apps:publish-app:
 
-#########################################
+*****************************************
 Publish your app on the AiiDAlab registry
-#########################################
+*****************************************
 
 To make your app available to other AiiDAlab users, please register it on the `AiiDAlab registry`_.
 
-===============
 How to register
 ===============
 
@@ -62,7 +61,6 @@ The PR will be reviewed by the AiiDAlab developers, which may result in you havi
     :align: center
     :target: `AiiDAlab registry webpage`_
 
-===========================
 About the AiiDAlab registry
 ===========================
 

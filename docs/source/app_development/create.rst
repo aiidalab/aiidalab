@@ -1,14 +1,13 @@
 .. _develop-apps:create-app:
 
-###################
+*******************
 Create AiiDAlab app
-###################
+*******************
 
 .. _develop-apps:create-app:variant-a_cookiecutter:
 
-*********************************************************
 Variant A: Quickstart using the AiiDAlab app cookiecutter
-*********************************************************
+=========================================================
 
 Open the terminal from the AiiDAlab start page by clicking on the icon labeled "Terminal":
 Then in the terminal, type:
@@ -39,14 +38,13 @@ The newly created app will show up with a rendered banner on the start page afte
 
 .. _develop-apps:create-app:variant-b_from-scratch:
 
-*************************************************
 Variant B: Create app from scratch (step-by-step)
-*************************************************
+=================================================
 
 Typically one would prefer to use the cookie-cutter to create a new app, but here are the steps to create an app from scratch.
 
 Step 1: Create the app folder
-=============================
+-----------------------------
 
 Open the terminal and then create a new app with:
 
@@ -66,7 +64,7 @@ However, it is obvious that there are still a few essential things missing: spec
     Newly created AiiDAlab app (still missing app metadata).
 
 Step 2: Add ``metadata.json`` file
-==================================
+----------------------------------
 
 We need to create a file called :file:`metadata.json` that contains some basic information about our newly created app.
 You can create the file either in the terminal, e.g., with ``vim``, or directly through the Jupyter interface.
@@ -100,7 +98,7 @@ To add a logo for your app, place the logo file within the app directory and add
 The ``...`` is a placeholder for the previously added metadata.
 
 Step 3: Add a start banner
-==========================
+--------------------------
 
 The start banner is the widget that shows up on the AiiDAlab start page and that users are expected to click on to start the app.
 You can create a static banner by adding :file:`start.md` file to the app directory, or a dynamic banner with a :file:`start.py` file.
@@ -119,7 +117,7 @@ Like the :file:`metadata.json` file, you can either use the File Manager or the 
 
 
 Step 4: Make the app functional
-===============================
+-------------------------------
 
 Creating a new app for AiiDAlab and making it show up on the start page is of course only the first step.
 Now we need to actually make it do something.

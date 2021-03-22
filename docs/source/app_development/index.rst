@@ -15,9 +15,8 @@ Overview of the separate in-depth sections in this part of the documentation:
 Below is a short overview of each section.
 It is recommended to follow the sections step-by-step when creating your first AiiDAlab app.
 
-**********
 Create app
-**********
+==========
 
 :ref:`Go directly to section<develop-apps:create-app>`
 
@@ -33,9 +32,8 @@ The first utilizes the `app cookiecutter <https://github.com/aiidalab/aiidalab-a
 The other option is to create the app from scratch.
 This is more cumbersome, but provides a more in-depth understanding of how AiiDAlab interfaces with an app.
 
-***********
 Publish app
-***********
+===========
 
 :ref:`Go directly to section<develop-apps:publish-app>`
 
