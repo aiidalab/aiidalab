@@ -1,7 +1,10 @@
 *.egg-info
 *.swp
+__pycache__/
 .ipynb_checkpoints/
+.tox/
 dist/
+apps_meta.sqlite
 Pipfile.lock
 requirements.txt_dev
 requirements.txt_stable
