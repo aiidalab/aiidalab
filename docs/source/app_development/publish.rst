@@ -52,7 +52,7 @@ Tutorials  Apps suitable for getting to know AiiDA and the AiiDAlab.
 Utilities  Utility apps for everyday tasks.
 =========  ===========================================================================
 
-Finally, you ``git push`` your branch with the updated ``apps.json`` to your fork on GitHub and `create a pull request (PR) https://github.com/aiidalab/aiidalab-registry/compare>`__ against the ``master`` branch of `AiiDAlab registry`_.
+Finally, you ``git push`` your branch with the updated ``apps.json`` to your fork on GitHub and `create a pull request (PR) <https://github.com/aiidalab/aiidalab-registry/compare>`__ against the ``master`` branch of `AiiDAlab registry`_.
 
 The PR will be reviewed by the AiiDAlab developers, which may result in you having to make changes, and when it is finally merged with the `AiiDAlab registry`_ repository, it will shortly become available on the `AiiDAlab registry webpage`_, as well as in the AiiDAlab app store.
 
