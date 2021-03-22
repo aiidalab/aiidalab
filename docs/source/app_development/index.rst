@@ -1,10 +1,10 @@
-*****************************
+#############################
 Develop AiiDAlab applications
-*****************************
+#############################
 
-===========================================================
-Variant A: Quickstart using the AiiDAlab application cutter
-===========================================================
+*****************************************************************
+Variant A: Quickstart using the AiiDAlab application cookiecutter
+*****************************************************************
 
 Open the terminal from the AiiDAlab start page by clicking on the icon labeled "Terminal":
 Then in the terminal, type:
@@ -31,9 +31,9 @@ The newly created app will show up with a rendered banner on the start page afte
         ~/apps/my-app$ git add -A                       - add all files
         ~/apps/my-app$ git commit -m "initial commit"   - create initial commit
 
-=================================================
+*************************************************
 Variant B: Create app from scratch (step-by-step)
-=================================================
+*************************************************
 
 Typically one would prefer to use the cookie-cutter to create a new app, but here are the steps to create an app from scratch.
 
@@ -130,9 +130,9 @@ Save the notebook and close it.
 Now go back to AiiDAlab start page and click on the ``My App`` link again - it should bring you to a page that says "Welcome to my app!"
 
 
-=========================================
+*****************************************
 Publish your app on the AiiDAlab registry
-=========================================
+*****************************************
 
 To make your app available to other AiiDAlab users, please register it on the `AiiDAlab registry <https://github.com/aiidalab/aiidalab-registry>`__.
 For this, please follow the instruction in the README.
