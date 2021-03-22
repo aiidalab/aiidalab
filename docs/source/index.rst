@@ -12,6 +12,7 @@ AiiDAlab is an environment for users with diverse expertise to access and run co
    Develop AiiDAlab apps <app_development/index.rst>
    Develop AiiDAlab <development/index.rst>
    API documentation <apidoc/aiidalab>
+   Widgets <widgets/index>
 
 
 ``aiidalab`` is released under the MIT license.
