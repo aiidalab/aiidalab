@@ -11,5 +11,6 @@ exclude tox.ini
 exclude .flake8
 
 include .gitmodules
+include LICENSE
 include CHANGELOG.md
 recursive-include jupyter-config *.json
