@@ -15,8 +15,10 @@ Overview of the separate in-depth sections in this part of the documentation:
 
 To get an idea of how proper apps may be built and used, you can check out these examples:
 
-.. toctree::
-    :maxdepth: 1
+.. note::
+
+    AiiDAlab expects that app source code is managed with `git <https://git-scm.com/>`__.
+    To start tracking the app development with git, open the terminal once more, and execute:
 
     example_qebands.rst
 
@@ -57,4 +59,3 @@ Publish app
 After creating the app, you need to register it with the `AiiDAlab registry <https://github.com/aiidalab/aiidalab-registry>`__ in order for other users to benefit from it.
 
 To learn more about this, please see :ref:`develop-apps:publish-app`.
-
