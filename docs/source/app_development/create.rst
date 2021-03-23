@@ -23,7 +23,7 @@ After answering the questions asked by the app-cutter, you will find a new folde
 The newly created app will show up with a rendered banner on the start page after a reload.
 
 .. note::
-    
+
     AiiDAlab expects that app source code is managed with `git <https://git-scm.com/>`__.
     To start tracking the app development with git, open the terminal once more, and execute:
 
