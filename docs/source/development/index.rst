@@ -104,68 +104,67 @@ This will ensure that the unit and integration tests are executed.
 How to make a new release (aiidalab and aiidalab-home)
 ------------------------------------------------------
 
-#. Switch to ``develop`` branch.
-#. Make a new release branch e.g. ``release/1.0.0a2``.
+1. Switch to ``develop`` branch.
+2. Make a new release branch e.g. ``release/1.0.0a2``.
 
 .. code-block:: console
 
        $ git checkout -b release/1.0.0a2
-
-#. Increment ``__version__`` in ``__init__.py`` AND ``setup.json``
+3. Increment ``__version__`` in ``__init__.py`` AND ``setup.json``
    (setup.py).
-#. Commit the changes with the commit message: "Prepare release
+4. Commit the changes with the commit message: "Prepare release
    1.0.0a2".
-#. Push the changes to GitHub.
-#. Create a PR from ``release/1.0.0a2`` branch to the ``master`` branch.
-#. Once the tests are passed, merge the PR via merge commit (do not use
+5. Push the changes to GitHub.
+6. Create a PR from ``release/1.0.0a2`` branch to the ``master`` branch.
+7. Once the tests are passed, merge the PR via merge commit (do not use
    rebase, it will recreate all the commits' sha!).
-#. Go to the command line and pull the ``master`` branch.
-#. Delete ``release/1.0.0a2`` branch locally.
+8. Go to the command line and pull the ``master`` branch.
+9. Delete ``release/1.0.0a2`` branch locally.
 
 .. code-block:: console
 
         $ git branch -d release/1.0.0a2
 
-#. Make a new annotated tag. Commit message: "Release 1.0.0a2"
+10. Make a new annotated tag. Commit message: "Release 1.0.0a2"
 
 .. code-block:: console
 
         $ git tag -a 1.0.0a2
 
-#. Push the new tag to GitHub: 
+11. Push the new tag to GitHub: 
 
 .. code-block:: console
 
        $ git push --tags
 
-#. List all new changes (with links to PRs) while making a release on
+12. List all new changes (with links to PRs) while making a release on
    GitHub.
-#. Remove the old dist folder.
+13. Remove the old dist folder.
 
 .. code-block:: console
 
        $ rm -r dist
 
-#. Create a new ``dist`` folder.
+14. Create a new ``dist`` folder.
 
 .. code-block:: console
 
         $ python setup.py sdist
 
-#. Upload things on test.pypi.org 
+15. Upload things on test.pypi.org 
 
 .. code-block:: console
 
        $ twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
-#. Check on test.pypi.org that everything is alright.
-#. Upload things on pypi.org:
+16. Check on test.pypi.org that everything is alright.
+17. Upload things on pypi.org:
 
 .. code-block:: console
 
         $ twine upload dist/*
 
-#. Merge ``master`` back to ``develop`` and push the ``develop`` branch
+18. Merge ``master`` back to ``develop`` and push the ``develop`` branch
    to GitHub.
 
 .. code-block:: console
