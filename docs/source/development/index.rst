@@ -110,6 +110,7 @@ How to make a new release (aiidalab and aiidalab-home)
 .. code-block:: console
 
        $ git checkout -b release/1.0.0a2
+
 3. Increment ``__version__`` in ``__init__.py`` AND ``setup.json``
    (setup.py).
 4. Commit the changes with the commit message: "Prepare release
@@ -123,22 +124,21 @@ How to make a new release (aiidalab and aiidalab-home)
 
 .. code-block:: console
 
-        $ git branch -d release/1.0.0a2
+       $ git branch -d release/1.0.0a2
 
 10. Make a new annotated tag. Commit message: "Release 1.0.0a2"
 
 .. code-block:: console
 
-        $ git tag -a 1.0.0a2
+       $ git tag -a 1.0.0a2
 
-11. Push the new tag to GitHub: 
+11. Push the new tag to GitHub:
 
 .. code-block:: console
 
        $ git push --tags
 
-12. List all new changes (with links to PRs) while making a release on
-   GitHub.
+12. List all new changes (with links to PRs) while making a release on GitHub.
 13. Remove the old dist folder.
 
 .. code-block:: console
@@ -149,9 +149,9 @@ How to make a new release (aiidalab and aiidalab-home)
 
 .. code-block:: console
 
-        $ python setup.py sdist
+       $ python setup.py sdist
 
-15. Upload things on test.pypi.org 
+15. Upload things on test.pypi.org
 
 .. code-block:: console
 
@@ -162,14 +162,13 @@ How to make a new release (aiidalab and aiidalab-home)
 
 .. code-block:: console
 
-        $ twine upload dist/*
+       $ twine upload dist/*
 
-18. Merge ``master`` back to ``develop`` and push the ``develop`` branch
-   to GitHub.
+18. Merge ``master`` back to ``develop`` and push the ``develop`` branch to GitHub.
 
 .. code-block:: console
 
-        $ git checkout develop && git merge master && git push
+       $ git checkout develop && git merge master && git push
 
 
 AiiDAlab Docker Stack
