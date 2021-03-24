@@ -171,13 +171,6 @@ How to make a new release (aiidalab and aiidalab-home)
 
         $ git checkout develop && git merge master && git push
 
--  Get latest version of dependencies:
-    ``pip install pur    pur``
-    Make sure to review changes!
--  Upload package
-
-   ``pip install --upgrade twine wheel    rm -rf build/ dist/    python setup.py sdist bdist_wheel    # for testing use    # twine upload --repository-url https://test.pypi.org/legacy/ dist/*    twine upload dist/*``
-
 
 AiiDAlab Docker Stack
 =====================
