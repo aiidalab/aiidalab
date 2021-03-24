@@ -174,9 +174,9 @@ How to make a new release (aiidalab and aiidalab-home)
 AiiDAlab Docker Stack
 =====================
 
-[TODO]
+[Related issue `#158 <https://github.com/aiidalab/aiidalab/issues/158>`_ ]
 
 AiiDAlab App Registry
 =====================
 
-[TODO]
+[Related issue `#159 <https://github.com/aiidalab/aiidalab/issues/159>`_ ]

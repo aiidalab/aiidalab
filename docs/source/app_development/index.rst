@@ -15,10 +15,8 @@ Overview of the separate in-depth sections in this part of the documentation:
 
 To get an idea of how proper apps may be built and used, you can check out these examples:
 
-.. note::
-
-    AiiDAlab expects that app source code is managed with `git <https://git-scm.com/>`__.
-    To start tracking the app development with git, open the terminal once more, and execute:
+.. toctree::
+    :maxdepth: 1
 
     example_qebands.rst
 
