@@ -6,9 +6,9 @@ AiiDAlab largely dependents on Jupyter widgets for the graphical user interface 
 More specifically, the `Ipywidgets <https://ipywidgets.readthedocs.io/>`_ package is the primary tool for creating AiiDAlab apps. 
 We have also created the `aiidalab-widgets-base <https://github.com/aiidalab/aiidalab-widgets-base>`_ that is based on `Ipywidgets` and provides tools to interact with AiiDA.
 
-***********************
+**********
 Ipywidgets
-***********************
+**********
 
 `Ipywidgets <https://ipywidgets.readthedocs.io/>`_ is a python package to create widgets inside the Jupyter. 
 Widgets are eventful python objects, which shows GUI components such as a slider, button, etc.
