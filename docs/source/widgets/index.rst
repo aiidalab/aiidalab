@@ -10,7 +10,7 @@ We have also created the `aiidalab-widgets-base <https://github.com/aiidalab/aii
 Ipywidgets
 **********
 
-`Ipywidgets <https://ipywidgets.readthedocs.io/>`_ is a python package to create widgets inside the Jupyter. 
+`Ipywidgets <https://ipywidgets.readthedocs.io/>`_ is a python package that provides interactive widgets to be used in Jupyter notebooks. 
 Widgets are eventful python objects, which shows GUI components such as a slider, button, etc.
 
 Ipywidgets provides base widgets like sliders, progressbar, buttons, checkbox, dropdown, radio buttons, text, textarea, label, etc. 
