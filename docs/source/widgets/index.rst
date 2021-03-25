@@ -88,9 +88,9 @@ Here is a list for some useful custom widgets:
 * `widget-bandsplot <https://github.com/osscar-org/widget-bandsplot>`_ : A widget to plot bandstructure and density of states.
 * `widget-jsmol <https://github.com/osscar-org/widget-jsmol>`_ : A widget to use the molecular visualizer Jmol inside the Jupyter.
 
-***********************
+*********************
 AiiDAlab base widgets
-***********************
+*********************
 
 Molecular and material simulations always need database parser, molecular visulizer and editor, image render tools etc.
 Here, we privde the `aiidalab-widgets-base <https://github.com/aiidalab/aiidalab-widgets-base>`_ , which is a collection of these tools.
