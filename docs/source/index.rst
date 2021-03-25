@@ -23,7 +23,6 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 
-
 ***********
 How to cite
 ***********
