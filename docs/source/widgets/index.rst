@@ -42,7 +42,8 @@ Traitlets
 In ipywidgets, all the widgets are using the `traitlets <https://traitlets.readthedocs.io/>`_ types for the parameters.
 As shown in the example above, the value of the ``FloatSlider`` is a ``Float`` trait type.
 One can not only show the current value ``value["new"]`` but also the old value ``value["old"]``.
-Traits can emit change events when the attributes are upated. This is very useful for creating custom widgets.
+Traits can emit change events when the attributes are updated.
+This is very useful for creating custom widgets.
 
 Custom widgets
 ==============
