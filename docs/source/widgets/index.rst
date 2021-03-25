@@ -14,7 +14,7 @@ Ipywidgets
 Widgets are eventful python objects, which shows GUI components such as a slider, button, etc.
 
 Ipywidgets package provides base widgets like sliders, progress bar, buttons, checkbox, dropdown, radio buttons, text, text area, label, etc. 
-The widgets have properties and value, which can be connected to the python codes and upated dynamically.
+The widgets have properties and value, which can be connected to the python codes and updated dynamically.
 For a simple example, one can use a slider to control the value of a variable.
 
 .. code-block:: python
