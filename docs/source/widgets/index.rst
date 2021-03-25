@@ -13,7 +13,7 @@ Ipywidgets
 `Ipywidgets <https://ipywidgets.readthedocs.io/>`_ is a python package that provides interactive widgets to be used in Jupyter notebooks. 
 Widgets are eventful python objects, which shows GUI components such as a slider, button, etc.
 
-Ipywidgets provides base widgets like sliders, progressbar, buttons, checkbox, dropdown, radio buttons, text, textarea, label, etc. 
+Ipywidgets package provides base widgets like sliders, progress bar, buttons, checkbox, dropdown, radio buttons, text, text area, label, etc. 
 The widgets have properties and value, which can be connected to the python codes and upated dynamically.
 For a simple example, one can use a slider to control the value of a variable.
 
