@@ -47,7 +47,7 @@ Traits can emit change events when the attributes are upated. This is very usefu
 Custom widgets
 ==============
 
-Ipywidgets package also supports for developers to create their own widgets.
+Ipywidgets package also supports developers in creating their own widgets.
 There is a detailed `tutorial <https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20Custom.html>`_ to show how to develop the custom widgets.
 In the ipywidgets framework is based on the Comm framework.
 In the Comm framework, the change events of the traits leads to send a json massage to the Jupyter kernel.
