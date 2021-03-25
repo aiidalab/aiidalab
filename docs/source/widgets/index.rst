@@ -45,7 +45,7 @@ One can not only show the current value ``value["new"]`` but also the old value 
 Traits can emit change events when the attributes are upated. This is very useful for creating custom widgets.
 
 Custom widgets
-=================
+==============
 
 Ipywidgets package also supports for developers to create their own widgets.
 There is a detailed `tutorial <https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20Custom.html>`_ to show how to develop the custom widgets.
