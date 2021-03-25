@@ -2,7 +2,8 @@
 Widgets
 #######
 
-The AiiDAlab largely dependents on the Jupyter widgets for the graphical user interface (GUI), namely the `Ipywidgets <https://ipywidgets.readthedocs.io/>`_ package. 
+AiiDAlab largely dependents on Jupyter widgets for the graphical user interface (GUI).
+More specifically, the `Ipywidgets <https://ipywidgets.readthedocs.io/>`_ package is the primary tool for creating AiiDAlab apps. 
 Furthremore, we create the `aiidalab-widgets-base <https://github.com/aiidalab/aiidalab-widgets-base>`_ to facilitate to develop apps in AiiDAlab.
 
 ***********************
@@ -100,5 +101,4 @@ Read more information at `https://aiidalab-widgets-base.readthedocs.io <https://
     :width: 600px
     :align: center
     :alt: text
-
 
