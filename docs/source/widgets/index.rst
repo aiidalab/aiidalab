@@ -48,7 +48,7 @@ Custom widgets
 ==============
 
 Ipywidgets package also supports developers in creating their own widgets.
-There is a detailed `tutorial <https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20Custom.html>`_ to show how to develop the custom widgets.
+There is a detailed `tutorial <https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20Custom.html>`_ to show how to develop a custom widget.
 In the ipywidgets framework is based on the Comm framework.
 In the Comm framework, the change events of the traits leads to send a json massage to the Jupyter kernel.
 Then, the frontend will update accordingly. 
