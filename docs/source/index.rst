@@ -17,7 +17,6 @@ AiiDAlab is an environment for users with diverse expertise to access and run co
 ``aiidalab`` is released under the MIT license.
 
 
-
 Indices and tables
 ==================
 
