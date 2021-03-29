@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 import time
-import aiidalab
+# import aiidalab
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -54,8 +54,8 @@ copyright = u"{}, {}. All rights reserved".format(
 #
 # The full version, including alpha/beta/rc tags.
 # The short X.Y version.
-version = ".".join(aiidalab.__version__.split(".")[:2])
-
+# version = ".".join(aiidalab.__version__.split(".")[:2])
+version = '1.0.0'
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
 show_authors = True
