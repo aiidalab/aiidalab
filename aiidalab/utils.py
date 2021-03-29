@@ -19,16 +19,22 @@ from .config import AIIDALAB_REGISTRY
 
 def update_cache():
     """Run this process asynchronously."""
-    requests_cache.install_cache(cache_name='apps_meta', backend='sqlite', expire_after=3600, old_data_on_error=True)
+    requests_cache.install_cache(
+        cache_name="apps_meta",
+        backend="sqlite",
+        expire_after=3600,
+        old_data_on_error=True,
+    )
     requests.get(AIIDALAB_REGISTRY)
-    requests_cache.install_cache(cache_name='apps_meta', backend='sqlite')
+    requests_cache.install_cache(cache_name="apps_meta", backend="sqlite")
 
 
 # Warning: try-except is a fix for Quantum Mobile release v19.03.0 that does not have requests_cache installed
 try:
     import requests_cache
+
     # At start getting data from cache
-    requests_cache.install_cache(cache_name='apps_meta', backend='sqlite')
+    requests_cache.install_cache(cache_name="apps_meta", backend="sqlite")
 
     # If requests_cache is installed, upgrade the cache in the background.
     UPDATE_CACHE_BACKGROUND = bg.BackgroundJobFunc(update_cache)
@@ -40,7 +46,7 @@ except ImportError:
 def load_app_registry():
     """Load apps' information from the AiiDAlab registry."""
     parsed_url = urlparse(AIIDALAB_REGISTRY)
-    if parsed_url.scheme == 'file':
+    if parsed_url.scheme == "file":
         with open(parsed_url.path) as file:
             return json.loads(file.read())
     else:
@@ -103,12 +109,16 @@ class Package:
 
     def fulfills(self, requirement):
         """Returns True if this entry fullfills the requirement."""
-        return canonicalize_name(self.name) == canonicalize_name(requirement.name) \
-                and self.version in requirement.specifier
+        return (
+            canonicalize_name(self.name) == canonicalize_name(requirement.name)
+            and self.version in requirement.specifier
+        )
 
 
 @cached(cache=TTLCache(maxsize=32, ttl=60))
 def find_installed_packages():
     """Return all currently installed packages."""
-    output = check_output([sys.executable, '-m', 'pip', 'list', '--format=json'], encoding='utf-8')
+    output = check_output(
+        [sys.executable, "-m", "pip", "list", "--format=json"], encoding="utf-8"
+    )
     return [Package(**package) for package in json.loads(output)]

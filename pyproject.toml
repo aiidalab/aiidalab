@@ -1,2 +1,7 @@
+[build-system]
+# this version is required to support reading of version in setup.cfg
+requires = ["setuptools>=46.4.0"]
+build-backend = "setuptools.build_meta"
+
 [tool.pytest.ini_options]
 norecursedirs = "tests/data"
