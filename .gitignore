@@ -1,7 +1,12 @@
 *.egg-info
 *.swp
+__pycache__/
 .ipynb_checkpoints/
+.tox/
 dist/
+docs/_build/
+apps_meta.sqlite
 Pipfile.lock
 requirements.txt_dev
 requirements.txt_stable
+.DS_Store

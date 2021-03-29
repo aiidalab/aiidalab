@@ -9,6 +9,7 @@ from dulwich.porcelain import status, branch_list
 
 class BranchTrackingStatus(Enum):
     """Descripe the tracking status of a branch."""
+
     BEHIND = -1
     EQUAL = 0
     AHEAD = 1
@@ -27,7 +28,7 @@ class GitManagedAppRepo(Repo):
 
         Raises RuntimeError if the repository is in a detached HEAD state.
         """
-        branches = self._get_branch_for_ref(b'HEAD')
+        branches = self._get_branch_for_ref(b"HEAD")
         if branches:
             return branches[0]
         raise RuntimeError("In detached HEAD state.")
@@ -39,10 +40,10 @@ class GitManagedAppRepo(Repo):
 
         cfg = self.get_config()
         try:
-            remote = cfg[(b'branch', branch)][b'remote']
-            merge = cfg[(b'branch', branch)][b'merge']
-            pattern = rb'refs\/heads'
-            remote_ref = b'refs/remotes/' + remote + re.sub(pattern, b'', merge)
+            remote = cfg[(b"branch", branch)][b"remote"]
+            merge = cfg[(b"branch", branch)][b"merge"]
+            pattern = rb"refs\/heads"
+            remote_ref = b"refs/remotes/" + remote + re.sub(pattern, b"", merge)
             return remote_ref
         except KeyError:
             return None
@@ -54,13 +55,16 @@ class GitManagedAppRepo(Repo):
 
     def update_available(self):
         """Check whether there non-pulled commits on the tracked branch."""
-        return self.get_branch_tracking_status(self.branch()) is BranchTrackingStatus.BEHIND
+        return (
+            self.get_branch_tracking_status(self.branch())
+            is BranchTrackingStatus.BEHIND
+        )
 
     def get_branch_tracking_status(self, branch):
         """Return the tracking status of branch."""
         tracked_branch = self.get_tracked_branch(branch)
         if tracked_branch:
-            ref = b'refs/heads/' + branch
+            ref = b"refs/heads/" + branch
 
             # Check if local branch points to same commit as tracked branch:
             if self.refs[ref] == self.refs[tracked_branch]:
@@ -82,5 +86,9 @@ class GitManagedAppRepo(Repo):
 
     def _get_branch_for_ref(self, ref):
         """Get the branch name for a given reference."""
-        pattern = rb'refs\/heads\/'
-        return [re.sub(pattern, b'', ref) for ref in self.refs.follow(ref)[0] if re.match(pattern, ref)]
+        pattern = rb"refs\/heads\/"
+        return [
+            re.sub(pattern, b"", ref)
+            for ref in self.refs.follow(ref)[0]
+            if re.match(pattern, ref)
+        ]

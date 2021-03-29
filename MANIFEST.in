@@ -1,3 +1,16 @@
-include setup.json
-include requirements.txt
+exclude docs
+recursive-exclude docs *
+exclude tests
+recursive-exclude tests *
+exclude miscellaneous
+recursive-exclude miscellaneous *
+
+exclude .pre-commit-config.yaml
+exclude .readthedocs.yml
+exclude tox.ini
+exclude .flake8
+
+include .gitmodules
+include LICENSE
+include CHANGELOG.md
 recursive-include jupyter-config *.json

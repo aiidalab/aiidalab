@@ -22,4 +22,4 @@ Those are the main features of the AiiDAlab Home app:
 Install/update/delete an app
 ****************************
 
-[TODO]
+[Related issue: `#152 <https://github.com/aiidalab/aiidalab/issues/152>`_]
