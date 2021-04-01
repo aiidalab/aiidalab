@@ -12,6 +12,7 @@ Overview of the separate in-depth sections in this part of the documentation:
     create.rst
     first_app.rst
     publish.rst
+    widgets.rst
 
 To get an idea of how proper apps may be built and used, you can check out these examples:
 
@@ -57,3 +58,13 @@ Publish app
 After creating the app, you need to register it with the `AiiDAlab registry <https://github.com/aiidalab/aiidalab-registry>`__ in order for other users to benefit from it.
 
 To learn more about this, please see :ref:`develop-apps:publish-app`.
+
+Widgets for AiiDAlab app
+========================
+
+:ref:`Go directly to section<develop-apps:widgets>`
+
+AiiDAlab apps need widgets for the graphical user interfaces (GUIs).
+Widgets from Ipywidgets package are largely employed for AiiDAlab apps.
+
+To learn more about the widgets, please see :ref:`develop-apps:widgets`.
