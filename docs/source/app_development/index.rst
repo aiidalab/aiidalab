@@ -68,4 +68,3 @@ AiiDAlab apps need widgets for the graphical user interfaces (GUIs).
 Widgets from Ipywidgets package are largely employed for AiiDAlab apps.
 
 To learn more about the widgets, please see :ref:`develop-apps:widgets`.
-
