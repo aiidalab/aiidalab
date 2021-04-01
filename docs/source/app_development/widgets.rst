@@ -5,17 +5,17 @@ Widgets for AiiDAlab app
 ########################
 
 AiiDAlab largely dependents on Jupyter widgets for the graphical user interface (GUI).
-More specifically, the `Ipywidgets <https://ipywidgets.readthedocs.io/>`_ package is the primary tool for creating AiiDAlab apps. 
+More specifically, the `Ipywidgets <https://ipywidgets.readthedocs.io/>`_ package is the primary tool for creating AiiDAlab apps.
 We have also created the `aiidalab-widgets-base <https://github.com/aiidalab/aiidalab-widgets-base>`_ that is based on `Ipywidgets` and provides tools to interact with AiiDA.
 
 **********
 Ipywidgets
 **********
 
-`Ipywidgets <https://ipywidgets.readthedocs.io/>`_ is a python package that provides interactive widgets to be used in Jupyter notebooks. 
+`Ipywidgets <https://ipywidgets.readthedocs.io/>`_ is a python package that provides interactive widgets to be used in Jupyter notebooks.
 Widgets are eventful python objects, which shows GUI components such as a slider, button, etc.
 
-Ipywidgets package provides base widgets like sliders, progress bar, buttons, checkbox, dropdown, radio buttons, text, text area, label, etc. 
+Ipywidgets package provides base widgets like sliders, progress bar, buttons, checkbox, dropdown, radio buttons, text, text area, label, etc.
 The widgets have properties and value, which can be connected to the python codes and updated dynamically.
 For a simple example, one can use a slider to control the value of a variable.
 
@@ -54,14 +54,14 @@ Ipywidgets package also supports developers in creating their own widgets.
 There is a detailed `tutorial <https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20Custom.html>`_ to show how to develop a custom widget.
 In the ipywidgets framework is based on the Comm framework.
 In the Comm framework, the change events of the traits leads to send a json massage to the Jupyter kernel.
-Then, the frontend will update accordingly. 
+Then, the frontend will update accordingly.
 
 Develop the custom widgets mainly involve two parts:
 
 * **Python**: in the Python part, one needs to define the APIs of the widgets.
-  For instance, the color of the widget's background. 
+  For instance, the color of the widget's background.
   The traits types should be initialized as:
-  
+
 
 .. code-block:: python
 
@@ -70,7 +70,7 @@ Develop the custom widgets mainly involve two parts:
     color = Unicode('').tag(sync=True)
 
 * **Javascript** (or TypeScript): the javascript part is for the frontend of the widgets.
-  The frontend uses the `backbone.js <https://backbonejs.org/>`_ framework. 
+  The frontend uses the `backbone.js <https://backbonejs.org/>`_ framework.
   The communications between the Python and Javascript parts are from the set and get functions of the traits.
 
 .. code-block:: javascript
@@ -97,7 +97,7 @@ AiiDAlab base widgets
 
 Molecular and material simulations always need database parser, molecular visulizer and editor, image render tools etc.
 Here, we privde the `aiidalab-widgets-base <https://github.com/aiidalab/aiidalab-widgets-base>`_ , which is a collection of these tools.
-Developers can easily reuse it to develop AiiDAlab apps. 
+Developers can easily reuse it to develop AiiDAlab apps.
 Read more information at `https://aiidalab-widgets-base.readthedocs.io <https://aiidalab-widgets-base.readthedocs.io/>`_ .
 
 .. image:: ./include/aiidalab-widgets-base.gif
