@@ -144,10 +144,10 @@ def _register_hello_world_app(url, head):
         "testing-3926140692": ["foo~=1.2"],
     }
     app_registry_data = {
+        "name": "hello-world",
         "git_url": url,
         "meta_url": "https://raw.githubusercontent.com/aiidalab/aiidalab-hello-world/master/metadata.json",
         "categories": ["Utilities"],
-        "groups": ["utilities"],
         "metainfo": app_data,
         "gitinfo": {
             f"refs/heads/{DEFAULT_BRANCH}": head.decode(),

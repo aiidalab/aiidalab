@@ -210,7 +210,7 @@ class AiidaLabApp(traitlets.HasTraits):
         name: str
         meta_url: str
         categories: List[str]
-        subpage: str
+        subpage: str = None
         logo: str = None
         metainfo: Dict[str, str] = field(default_factory=dict)
         gitinfo: Dict[str, str] = field(default_factory=dict)
