@@ -20,9 +20,9 @@ The relevant jupyter notebook extensions are enabled automatically.
 # install latest version from pypi
 pip install aiidalab
 # note: pip can *enable* nbextensions [1,2], but not install them
-jupyter nbextension install --sys-prefix --py fileupload        
+jupyter nbextension install --sys-prefix --py fileupload
 ```
-[1] See the [jupyter-notebook documentation](http://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Distributing%20Jupyter%20Extensions%20as%20Python%20Packages.html#Automatically-enabling-a-server-extension-and-nbextension)  
+[1] See the [jupyter-notebook documentation](http://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Distributing%20Jupyter%20Extensions%20as%20Python%20Packages.html#Automatically-enabling-a-server-extension-and-nbextension)
 [2] http://jupyter-contrib-nbextensions.readthedocs.io/en/latest/install.html
 
 ## Documentation
@@ -33,7 +33,7 @@ The documentation can be found on the [following web page](https://aiidalab.read
 ```
 # install latest version from github
 pip install git+https://github.com/aiidalab/aiidalab-metapkg
-jupyter nbextension install --sys-prefix --py fileupload        
+jupyter nbextension install --sys-prefix --py fileupload
 ```
 
 Note: `pip install -e .` does *not* process the `data_files` and thus does not enable the jupyter extensions.
@@ -42,6 +42,13 @@ Note: `pip install -e .` does *not* process the `data_files` and thus does not e
 ## License
 
 MIT
+
+## Citation
+
+Users of AiiDAlab are kindly asked to cite the following publication in their own work:
+
+A. V. Yakutovich et al., Comp. Mat. Sci. 188, 110165 (2021).
+[DOI:10.1016/j.commatsci.2020.110165](https://doi.org/10.1016/j.commatsci.2020.110165)
 
 ## Contact
 
@@ -56,4 +63,3 @@ Grant No. 676598.
 
 ![MARVEL](miscellaneous/logos/MARVEL.png)
 ![MaX](miscellaneous/logos/MaX.png)
-
