@@ -51,9 +51,13 @@ def load_app_registry():
             return json.loads(file.read())
     else:
         try:
-            return requests.get(AIIDALAB_REGISTRY).json()
-        except ValueError:
+            registry = requests.get(AIIDALAB_REGISTRY)
+            # Now check also the exit code, only accept a 200 (OK, request succeeded)
+            assert registry.status_code == 200
+            return registry.json()
+        except requests.exceptions.RequestException as e:
             print("Registry server is unavailable! Can't check for the updates")
+            print(e)
             return dict(apps=dict(), catgories=dict())
 
 
