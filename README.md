@@ -3,41 +3,17 @@
 
 The `aiidalab` package sets up the python environment found on the
 [AiiDAlab](https://aiidalab.materialscloud.org).
-Amongst others, this includes
 
- * a wide range of aiida plugins
- * jupyter
- * AiiDAlab base widgets
- * ...
-
-The relevant jupyter notebook extensions are enabled automatically.
-
-**Note:** This is the development version for **AiiDA 1.0**.
 
 ## Installation
 
+Install latest version from pypi:
 ```
-# install latest version from pypi
 pip install aiidalab
-# note: pip can *enable* nbextensions [1,2], but not install them
-jupyter nbextension install --sys-prefix --py fileupload
 ```
-[1] See the [jupyter-notebook documentation](http://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Distributing%20Jupyter%20Extensions%20as%20Python%20Packages.html#Automatically-enabling-a-server-extension-and-nbextension)
-[2] http://jupyter-contrib-nbextensions.readthedocs.io/en/latest/install.html
 
 ## Documentation
 The documentation can be found on the [following web page](https://aiidalab.readthedocs.io).
-
-## Testing
-
-```
-# install latest version from github
-pip install git+https://github.com/aiidalab/aiidalab-metapkg
-jupyter nbextension install --sys-prefix --py fileupload
-```
-
-Note: `pip install -e .` does *not* process the `data_files` and thus does not enable the jupyter extensions.
-
 
 ## License
 
