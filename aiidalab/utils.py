@@ -52,7 +52,7 @@ def load_app_registry():
     else:
         try:
             return requests.get(AIIDALAB_REGISTRY).json()
-        except ValueError:
+        except (ValueError, requests.ConnectionError):
             print("Registry server is unavailable! Can't check for the updates")
             return dict(apps=dict(), catgories=dict())
 
