@@ -1,46 +1,44 @@
 # -*- coding: utf-8 -*-
 """Module to manage AiiDAlab apps."""
 
-import re
+import errno
 import os
 import shutil
-import json
-import errno
-import logging
-from collections import defaultdict
+import sys
+import tarfile
+import tempfile
 from contextlib import contextmanager
+from dataclasses import asdict
+from dataclasses import dataclass
+from dataclasses import field
 from enum import Enum, auto
-from time import sleep
+from itertools import repeat
+from pathlib import Path
 from threading import Thread
-from subprocess import check_output, STDOUT
-from dataclasses import dataclass, field, asdict
-from urllib.parse import urlsplit, urldefrag
+from time import sleep
+from typing import List
+from urllib.parse import urldefrag
+from urllib.parse import urlsplit
+from urllib.parse import urlunsplit
 
-from typing import List, Dict
-
+import requests
 import traitlets
-from dulwich.porcelain import fetch
 from dulwich.errors import NotGitRepository
-from dulwich.objects import Tag, Commit
 from packaging.requirements import Requirement
-from packaging.specifiers import SpecifierSet, InvalidSpecifier
 from packaging.version import parse
+from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
-from watchdog.events import FileSystemEventHandler
 
-from .config import AIIDALAB_DEFAULT_GIT_BRANCH
+
+from .config import AIIDALAB_APPS
 from .git_util import GitManagedAppRepo as Repo
-from .utils import throttled
+from .git_util import git_clone
 from .utils import find_installed_packages
-
-
-class AppNotInstalledException(Exception):
-    pass
-
-
-class AppRemoteUpdateError(RuntimeError):
-    pass
+from .utils import load_app_registry_entry
+from .utils import split_git_url
+from .utils import this_or_only_subdir
+from .utils import throttled
 
 
 # A version is usually of type str, but it can also be a value
@@ -50,6 +48,165 @@ class AppRemoteUpdateError(RuntimeError):
 class AppVersion(Enum):
     UNKNOWN = auto()
     NOT_INSTALLED = auto()
+
+
+@dataclass
+class _AiidaLabApp:
+
+    metadata: dict
+    name: str
+    path: Path
+    categories: List[str] = field(default_factory=list)
+    releases: dict = field(default_factory=dict)
+
+    @classmethod
+    def from_registry_entry(cls, path, registry_entry):
+        return cls(
+            path=path,
+            **{
+                key: value
+                for key, value in registry_entry.items()
+                if key in ("categories", "metadata", "name", "releases")
+            },
+        )
+
+    @classmethod
+    def from_id(cls, app_id, registry_entry=None, apps_path=None):
+        if registry_entry is None:
+            registry_entry = load_app_registry_entry(app_id) or dict(
+                name=app_id, metadata=dict()
+            )
+        if apps_path is None:
+            apps_path = AIIDALAB_APPS
+
+        return cls.from_registry_entry(
+            path=Path(apps_path).joinpath(app_id), registry_entry=registry_entry
+        )
+
+    @property
+    def _repo(self):
+        try:
+            return Repo(str(self.path))
+        except NotGitRepository:
+            return None
+
+    def installed_version(self):
+        if self._repo:
+            head_commit = self._repo.head().decode()
+            versions_by_commit = {
+                split_git_url(release["url"])[1]: version
+                for version, release in self.releases.items()
+                if urlsplit(release["url"]).scheme.startswith("git+")
+            }
+            return versions_by_commit.get(head_commit, AppVersion.UNKNOWN)
+        elif self.path.exists():
+            return AppVersion.UNKNOWN
+        return AppVersion.NOT_INSTALLED
+
+    def dirty(self):
+        if self._repo:
+            return self._repo.dirty()
+
+    def uninstall(self):
+        if self.path.exists():
+            shutil.rmtree(self.path)
+
+    def find_matching_releases(self, specifier):
+        matching_releases = [
+            version for version in self.releases if parse(version) in specifier
+        ]
+        # Sort by intrinsic order (e.g. 1.1.0 -> 1.0.1 -> 1.0.0 and so on)
+        matching_releases.sort(key=parse, reverse=True)
+        return matching_releases
+
+    @staticmethod
+    def _find_incompatibilities_python(requirements, python_bin):
+        packages = find_installed_packages(python_bin)
+        for requirement in map(Requirement, requirements):
+            f = [p for p in packages if p.fulfills(requirement)]
+            if not any(f):
+                yield requirement
+
+    def _find_incompatibilities(self, version, python_bin):
+        environment = self.releases[version].get("environment")
+        for key, spec in environment.items():
+            if key == "python_requirements":
+                yield from zip(
+                    repeat("python"),
+                    self._find_incompatibilities_python(spec, python_bin),
+                )
+            else:
+                raise ValueError(f"Unknown eco-system '{key}'")
+
+    def is_compatible(self, version, python_bin=None):
+        if python_bin is None:
+            python_bin = sys.executable
+        return not any(self._find_incompatibilities(version, python_bin))
+
+    def _install_from_path(self, path):
+        if path.is_dir():
+            shutil.copytree(this_or_only_subdir(path), self.path)
+        else:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                with tarfile.open(path) as tar_file:
+                    tar_file.extractall(path=tmp_dir)
+                    self._install_from_path(Path(tmp_dir))
+
+    def _install_from_https(self, url):
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        content = response.content
+
+        with tempfile.NamedTemporaryFile() as tmp_file:
+            tmp_file.write(content)
+            tmp_file.flush()
+            self._install_from_path(Path(tmp_file.name))
+
+    def _install_from_git_repository(self, git_url):
+        if urldefrag(git_url).fragment:
+            raise NotImplementedError(
+                "Path specification via fragment not yet supported."
+            )
+        base_url, ref = split_git_url(git_url)
+        git_clone(base_url, ref, self.path)
+
+    def install(self, version=None):
+        if version is None:
+            try:
+                version = list(sorted(self.releases, key=parse))[-1]
+            except IndexError:
+                raise ValueError("No versions available for '{self}'.")
+
+        self.uninstall()
+
+        url = self.releases[version]["url"]
+        split_url = urlsplit(url)
+        try:
+            if split_url.scheme in ("", "file"):
+                self._install_from_path(Path(split_url.path))
+            elif split_url.scheme == "https":
+                self._install_from_https(url)
+            elif split_url.scheme == "git+file":
+                self._install_from_git_repository(
+                    urlunsplit(split_url._replace(scheme="file"))
+                )
+            elif split_url.scheme == "git+https":
+                self._install_from_git_repository(
+                    urlunsplit(split_url._replace(scheme="https"))
+                )
+            else:
+                raise NotImplementedError(
+                    "Unsupported scheme: {split_url.scheme} ({url})"
+                )
+        except RuntimeError as error:
+            raise RuntimeError(
+                f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
+                f", due to error: {error}"
+            )
+
+
+class AppNotInstalledException(Exception):
+    pass
 
 
 class AiidaLabAppWatch:
@@ -202,187 +359,14 @@ class AiidaLabApp(traitlets.HasTraits):
     compatible = traitlets.Bool(readonly=True, allow_none=True)
     compatibility_info = traitlets.Dict()
 
-    @dataclass
-    class AppRegistryData:
-        """Dataclass that contains the app data from the app registry."""
-
-        git_url: str
-        name: str
-        meta_url: str
-        categories: List[str]
-        subpage: str = None
-        logo: str = None
-        metainfo: Dict[str, str] = field(default_factory=dict)
-        gitinfo: Dict[str, str] = field(default_factory=dict)
-        hosted_on: str = None
-
-    class _GitReleaseLine:
-        """Utility class to operate on the release line of the app.
-
-        A release line is specified via the app url as part of the fragment (after '#').
-
-        A release line can be specified either as
-            a) a commit denoted by a hexadecimal number with either 20 or 40 digits, or
-            b) a short reference, which can be either a branch or a tag name.
-
-        A full ref is the ref as defined in the Git glossary, e.g., 'refs/heads/main'.
-        A revision is either a full ref or a commit.
-        """
-
-        def __init__(self, app, line):
-            self.app = app
-            self.line = line
-
-            match = re.fullmatch(
-                r"(?P<commit>([0-9a-fA-F]{20}){1,2})|(?P<short_ref>.+)", line
-            )
-            if not match:
-                raise ValueError(f"Illegal release line: {line}")
-
-            self.commit = match.groupdict()["commit"]
-            self.short_ref = match.groupdict()["short_ref"]
-            assert self.commit or self.short_ref
-
-        @property
-        def _repo(self):
-            return Repo(self.app.path)
-
-        def _resolve_short_ref(self, short_ref):
-            """Attempt to resolve the short-ref to a full ref.
-
-            For example, 'branch' would be resolved to 'refs/heads/branch'
-            if 'branch' is a local branch or 'refs/tags/branch' if it was
-            a tag.
-
-            This function returns None if the short-ref cannot be resolved
-            to a full reference.
-            """
-            # Check if short-ref is among the remote refs:
-            for ref in self._repo.refs.allkeys():
-                if re.match(r"refs\/remotes\/(.*)?\/" + short_ref, ref.decode()):
-                    return ref
-
-            # Check if short-ref is a head (branch):
-            if f"refs/heads/{short_ref}".encode() in self._repo.refs.allkeys():
-                return f"refs/heads/{short_ref}".encode()
-
-            # Check if short-ref is a tag:
-            if f"refs/tags/{short_ref}".encode() in self._repo.refs.allkeys():
-                return f"refs/tags/{short_ref}".encode()
-
-            return None
-
-        @staticmethod
-        def _get_sha(obj):
-            """Determine the SHA for a given commit object."""
-            assert isinstance(obj, (Tag, Commit))
-            return obj.object[1] if isinstance(obj, Tag) else obj.id
-
-        def find_versions(self):
-            """Find versions available for this release line.
-
-            When encountering an ambiguous release line name, i.e.,
-            a shared branch and tag name, we give preference to the
-            branch, because that is what git does in this situation.
-            """
-            assert self.short_ref or self.commit
-
-            if self.commit:  # The release line is a commit.
-                assert self.commit.encode() in self._repo.object_store
-                yield self.commit.encode()
-            else:
-                ref = self._resolve_short_ref(self.short_ref)
-                if ref is None:
-                    raise ValueError(
-                        f"Unable to resolve {self.short_ref!r}. "
-                        "Are you sure this is a valid git branch or tag?"
-                    )
-
-                # The release line is a head (branch).
-                if ref.startswith(b"refs/remotes/"):
-                    ref_commit = self._repo.get_peeled(ref)
-                    all_tags = {
-                        ref
-                        for ref in self._repo.get_refs()
-                        if ref.startswith(b"refs/tags")
-                    }
-
-                    # Create lookup table from commit -> tags
-                    tags_lookup = defaultdict(set)
-                    for tag in all_tags:
-                        tags_lookup[self._get_sha(self._repo[tag])].add(tag)
-
-                    # Determine all the tagged commits on the branch (HEAD)
-                    commits_on_head = self._repo.get_walker(self._repo.refs[ref])
-                    tagged_commits_on_head = [
-                        c.commit.id
-                        for c in commits_on_head
-                        if c.commit.id in tags_lookup
-                    ]
-
-                    # Always yield the tip of the branch (HEAD), i.e., the latest commit on the branch.
-                    yield from tags_lookup.get(ref_commit, (ref,))
-
-                    # Yield all other tagged commits on the branch:
-                    for commit in tagged_commits_on_head:
-                        if commit != ref_commit:
-                            yield from tags_lookup[commit]
-
-                # The release line is a tag.
-                elif ref.startswith(b"refs/tags/"):
-                    yield ref
-
-        def _resolve_commit(self, rev):
-            """Map a revision to a commit."""
-            if len(rev) in (20, 40) and rev in self._repo.object_store:
-                return rev
-
-            return self._get_sha(self._repo[rev])
-
-        def resolve_revision(self, commit):
-            """Map a given commit to a named version (branch/tag) if possible."""
-            lookup = defaultdict(set)
-            for version in self.find_versions():
-                lookup[self._resolve_commit(version)].add(version)
-            return lookup.get(commit, {commit})
-
-        def _on_release_line(self, rev):
-            """Determine whether the release line contains the provided version."""
-            return rev in [
-                self._resolve_commit(version) for version in self.find_versions()
-            ]
-
-        def current_revision(self):
-            """Return the version currently installed on the release line.
-
-            Returns None if the current revision is not on this release line.
-            """
-            current_commit = self._repo.head()
-            on_release_line = self._on_release_line(current_commit)
-            if on_release_line:
-                return list(sorted(self.resolve_revision(current_commit)))[0]
-
-            return None  # current revision not on the release line
-
-        def is_branch(self):
-            """Return True if release line is a branch."""
-            return f"refs/remotes/origin/{self.line}".encode() in self._repo.refs
-
     def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
+        self._app = _AiidaLabApp.from_id(
+            name, registry_entry=app_data, apps_path=aiidalab_apps_path
+        )
         super().__init__()
 
-        if app_data is None:
-            self._registry_data = None
-            self._release_line = None
-        else:
-            self._registry_data = self.AppRegistryData(**app_data)
-            parsed_url = urlsplit(self._registry_data.git_url)
-            self._release_line = self._GitReleaseLine(
-                self, parsed_url.fragment or AIIDALAB_DEFAULT_GIT_BRANCH
-            )
-
-        self.name = name
-        self.path = os.path.join(aiidalab_apps_path, self.name)
+        self.name = self._app.name
+        self.path = str(self._app.path)
         self.refresh_async()
 
         if watch:
@@ -404,11 +388,7 @@ class AiidaLabApp(traitlets.HasTraits):
     def _default_detached(self):
         """Provide default value for detached traitlet."""
         if self.is_installed():
-            modified = self._repo.dirty()
-            if self._release_line is not None:
-                revision = self._release_line.current_revision()
-                return revision is not None and not modified
-            return True
+            return self._app.dirty() or self._installed_version() is AppVersion.UNKNOWN
         return None
 
     @traitlets.default("busy")
@@ -440,176 +420,38 @@ class AiidaLabApp(traitlets.HasTraits):
         except NotGitRepository:
             return False
 
-    def _install_app_version(self, version):
-        """Install a specific app version."""
-        assert self._registry_data is not None
-        assert self._release_line is not None
-
-        with self._show_busy():
-
-            if not re.fullmatch(
-                r"git:((?P<commit>([0-9a-fA-F]{20}){1,2})|(?P<short_ref>.+))", version
-            ):
-                raise ValueError(f"Unknown version format: '{version}'")
-
-            if not os.path.isdir(self.path):  # clone first
-                url = urldefrag(self._registry_data.git_url).url
-                check_output(
-                    ["git", "clone", url, self.path],
-                    cwd=os.path.dirname(self.path),
-                    stderr=STDOUT,
-                )
-
-            # Switch to desired version
-            rev = (
-                self._release_line.resolve_revision(re.sub("git:", "", version))
-                .pop()
-                .encode()
-            )
-            if self._release_line.is_branch():
-                branch = self._release_line.line
-                check_output(
-                    ["git", "checkout", "--force", branch], cwd=self.path, stderr=STDOUT
-                )
-                check_output(
-                    ["git", "reset", "--hard", rev], cwd=self.path, stderr=STDOUT
-                )
-            else:
-                check_output(
-                    ["git", "checkout", "--force", rev], cwd=self.path, stderr=STDOUT
-                )
-
-            self.refresh()
-            return "git:" + rev.decode()
-
     def install_app(self, version=None):
         """Installing the app."""
-        if version is None:  # initial installation
-            version = self._install_app_version(f"git:{self._release_line.line}")
-
-            # switch to compatible version if possible
-            available_versions = list(self._available_versions())
-            if available_versions:
-                return self._install_app_version(version=available_versions[0])
-
-            return version
-
-        # app already installed, just switch version
-        return self._install_app_version(version=version)
+        with self._show_busy():
+            self._app.install(version=version)
+            self.refresh()
+            return self._installed_version()
 
     def update_app(self, _=None):
         """Perform app update."""
-        assert self._registry_data is not None
-        try:
-            if self._remote_update_available():
-                self._fetch_from_remote()
-        except AppRemoteUpdateError:
-            pass
-        available_versions = list(self._available_versions())
-        return self.install_app(version=available_versions[0])
+        with self._show_busy():
+            # Installing with version=None automatically selects latest
+            # available version.
+            version = self.install_app(version=None)
+            self.refresh()
+            return version
 
     def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
         # Perform uninstall process.
         with self._show_busy():
-            try:
-                shutil.rmtree(self.path)
-            except FileNotFoundError:
-                raise RuntimeError("App was already uninstalled!")
+            self._app.uninstall()
             self.refresh()
-
-    def _remote_update_available(self):
-        """Check whether there are more commits at the origin (based on the registry)."""
-        error_message_prefix = (
-            "Unable to determine whether remote update is available: "
-        )
-
-        try:  # Obtain reference to git repository.
-            repo = self._repo
-        except NotGitRepository as error:
-            raise AppRemoteUpdateError(f"{error_message_prefix}{error}")
-
-        try:  # Determine sha of remote-tracking branch from registry.
-            branch = self._release_line.line
-            branch_ref = "refs/heads/" + branch
-            local_remote_ref = "refs/remotes/origin/" + branch
-            remote_sha = self._registry_data.gitinfo[branch_ref]
-        except AttributeError:
-            raise AppRemoteUpdateError(f"{error_message_prefix}app is not registered")
-        except KeyError:
-            raise AppRemoteUpdateError(
-                f"{error_message_prefix}no data about this release line in registry"
-            )
-
-        try:  # Determine sha of remote-tracking branch from repository.
-            local_remote_sha = repo.refs[local_remote_ref.encode()].decode()
-        except KeyError:
-            return False  # remote ref not found, release line likely not a branch
-
-        return remote_sha != local_remote_sha
-
-    def _fetch_from_remote(self):
-        with self._show_busy():
-            fetch(
-                repo=self._repo,
-                remote_location=urldefrag(self._registry_data.git_url).url,
-            )
-
-    def check_for_updates(self):
-        """Check whether there is an update available for the installed release line."""
-        try:
-            assert not self.detached
-            remote_update_available = self._remote_update_available()
-        except (AssertionError, AppRemoteUpdateError):
-            self.set_trait("updates_available", None)
-        else:
-            available_versions = list(self._available_versions())
-            if len(available_versions) > 0:
-                local_update_available = self.installed_version != available_versions[0]
-            else:
-                local_update_available = None
-            self.set_trait(
-                "updates_available", remote_update_available or local_update_available
-            )
 
     def _available_versions(self):
         """Return all available and compatible versions."""
-        if self.is_installed() and self._release_line is not None:
-            versions = [
-                "git:" + ref.decode() for ref in self._release_line.find_versions()
-            ]
-        elif self._registry_data is not None:
-
-            def is_tag(ref):
-                return ref.startswith("refs/tags") and "^{}" not in ref
-
-            def sort_key(ref):
-                version = parse(ref[len("refs/tags/") :])
-                return (not is_tag(ref), version, ref)
-
-            versions = [
-                "git:" + ref
-                for ref in reversed(sorted(self._registry_data.gitinfo, key=sort_key))
-                if is_tag(ref) or ref == f"refs/heads/{self._release_line.line}"
-            ]
-        else:
-            versions = []
-
-        for version in versions:
+        for version in sorted(self._app.releases, key=parse, reverse=True):
             if self._is_compatible(version):
                 yield version
 
     def _installed_version(self):
         """Determine the currently installed version."""
-        if self.is_installed():
-            if self._has_git_repo():
-                modified = self._repo.dirty()
-                if not (self._release_line is None or modified):
-                    revision = self._release_line.current_revision()
-                    if revision is not None:
-                        return f"git:{revision.decode()}"
-            return AppVersion.UNKNOWN
-        return AppVersion.NOT_INSTALLED
+        return self._app.installed_version()
 
     @traitlets.default("compatible")
     def _default_compatible(self):  # pylint: disable=no-self-use
@@ -617,83 +459,10 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def _is_compatible(self, app_version=None):
         """Determine whether the currently installed version is compatible."""
-        if app_version is None:
-            app_version = self.installed_version
-
-        def get_version_identifier(version):
-            "Get version identifier from version (e.g. git:refs/tags/v1.0.0 -> v1.0.0)."
-            if version.startswith("git:refs/tags/"):
-                return version[len("git:refs/tags/") :]
-            if version.startswith("git:refs/heads/"):
-                return version[len("git:refs/heads/") :]
-            if version.startswith("git:refs/remotes/"):  # remote branch
-                return re.sub(r"git:refs\/remotes\/(.+?)\/", "", version)
-            return version
-
-        class RegexMatchSpecifierSet:
-            """Interpret 'invalid' specifier sets as regular expression pattern."""
-
-            def __init__(self, specifiers=""):
-                self.specifiers = specifiers
-
-            def __contains__(self, version):
-                return re.match(self.specifiers, version) is not None
-
-        def specifier_set(specifiers=""):
-            try:
-                return SpecifierSet(specifiers=specifiers, prereleases=True)
-            except InvalidSpecifier:
-                return RegexMatchSpecifierSet(specifiers=specifiers)
-
-        def find_missing_requirements(requirements, packages):
-            for requirement in requirements:
-                if not any(package.fulfills(requirement) for package in packages):
-                    logging.debug(
-                        f"{self.name}({app_version}): missing requirement '{requirement}'"
-                    )  # pylint: disable=logging-fstring-interpolation
-                    yield requirement  # missing requirement
-
-        # Retrieve and convert the compatibility map from the app metadata.
         try:
-            compat_map = self.metadata.get("requires", {"": []})
-            compat_map = {
-                specifier_set(app_version): [Requirement(r) for r in reqs]
-                for app_version, reqs in compat_map.items()
-            }
-        except RuntimeError:  # not registered
-            return None  # unable to determine compatibility
-        else:
-            if isinstance(app_version, str):
-                # Determine version identifier (i.e. 'git:refs/tags/v1.2' is translated to 'v1.2')
-                app_version_identifier = get_version_identifier(app_version)
-
-                # Determine all specs that match the given version identifier.
-                matching_specs = [
-                    app_spec
-                    for app_spec in compat_map
-                    if app_version_identifier in app_spec
-                ]
-
-                # Find all packages installed within in this environment.
-                packages = find_installed_packages()
-
-                # Determine whether any matching specifiers are compatible with the environment.
-                missing_requirements = {
-                    spec: list(find_missing_requirements(compat_map[spec], packages))
-                    for spec in matching_specs
-                }
-
-                # Store missing requirements in compatibility_info trait to make reasons for
-                # compatibility available to subscribers:
-                self.compatibility_info.update(missing_requirements)
-
-                # Return whether the app is at all compatible:
-                return any(
-                    not any(missing_reqs)
-                    for missing_reqs in missing_requirements.values()
-                )
-
-        return None  # compatibility indetermined since the app is not installed
+            return self._app.is_compatible(version=app_version)
+        except KeyError:
+            return None  # compatibility indetermined for given version
 
     @throttled(calls_per_second=1)
     def refresh(self):
@@ -710,7 +479,10 @@ class AiidaLabApp(traitlets.HasTraits):
                         "detached",
                         self.installed_version is AppVersion.UNKNOWN or modified,
                     )
-                    self.check_for_updates()
+                    self.set_trait(
+                        "updates_available",
+                        self.installed_version != list(self._available_versions())[0],
+                    )
                 else:
                     self.set_trait("updates_available", None)
                     self.set_trait("detached", None)
@@ -723,25 +495,12 @@ class AiidaLabApp(traitlets.HasTraits):
     @property
     def metadata(self):
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
-        if self._registry_data is not None and self._registry_data.metainfo:
-            return dict(self._registry_data.metainfo)
-
-        if self.is_installed():
-            try:
-                with open(os.path.join(self.path, "metadata.json")) as json_file:
-                    return json.load(json_file)
-            except IOError:
-                return dict()
-
-        raise RuntimeError(
-            f"Requested app '{self.name}' is not installed and is also not registered on the app registry."
-        )
+        return self._app.metadata
 
     def _get_from_metadata(self, what):
         """Get information from metadata."""
-
         try:
-            return "{}".format(self.metadata[what])
+            return "{}".format(self._app.metadata[what])
         except KeyError:
             if not os.path.isfile(os.path.join(self.path, "metadata.json")):
                 return "({}) metadata.json file is not present".format(what)

@@ -2,6 +2,8 @@
 """Utility module for git-managed AiiDAlab apps."""
 import re
 from enum import Enum
+from subprocess import CalledProcessError
+from subprocess import run
 
 from dulwich.repo import Repo
 from dulwich.porcelain import status, branch_list
@@ -92,3 +94,22 @@ class GitManagedAppRepo(Repo):
             for ref in self.refs.follow(ref)[0]
             if re.match(pattern, ref)
         ]
+
+
+def git_clone(url, commit, path):
+    try:
+        run(
+            ["git", "clone", str(url), str(path)],
+            capture_output=True,
+            encoding="utf-8",
+            check=True,
+        )
+        run(
+            ["git", "checkout", str(commit)],
+            capture_output=True,
+            encoding="utf-8",
+            check=True,
+            cwd=str(path),
+        )
+    except CalledProcessError as error:
+        raise RuntimeError(error.stderr)
