@@ -464,6 +464,19 @@ class AiidaLabApp(traitlets.HasTraits):
         except KeyError:
             return None  # compatibility indetermined for given version
 
+    def _updates_available(self):
+        """Determine whether there are updates available.
+
+        For this the app must be installed in a known version and there must be
+        available (and compatible) versions.
+        """
+        installed_version = self._installed_version()
+        if installed_version not in (AppVersion.UNKNOWN, AppVersion.NOT_INSTALLED):
+            available_versions = list(self._available_versions())
+            if len(available_versions):
+                return self._installed_version() != available_versions[0]
+        return False
+
     @throttled(calls_per_second=1)
     def refresh(self):
         """Refresh app state."""
@@ -479,10 +492,7 @@ class AiidaLabApp(traitlets.HasTraits):
                         "detached",
                         self.installed_version is AppVersion.UNKNOWN or modified,
                     )
-                    self.set_trait(
-                        "updates_available",
-                        self.installed_version != list(self._available_versions())[0],
-                    )
+                    self.set_trait("updates_available", self._updates_available())
                 else:
                     self.set_trait("updates_available", None)
                     self.set_trait("detached", None)
