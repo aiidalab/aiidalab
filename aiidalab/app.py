@@ -127,7 +127,9 @@ class _AiidaLabApp:
             if not any(f):
                 yield requirement
 
-    def _find_incompatibilities(self, version, python_bin):
+    def find_incompatibilities(self, version, python_bin=None):
+        if python_bin is None:
+            python_bin = sys.executable
         environment = self.releases[version].get("environment")
         for key, spec in environment.items():
             if key == "python_requirements":
@@ -139,9 +141,7 @@ class _AiidaLabApp:
                 raise ValueError(f"Unknown eco-system '{key}'")
 
     def is_compatible(self, version, python_bin=None):
-        if python_bin is None:
-            python_bin = sys.executable
-        return not any(self._find_incompatibilities(version, python_bin))
+        return not any(self.find_incompatibilities(version, python_bin))
 
     def _install_from_path(self, path):
         if path.is_dir():
@@ -457,11 +457,23 @@ class AiidaLabApp(traitlets.HasTraits):
     def _default_compatible(self):  # pylint: disable=no-self-use
         return None
 
-    def _is_compatible(self, app_version=None):
+    def _is_compatible(self, app_version):
         """Determine whether the currently installed version is compatible."""
         try:
-            return self._app.is_compatible(version=app_version)
+            incompatibilities = dict(
+                self._app.find_incompatibilities(version=app_version)
+            )
+            self.compatibility_info.update(
+                {
+                    app_version: [
+                        f"({eco_system}) {requirement}"
+                        for eco_system, requirement in incompatibilities.items()
+                    ]
+                }
+            )
+            return not any(incompatibilities)
         except KeyError:
+            raise
             return None  # compatibility indetermined for given version
 
     def _updates_available(self):
@@ -484,7 +496,9 @@ class AiidaLabApp(traitlets.HasTraits):
             with self.hold_trait_notifications():
                 self.available_versions = list(self._available_versions())
                 self.installed_version = self._installed_version()
-                self.set_trait("compatible", self._is_compatible())
+                self.set_trait(
+                    "compatible", self._is_compatible(self.installed_version)
+                )
                 if self.is_installed() and self._has_git_repo():
                     self.installed_version = self._installed_version()
                     modified = self._repo.dirty()
