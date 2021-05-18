@@ -3,11 +3,12 @@
 import sys
 import json
 import time
-from urllib.parse import urlparse
 from collections import defaultdict
 from functools import wraps
-from subprocess import check_output
+from subprocess import run
 from threading import Lock
+from urllib.parse import urlsplit
+from urllib.parse import urlunsplit
 
 import requests
 from cachetools import cached, TTLCache
@@ -43,18 +44,22 @@ except ImportError:
     pass
 
 
-def load_app_registry():
+def load_app_registry_index():
     """Load apps' information from the AiiDAlab registry."""
-    parsed_url = urlparse(AIIDALAB_REGISTRY)
-    if parsed_url.scheme == "file":
-        with open(parsed_url.path) as file:
-            return json.loads(file.read())
-    else:
-        try:
-            return requests.get(AIIDALAB_REGISTRY).json()
-        except ValueError:
-            print("Registry server is unavailable! Can't check for the updates")
-            return dict(apps=dict(), catgories=dict())
+    try:
+        return requests.get(f"{AIIDALAB_REGISTRY}/apps_index.json").json()
+    except (ValueError, requests.ConnectionError):
+        print("Registry server is unavailable! Can't check for the updates")
+        return dict(apps=dict(), catgories=dict())
+
+
+def load_app_registry_entry(app_id):
+    """Load registry enty for app with app_id."""
+    try:
+        return requests.get(f"{AIIDALAB_REGISTRY}/apps/{app_id}.json").json()
+    except (ValueError, requests.ConnectionError):
+        print(f"Unable to load registry entry for app with id '{app_id}'.")
+        return None
 
 
 class throttled:  # pylint: disable=invalid-name
@@ -105,7 +110,7 @@ class Package:
         self.version = version
 
     def __str__(self):
-        return f"{type(self).__name__}({self.name, self.version})"
+        return f"{type(self).__name__}({self.name}, {self.version})"
 
     def fulfills(self, requirement):
         """Returns True if this entry fullfills the requirement."""
@@ -116,9 +121,33 @@ class Package:
 
 
 @cached(cache=TTLCache(maxsize=32, ttl=60))
-def find_installed_packages():
+def find_installed_packages(python_bin=None):
     """Return all currently installed packages."""
-    output = check_output(
-        [sys.executable, "-m", "pip", "list", "--format=json"], encoding="utf-8"
-    )
+    if python_bin is None:
+        python_bin = sys.executable
+    output = run(
+        [python_bin, "-m", "pip", "list", "--format=json"],
+        encoding="utf-8",
+        capture_output=True,
+    ).stdout
     return [Package(**package) for package in json.loads(output)]
+
+
+def split_git_url(git_url):
+    """Split the base url and the ref pointer of a git url.
+
+    For example: git+https://example.com/app.git@v1 is split into and returned
+    as tuple: (git+https://example.com/app.git, v1)
+    """
+
+    parsed_url = urlsplit(git_url)
+    if "@" in parsed_url.path:
+        path, ref = parsed_url.path.rsplit("@", 1)
+    else:
+        path, ref = parsed_url.path, None
+    return urlunsplit(parsed_url._replace(path=path)), ref
+
+
+def this_or_only_subdir(path):
+    members = list(path.iterdir())
+    return members[0] if len(members) == 1 and members[0].is_dir() else path
