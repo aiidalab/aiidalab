@@ -14,7 +14,7 @@ This is by far the easiest way of getting started with AiiDAlab.
 First, you need to make sure that Docker is installed on your machine, otherwise, go to `Get Started with Docker <https://www.docker.com/get-started>`__ page and follow the instructions for your operating system.
 Once the Docker is installed, clone the `AiiDAlab Docker Stack <https://github.com/aiidalab/aiidalab-docker-stack>`__ repository and enter it.
 
-   .. code-block: console
+   .. code-block:: console
 
        $ git clone https://github.com/aiidalab/aiidalab-docker-stack
        $ cd aiidalab-docker-stack
