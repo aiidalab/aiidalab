@@ -496,7 +496,9 @@ class AiidaLabApp(traitlets.HasTraits):
             with self.hold_trait_notifications():
                 self.available_versions = list(self._available_versions())
                 self.installed_version = self._installed_version()
-                if not self.is_installed(): # Do not check compatibility if the app is not installed.
+                if (
+                    not self.is_installed()
+                ):  # Do not check compatibility if the app is not installed.
                     return
                 self.set_trait(
                     "compatible", self._is_compatible(self.installed_version)
