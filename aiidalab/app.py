@@ -458,7 +458,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return None
 
     def _is_compatible(self, app_version):
-        """Determine whether the currently installed version is compatible."""
+        """Determine whether the specified version is compatible."""
         try:
             incompatibilities = dict(
                 self._app.find_incompatibilities(version=app_version)
@@ -473,7 +473,6 @@ class AiidaLabApp(traitlets.HasTraits):
             )
             return not any(incompatibilities)
         except KeyError:
-            raise
             return None  # compatibility indetermined for given version
 
     def _updates_available(self):
