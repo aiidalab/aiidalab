@@ -2,6 +2,7 @@
 """Module to manage AiiDAlab apps."""
 
 import errno
+import logging
 import os
 import shutil
 import sys
@@ -39,6 +40,9 @@ from .utils import load_app_registry_entry
 from .utils import split_git_url
 from .utils import this_or_only_subdir
 from .utils import throttled
+
+
+logger = logging.getLogger(__name__)
 
 
 # A version is usually of type str, but it can also be a value
@@ -92,13 +96,17 @@ class _AiidaLabApp:
 
     def installed_version(self):
         if self._repo:
-            head_commit = self._repo.head().decode()
-            versions_by_commit = {
-                split_git_url(release["url"])[1]: version
-                for version, release in self.releases.items()
-                if urlsplit(release["url"]).scheme.startswith("git+")
-            }
-            return versions_by_commit.get(head_commit, AppVersion.UNKNOWN)
+            try:
+                head_commit = self._repo.head().decode()
+                versions_by_commit = {
+                    split_git_url(release["url"])[1]: version
+                    for version, release in self.releases.items()
+                    if urlsplit(release["url"]).scheme.startswith("git+")
+                }
+                return versions_by_commit.get(head_commit, AppVersion.UNKNOWN)
+            except Exception as error:
+                logger.debug(f"Encountered error while determining version: {error}")
+                return AppVersion.UNKNOWN
         elif self.path.exists():
             return AppVersion.UNKNOWN
         return AppVersion.NOT_INSTALLED
