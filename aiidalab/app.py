@@ -118,10 +118,8 @@ class _AiidaLabApp:
         if self.path.exists():
             shutil.rmtree(self.path)
 
-    def find_matching_releases(self, specifier):
-        matching_releases = [
-            version for version in self.releases if parse(version) in specifier
-        ]
+    def find_matching_releases(self, specifier, prereleases=None):
+        matching_releases = specifier.filter(self.releases, prereleases=prereleases)
         # Sort by intrinsic order (e.g. 1.1.0 -> 1.0.1 -> 1.0.0 and so on)
         matching_releases.sort(key=parse, reverse=True)
         return matching_releases
