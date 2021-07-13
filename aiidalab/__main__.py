@@ -227,8 +227,10 @@ def show_environment(app_requirement, indent):
     click.echo(json.dumps(aggregated_environment, indent=indent))
 
 
-def _find_version_to_install(app_requirement, app, force, python_bin):
-    matching_releases = app.find_matching_releases(app_requirement.specifier)
+def _find_version_to_install(app_requirement, app, force, python_bin, prereleases):
+    matching_releases = app.find_matching_releases(
+        app_requirement.specifier, prereleases
+    )
     compatible_releases = [
         version
         for version in matching_releases
@@ -282,7 +284,13 @@ def _find_version_to_install(app_requirement, app, force, python_bin):
     "Set this option to an empty string to skip the dependency check.",
     type=click.Path(dir_okay=False),
 )
-def install(app_requirement, yes, dry_run, force, python_bin):
+@click.option(
+    "--pre",
+    "prereleases",
+    is_flag=True,
+    help="Include prereleases among the candidates for installation.",
+)
+def install(app_requirement, yes, dry_run, force, python_bin, prereleases):
     """Install apps.
 
     This command will install the latest version of an app matching the given requirement.
@@ -301,6 +309,7 @@ def install(app_requirement, yes, dry_run, force, python_bin):
                 _find_app_from_id(requirement.name),
                 force=force,
                 python_bin=python_bin,
+                prereleases=prereleases,
             )
             for requirement in map(_parse_requirement, set(app_requirement))
         }
