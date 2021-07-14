@@ -533,9 +533,7 @@ class AiidaLabApp(traitlets.HasTraits):
         try:
             return "{}".format(self._app.metadata[what])
         except KeyError:
-            if not os.path.isfile(os.path.join(self.path, "metadata.json")):
-                return "({}) metadata.json file is not present".format(what)
-            return 'the field "{}" is not present in metadata.json file'.format(what)
+            return f'Field "{what}" is not present in app metadata.'
 
     @property
     def authors(self):
