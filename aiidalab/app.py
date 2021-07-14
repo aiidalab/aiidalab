@@ -508,7 +508,7 @@ class AiidaLabApp(traitlets.HasTraits):
             parse(version).is_prerelease for version in all_available_versions
         )
         self.installed_version = self._installed_version()
-        self.include_prereleases = (
+        self.include_prereleases = self.include_prereleases or (
             isinstance(self.installed_version, str)
             and parse(self.installed_version).is_prerelease
         )
