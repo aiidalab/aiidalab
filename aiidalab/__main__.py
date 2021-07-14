@@ -73,7 +73,15 @@ def info():
 
 @cli.command()
 @click.argument("app-query", default="*")
-def search(app_query):
+@click.option(
+    "--pre",
+    "prereleases",
+    is_flag=True,
+    default=None,
+    help="Include prereleases among the search candidates. Note: Prereleases "
+    "are automatically included if an app has only prereleases.",
+)
+def search(app_query, prereleases):
     """Search for apps within the registry.
 
     Accepts either a search query with app names that contain wildcards ('*', '?')
@@ -110,7 +118,10 @@ def search(app_query):
                 f"Did not find entry for app with name '{app_requirement.name}'."
             )
         matching_releases = [
-            version for version in app.find_matching_releases(app_requirement.specifier)
+            version
+            for version in app.find_matching_releases(
+                app_requirement.specifier, prereleases
+            )
         ]
         if matching_releases:
             click.echo(
