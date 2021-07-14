@@ -20,6 +20,7 @@ from typing import List
 from urllib.parse import urldefrag
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
+from uuid import uuid4
 
 import requests
 import traitlets
@@ -115,8 +116,10 @@ class _AiidaLabApp:
             return self._repo.dirty()
 
     def uninstall(self):
+        trash_path = Path.home().joinpath(".trash", f"self.name-{uuid4()!s}")
         if self.path.exists():
-            shutil.rmtree(self.path)
+            trash_path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.rename(trash_path)
 
     def find_matching_releases(self, specifier):
         matching_releases = [
