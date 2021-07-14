@@ -543,7 +543,7 @@ class AiidaLabApp(traitlets.HasTraits):
     @property
     def url(self):
         """Provide explicit link to Git repository."""
-        return getattr(self._registry_data, "git_url", None)
+        return self._get_from_metadata("external_url")
 
     @property
     def more(self):
