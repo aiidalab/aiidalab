@@ -121,10 +121,8 @@ class _AiidaLabApp:
             trash_path.parent.mkdir(parents=True, exist_ok=True)
             self.path.rename(trash_path)
 
-    def find_matching_releases(self, specifier):
-        matching_releases = [
-            version for version in self.releases if parse(version) in specifier
-        ]
+    def find_matching_releases(self, specifier, prereleases=None):
+        matching_releases = specifier.filter(self.releases, prereleases=prereleases)
         # Sort by intrinsic order (e.g. 1.1.0 -> 1.0.1 -> 1.0.0 and so on)
         matching_releases.sort(key=parse, reverse=True)
         return matching_releases
@@ -363,6 +361,8 @@ class AiidaLabApp(traitlets.HasTraits):
         [traitlets.Unicode(), traitlets.UseEnum(AppVersion)]
     )
     updates_available = traitlets.Bool(readonly=True, allow_none=True)
+    has_prereleases = traitlets.Bool()
+    include_prereleases = traitlets.Bool()
 
     busy = traitlets.Bool(readonly=True)
     detached = traitlets.Bool(readonly=True, allow_none=True)
@@ -387,6 +387,16 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def __str__(self):
         return f"<AiidaLabApp name='{self._app.name}'>"
+
+    @traitlets.default("include_prereleases")
+    def _default_include_prereleases(self):
+        "Provide default value for include_prereleases trait." ""
+        return False
+
+    @traitlets.observe("include_prereleases")
+    def _observe_include_prereleases(self, change):
+        if change["old"] != change["new"]:
+            self.refresh()
 
     @traitlets.default("detached")
     def _default_detached(self):
@@ -492,13 +502,28 @@ class AiidaLabApp(traitlets.HasTraits):
                 return self._installed_version() != available_versions[0]
         return False
 
+    def _refresh_versions(self):
+        all_available_versions = list(self._available_versions())
+        self.has_prereleases = any(
+            parse(version).is_prerelease for version in all_available_versions
+        )
+        self.installed_version = self._installed_version()
+        self.include_prereleases = (
+            isinstance(self.installed_version, str)
+            and parse(self.installed_version).is_prerelease
+        )
+        self.available_versions = [
+            str(version)
+            for version in all_available_versions
+            if self.include_prereleases or not parse(version).is_prerelease
+        ]
+
     @throttled(calls_per_second=1)
     def refresh(self):
         """Refresh app state."""
         with self._show_busy():
             with self.hold_trait_notifications():
-                self.available_versions = list(self._available_versions())
-                self.installed_version = self._installed_version()
+                self._refresh_versions()
                 self.set_trait(
                     "compatible", self._is_compatible(self.installed_version)
                 )
