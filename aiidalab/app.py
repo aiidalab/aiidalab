@@ -122,7 +122,9 @@ class _AiidaLabApp:
             self.path.rename(trash_path)
 
     def find_matching_releases(self, specifier, prereleases=None):
-        matching_releases = specifier.filter(self.releases, prereleases=prereleases)
+        matching_releases = list(
+            specifier.filter(self.releases, prereleases=prereleases)
+        )
         # Sort by intrinsic order (e.g. 1.1.0 -> 1.0.1 -> 1.0.0 and so on)
         matching_releases.sort(key=parse, reverse=True)
         return matching_releases
