@@ -499,7 +499,7 @@ class AiidaLabApp(traitlets.HasTraits):
         """
         installed_version = self._installed_version()
         if installed_version not in (AppVersion.UNKNOWN, AppVersion.NOT_INSTALLED):
-            available_versions = list(self._available_versions())
+            available_versions = list(self.available_versions)
             if len(available_versions):
                 return self._installed_version() != available_versions[0]
         return False
