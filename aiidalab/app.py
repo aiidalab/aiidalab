@@ -9,7 +9,6 @@ import sys
 import tarfile
 import tempfile
 from contextlib import contextmanager
-from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum, auto
@@ -383,14 +382,8 @@ class AiidaLabApp(traitlets.HasTraits):
         else:
             self._watch = None
 
-    def __repr__(self):
-        app_data_argument = (
-            None if self._registry_data is None else asdict(self._registry_data)
-        )
-        return (
-            f"AiidaLabApp(name={self.name!r}, app_data={app_data_argument!r}, "
-            f"aiidalab_apps_path={os.path.dirname(self.path)!r})"
-        )
+    def __str__(self):
+        return f"<AiidaLabApp name='{self._app.name}'>"
 
     @traitlets.default("detached")
     def _default_detached(self):
