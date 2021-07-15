@@ -46,6 +46,8 @@ def _list_apps(apps_path):
     if apps_path.is_dir():
         for path in apps_path.iterdir():
             if path.is_dir():
+                if path.stem.startswith(".") or path.stem == "__pycache__":
+                    continue  # exclude hidden directories and the Python cache directory.
                 app_name = str(path.relative_to(apps_path))
                 try:
                     yield path, app_name, AiidaLabApp.from_id(app_name)
