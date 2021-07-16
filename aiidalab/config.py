@@ -13,7 +13,7 @@ if _DEVELOP_MODE:  # Warn developer that the mode is enabled.
     lines = [f"Executing '{__name__.split('.')[0]}' in DEVELOP mode."]
     config_ = {k: v for k, v in _CONFIG.items() if k != "develop"}
     if config_:  # The config does not only contain the 'develop' key.
-        lines.append(f"{CONFIG_PATH!s} (takes precendece):")
+        lines.append(f"{CONFIG_PATH!s} (takes precedence):")
         lines.extend(toml.dumps(config_).splitlines())
     click.secho("\n".join([f"\U0001F6A7  {line}" for line in lines]), fg="yellow")
 
