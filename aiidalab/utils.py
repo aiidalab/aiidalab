@@ -3,8 +3,10 @@
 import sys
 import json
 import time
+import logging
 from collections import defaultdict
 from functools import wraps
+from pathlib import Path
 from subprocess import run
 from threading import Lock
 from urllib.parse import urlsplit
@@ -12,36 +14,39 @@ from urllib.parse import urlunsplit
 
 import requests
 from cachetools import cached, TTLCache
-from IPython.lib import backgroundjobs as bg
 from packaging.utils import canonicalize_name
 
 from .config import AIIDALAB_REGISTRY
 
 
-def update_cache():
-    """Run this process asynchronously."""
-    requests_cache.install_cache(
-        cache_name="apps_meta",
-        backend="sqlite",
-        expire_after=3600,
-        old_data_on_error=True,
-    )
-    requests.get(AIIDALAB_REGISTRY)
-    requests_cache.install_cache(cache_name="apps_meta", backend="sqlite")
+logger = logging.getLogger(__name__)
 
 
-# Warning: try-except is a fix for Quantum Mobile release v19.03.0 that does not have requests_cache installed
+# Warning: try-except is a fix for Quantum Mobile release v19.03.0 where
+# requests_cache is not installed.
 try:
     import requests_cache
-
-    # At start getting data from cache
-    requests_cache.install_cache(cache_name="apps_meta", backend="sqlite")
-
-    # If requests_cache is installed, upgrade the cache in the background.
-    UPDATE_CACHE_BACKGROUND = bg.BackgroundJobFunc(update_cache)
-    UPDATE_CACHE_BACKGROUND.start()
 except ImportError:
-    pass
+    logger.warning(
+        "The requests_cache package is missing.  Requests made to the app "
+        "registry will not be cached!"
+    )
+else:
+    # Install global cache for all requests.
+
+    # The cache file is placed within the user home directory.
+    cache_file = Path.home().joinpath(".cache", "requests", "cache")
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # The cache is configured to avoid spamming the index server with requests
+    # that are made in rapid succession and also serves as a fallback in case
+    # that the index server is not reachable.
+    requests_cache.install_cache(
+        cache_name=str(cache_file),
+        backend="sqlite",
+        expire_after=60,  # seconds
+        old_data_on_error=True,
+    )
 
 
 def load_app_registry_index():
