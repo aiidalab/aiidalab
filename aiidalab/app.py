@@ -60,6 +60,7 @@ class _AiidaLabApp:
     metadata: dict
     name: str
     path: Path
+    logo: str = field(default_factory=str)
     categories: List[str] = field(default_factory=list)
     releases: dict = field(default_factory=dict)
 
@@ -70,7 +71,7 @@ class _AiidaLabApp:
             **{
                 key: value
                 for key, value in registry_entry.items()
-                if key in ("categories", "metadata", "name", "releases")
+                if key in ("categories", "logo", "metadata", "name", "releases")
             },
         )
 
@@ -114,6 +115,10 @@ class _AiidaLabApp:
     def dirty(self):
         if self._repo:
             return self._repo.dirty()
+
+    def is_installed(self):
+        """The app is installed if the corresponding folder is present."""
+        return self.path.exists()
 
     def uninstall(self):
         trash_path = Path.home().joinpath(".trash", f"{self.name}-{uuid4()!s}")
@@ -378,6 +383,8 @@ class AiidaLabApp(traitlets.HasTraits):
         super().__init__()
 
         self.name = self._app.name
+        self.logo = self._app.logo
+        self.is_installed = self._app.is_installed
         self.path = str(self._app.path)
         self.refresh_async()
 
@@ -423,10 +430,6 @@ class AiidaLabApp(traitlets.HasTraits):
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
         return category in self._registry_data.categories
-
-    def is_installed(self):
-        """The app is installed if the corresponding folder is present."""
-        return os.path.isdir(self.path)
 
     def _has_git_repo(self):
         """Check if the app has a .git folder in it."""
