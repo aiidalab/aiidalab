@@ -59,8 +59,8 @@ class _AiidaLabApp:
 
     metadata: dict
     name: str
-    logo: str
     path: Path
+    logo: str = field(default_factory=str)
     categories: List[str] = field(default_factory=list)
     releases: dict = field(default_factory=dict)
 
