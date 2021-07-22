@@ -118,7 +118,7 @@ class _AiidaLabApp:
 
     def is_installed(self):
         """The app is installed if the corresponding folder is present."""
-        return os.path.isdir(self.path)
+        return self.path.exists()
 
     def uninstall(self):
         trash_path = Path.home().joinpath(".trash", f"{self.name}-{uuid4()!s}")
