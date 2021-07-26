@@ -240,14 +240,19 @@ def show_environment(app_requirement, indent):
     click.echo(json.dumps(aggregated_environment, indent=indent))
 
 
-def _find_version_to_install(app_requirement, app, force, python_bin, prereleases):
+def _find_version_to_install(
+    app_requirement, app, force, dependencies, python_bin, prereleases
+):
+    assert dependencies in ("install", "require", "ignore")
     matching_releases = app.find_matching_releases(
         app_requirement.specifier, prereleases
     )
     compatible_releases = [
         version
         for version in matching_releases
-        if force or not python_bin or app.is_compatible(version, python_bin=python_bin)
+        if force
+        or (dependencies in ("install", "ignore"))
+        or app.is_compatible(version, python_bin=python_bin)
     ]
 
     # Best case scenario: matching and compatible release found!
@@ -290,12 +295,22 @@ def _find_version_to_install(app_requirement, app, force, python_bin, prerelease
     help="Ignore all warnings and perform potentially dangerous operations anyways.",
 )
 @click.option(
+    "-d",
+    "--dependencies",
+    type=click.Choice(["install", "require", "ignore"]),
+    default="install",
+    help="Select whether to install app dependencies (the default), "
+    "require them to be installed prior to installation, "
+    "or completely ignore them.",
+    show_default=True,
+)
+@click.option(
     "--python",
     "python_bin",
-    default="python",
-    help="Specify the Python binary for which to check Python-dependencies for. "
-    "Set this option to an empty string to skip the dependency check.",
-    type=click.Path(dir_okay=False),
+    default=shutil.which("python"),
+    type=click.Path(dir_okay=False, exists=True),
+    help="The Python binary to use to install Python dependencies or to check their presence.",
+    show_default=True,
 )
 @click.option(
     "--pre",
@@ -303,7 +318,9 @@ def _find_version_to_install(app_requirement, app, force, python_bin, prerelease
     is_flag=True,
     help="Include prereleases among the candidates for installation.",
 )
-def install(app_requirement, yes, dry_run, force, python_bin, prereleases):
+def install(
+    app_requirement, yes, dry_run, force, dependencies, python_bin, prereleases
+):
     """Install apps.
 
     This command will install the latest version of an app matching the given requirement.
@@ -320,6 +337,7 @@ def install(app_requirement, yes, dry_run, force, python_bin, prereleases):
             requirement: _find_version_to_install(
                 requirement,
                 _find_app_from_id(requirement.name),
+                dependencies=dependencies,
                 force=force,
                 python_bin=python_bin,
                 prereleases=prereleases,
@@ -332,7 +350,7 @@ def install(app_requirement, yes, dry_run, force, python_bin, prereleases):
         return
 
     elif any(version is None for (_, version) in install_candidates.values()):
-        for requirement, (_, version) in sorted(install_candidates.items()):
+        for requirement, (_, version) in install_candidates.items():
             if version is None:
                 click.secho(
                     f"Requirement '{requirement}' already satisfied.",
@@ -348,7 +366,7 @@ def install(app_requirement, yes, dry_run, force, python_bin, prereleases):
     apps_table = tabulate(
         [
             [app.name, version, app.path]
-            for _, (app, version) in sorted(install_candidates.items())
+            for _, (app, version) in install_candidates.items()
             if version is not None
         ],
         headers=["App", "Version", "Path"],
@@ -362,10 +380,19 @@ def install(app_requirement, yes, dry_run, force, python_bin, prereleases):
                         f"Would install '{app.name}' version '{version}'.", fg="green"
                     )
                 else:
-                    app.install(version=version)
-                    click.secho(
-                        f"Installed '{app.name}' version '{version}'.", fg="green"
-                    )
+                    try:
+                        app.install(
+                            version=version,
+                            install_dependencies=dependencies == "install",
+                            python_bin=python_bin,
+                        )
+                    except RuntimeError as error:
+                        click.secho(f"Error: {error}", fg="red")
+                        break
+                    else:
+                        click.secho(
+                            f"Installed '{app.name}' version '{version}'.", fg="green"
+                        )
 
 
 @cli.command()

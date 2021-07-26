@@ -14,6 +14,8 @@ from dataclasses import field
 from enum import Enum, auto
 from itertools import repeat
 from pathlib import Path
+from subprocess import CalledProcessError
+from subprocess import run
 from threading import Thread
 from time import sleep
 from typing import List
@@ -120,11 +122,19 @@ class _AiidaLabApp:
         """The app is installed if the corresponding folder is present."""
         return self.path.exists()
 
-    def uninstall(self):
+    def _move_to_trash(self):
         trash_path = Path.home().joinpath(".trash", f"{self.name}-{uuid4()!s}")
         if self.path.exists():
             trash_path.parent.mkdir(parents=True, exist_ok=True)
             self.path.rename(trash_path)
+            return trash_path
+
+    def _restore_from(self, trash_path):
+        self._move_to_trash()
+        trash_path.rename(self.path)
+
+    def uninstall(self):
+        self._move_to_trash()
 
     def find_matching_releases(self, specifier, prereleases=None):
         matching_releases = list(
@@ -158,6 +168,33 @@ class _AiidaLabApp:
     def is_compatible(self, version, python_bin=None):
         return not any(self.find_incompatibilities(version, python_bin))
 
+    def _install_dependencies(self, python_bin):
+        """Try to install the app dependencies with pip (if specified)."""
+
+        def _pip_install(*args):
+            run(
+                [python_bin, "-m", "pip", "install", *args],
+                check=True,
+                encoding="utf-8",
+            )
+
+        for path in (self.path.joinpath(".aiidalab"), self.path):
+            if path.exists():
+                try:
+                    if path.joinpath("setup.py").is_file():
+                        _pip_install("--use-feature=in-tree-build", str(path))
+                    elif path.joinpath("requirements.txt").is_file():
+                        _pip_install(
+                            f"--requirement={path.joinpath('requirements.txt')}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Warning: App '{self.name}' does not declare any dependencies."
+                        )
+                    break
+                except CalledProcessError:
+                    raise RuntimeError("Failed to install dependencies.")
+
     def _install_from_path(self, path):
         if path.is_dir():
             shutil.copytree(this_or_only_subdir(path), self.path)
@@ -185,14 +222,16 @@ class _AiidaLabApp:
         base_url, ref = split_git_url(git_url)
         git_clone(base_url, ref, self.path)
 
-    def install(self, version=None):
+    def install(self, version=None, python_bin=None, install_dependencies=True):
         if version is None:
             try:
                 version = list(sorted(self.releases, key=parse))[-1]
             except IndexError:
                 raise ValueError("No versions available for '{self}'.")
+        if python_bin is None:
+            python_bin = sys.executable
 
-        self.uninstall()
+        trash_path = self._move_to_trash()
 
         url = self.releases[version]["url"]
         split_url = urlsplit(url)
@@ -213,11 +252,27 @@ class _AiidaLabApp:
                 raise NotImplementedError(
                     "Unsupported scheme: {split_url.scheme} ({url})"
                 )
+
+            # Install dependencies
+            if install_dependencies:
+                self._install_dependencies(python_bin)
         except RuntimeError as error:
-            raise RuntimeError(
-                f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
-                f", due to error: {error}"
-            )
+            try:
+                if trash_path is None:
+                    # App, was not previously installed, just remove it.
+                    logger.info("Removing partially installed app.")
+                    self._move_to_trash()
+                else:
+                    # Attempt rollback to previous version.
+                    logger.info("Performing rollback to previously installed version.")
+                    self._restore_from(trash_path)
+            except RuntimeError as error:
+                logger.warning(f"Rollback failed due to error: {error}!")
+            finally:
+                raise RuntimeError(
+                    f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
+                    f", due to error: {error}"
+                )
 
 
 class AppNotInstalledException(Exception):
