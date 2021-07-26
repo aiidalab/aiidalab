@@ -247,7 +247,7 @@ def _find_version_to_install(app_requirement, app, force, python_bin, prerelease
     compatible_releases = [
         version
         for version in matching_releases
-        if not python_bin or app.is_compatible(version, python_bin=python_bin)
+        if force or not python_bin or app.is_compatible(version, python_bin=python_bin)
     ]
 
     # Best case scenario: matching and compatible release found!
