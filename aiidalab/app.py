@@ -8,6 +8,7 @@ import shutil
 import sys
 import tarfile
 import tempfile
+import subprocess
 from contextlib import contextmanager
 from dataclasses import dataclass
 from dataclasses import field
@@ -15,7 +16,6 @@ from enum import Enum, auto
 from itertools import repeat
 from pathlib import Path
 from subprocess import CalledProcessError
-from subprocess import run
 from threading import Thread
 from time import sleep
 from typing import List
@@ -65,6 +65,8 @@ class _AiidaLabApp:
     logo: str = field(default_factory=str)
     categories: List[str] = field(default_factory=list)
     releases: dict = field(default_factory=dict)
+    stderr = sys.stderr
+    stdout = sys.stdout
 
     @classmethod
     def from_registry_entry(cls, path, registry_entry):
@@ -172,11 +174,21 @@ class _AiidaLabApp:
         """Try to install the app dependencies with pip (if specified)."""
 
         def _pip_install(*args):
-            run(
+            process = subprocess.Popen(
                 [python_bin, "-m", "pip", "install", *args],
-                check=True,
                 encoding="utf-8",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
+            while True:
+                output = process.stdout.readline()
+                errors = process.stderr.readline()
+                if output == "" and errors == "" and process.poll() is not None:
+                    break
+                if output:
+                    self.stdout.write(output)
+                if errors:
+                    self.stderr.write(output)
 
         for path in (self.path.joinpath(".aiidalab"), self.path):
             if path.exists():
@@ -493,6 +505,12 @@ class AiidaLabApp(traitlets.HasTraits):
             return True
         except NotGitRepository:
             return False
+
+    def set_stdout(self, stdout):
+        self._app.stdout = stdout
+
+    def set_stderr(self, stderr):
+        self._app.stderr = stderr
 
     def install_app(self, version=None):
         """Installing the app."""
