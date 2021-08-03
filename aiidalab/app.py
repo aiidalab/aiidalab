@@ -65,7 +65,6 @@ class _AiidaLabApp:
     logo: str = field(default_factory=str)
     categories: List[str] = field(default_factory=list)
     releases: dict = field(default_factory=dict)
-    stderr = sys.stderr
     stdout = sys.stdout
 
     @classmethod
@@ -177,18 +176,16 @@ class _AiidaLabApp:
             process = subprocess.Popen(
                 [python_bin, "-m", "pip", "install", *args],
                 encoding="utf-8",
+                bufsize=1,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
             )
             while True:
                 output = process.stdout.readline()
-                errors = process.stderr.readline()
-                if output == "" and errors == "" and process.poll() is not None:
+                if output == "" and process.poll() is not None:
                     break
                 if output:
                     self.stdout.write(output)
-                if errors:
-                    self.stderr.write(output)
 
         for path in (self.path.joinpath(".aiidalab"), self.path):
             if path.exists():
@@ -508,9 +505,6 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def set_stdout(self, stdout):
         self._app.stdout = stdout
-
-    def set_stderr(self, stderr):
-        self._app.stderr = stderr
 
     def install_app(self, version=None):
         """Installing the app."""
