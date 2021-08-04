@@ -65,7 +65,6 @@ class _AiidaLabApp:
     logo: str = field(default_factory=str)
     categories: List[str] = field(default_factory=list)
     releases: dict = field(default_factory=dict)
-    stdout = sys.stdout
 
     @classmethod
     def from_registry_entry(cls, path, registry_entry):
@@ -169,12 +168,13 @@ class _AiidaLabApp:
     def is_compatible(self, version, python_bin=None):
         return not any(self.find_incompatibilities(version, python_bin))
 
-    def _install_dependencies(self, python_bin):
+    def _install_dependencies(self, python_bin, stdout=None):
         """Try to install the app dependencies with pip (if specified)."""
 
-        def _pip_install(*args):
+        def _pip_install(*args, stdout=None):
             # The implementation of this function is taken and adapted from:
             # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
+            stdout = stdout or sys.stdout
             process = subprocess.Popen(
                 [python_bin, "-m", "pip", "install", *args],
                 encoding="utf-8",
@@ -187,16 +187,19 @@ class _AiidaLabApp:
                 if output == "" and process.poll() is not None:
                     break
                 if output:
-                    self.stdout.write(output)
+                    stdout.write(output)
 
         for path in (self.path.joinpath(".aiidalab"), self.path):
             if path.exists():
                 try:
                     if path.joinpath("setup.py").is_file():
-                        _pip_install("--use-feature=in-tree-build", str(path))
+                        _pip_install(
+                            "--use-feature=in-tree-build", str(path), stdout=stdout
+                        )
                     elif path.joinpath("requirements.txt").is_file():
                         _pip_install(
-                            f"--requirement={path.joinpath('requirements.txt')}"
+                            f"--requirement={path.joinpath('requirements.txt')}",
+                            stdout=stdout,
                         )
                     else:
                         logger.warning(
@@ -233,7 +236,9 @@ class _AiidaLabApp:
         base_url, ref = split_git_url(git_url)
         git_clone(base_url, ref, self.path)
 
-    def install(self, version=None, python_bin=None, install_dependencies=True):
+    def install(
+        self, version=None, python_bin=None, install_dependencies=True, stdout=None
+    ):
         if version is None:
             try:
                 version = list(sorted(self.releases, key=parse))[-1]
@@ -266,7 +271,7 @@ class _AiidaLabApp:
 
             # Install dependencies
             if install_dependencies:
-                self._install_dependencies(python_bin)
+                self._install_dependencies(python_bin, stdout=stdout)
         except RuntimeError as error:
             try:
                 if trash_path is None:
@@ -505,13 +510,10 @@ class AiidaLabApp(traitlets.HasTraits):
         except NotGitRepository:
             return False
 
-    def set_stdout(self, stdout):
-        self._app.stdout = stdout
-
-    def install_app(self, version=None):
+    def install_app(self, version=None, stdout=None):
         """Installing the app."""
         with self._show_busy():
-            self._app.install(version=version)
+            self._app.install(version=version, stdout=stdout)
             self.refresh()
             return self._installed_version()
 
