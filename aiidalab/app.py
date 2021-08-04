@@ -5,10 +5,10 @@ import errno
 import logging
 import os
 import shutil
+import subprocess
 import sys
 import tarfile
 import tempfile
-import subprocess
 from contextlib import contextmanager
 from dataclasses import dataclass
 from dataclasses import field
@@ -173,6 +173,8 @@ class _AiidaLabApp:
         """Try to install the app dependencies with pip (if specified)."""
 
         def _pip_install(*args):
+            # The implementation of this function is taken and adapted from:
+            # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
             process = subprocess.Popen(
                 [python_bin, "-m", "pip", "install", *args],
                 encoding="utf-8",
