@@ -517,12 +517,12 @@ class AiidaLabApp(traitlets.HasTraits):
             self.refresh()
             return self._installed_version()
 
-    def update_app(self, _=None):
+    def update_app(self, _=None, stdout=None):
         """Perform app update."""
         with self._show_busy():
             # Installing with version=None automatically selects latest
             # available version.
-            version = self.install_app(version=None)
+            version = self.install_app(version=None, stdout=stdout)
             self.refresh()
             return version
 
