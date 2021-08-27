@@ -175,6 +175,16 @@ class _AiidaLabApp:
             # The implementation of this function is taken and adapted from:
             # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
             stdout = stdout or sys.stdout
+
+            def print_process_output(process):
+                while True:
+                    output = process.stdout.readline()
+                    if output == "" and process.poll() is not None:
+                        break
+                    if output:
+                        stdout.write(output)
+
+            # Install package dependencies.
             process = subprocess.Popen(
                 [python_bin, "-m", "pip", "install", *args],
                 encoding="utf-8",
@@ -182,12 +192,27 @@ class _AiidaLabApp:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
             )
-            while True:
-                output = process.stdout.readline()
-                if output == "" and process.poll() is not None:
-                    break
-                if output:
-                    stdout.write(output)
+            print_process_output(process)
+
+            # AiiDA plugins require reentry run to be found by AiiDA.
+            process = subprocess.Popen(
+                ["reentry", "scan"],
+                encoding="utf-8",
+                bufsize=1,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            print_process_output(process)
+
+            # Restarting the AiiDA daemon to import newly installed plugins.
+            process = subprocess.Popen(
+                ["verdi", "daemon", "restart"],
+                encoding="utf-8",
+                bufsize=1,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            print_process_output(process)
 
         for path in (self.path.joinpath(".aiidalab"), self.path):
             if path.exists():
