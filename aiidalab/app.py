@@ -3,9 +3,9 @@
 
 import errno
 import logging
+import io
 import os
 import shutil
-import subprocess
 import sys
 import tarfile
 import tempfile
@@ -42,6 +42,9 @@ from .utils import load_app_registry_entry
 from .utils import split_git_url
 from .utils import this_or_only_subdir
 from .utils import throttled
+from .utils import run_pip_install
+from .utils import run_verdi_daemon_restart
+from .utils import run_reentry_scan
 
 
 logger = logging.getLogger(__name__)
@@ -176,43 +179,20 @@ class _AiidaLabApp:
             # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
             stdout = stdout or sys.stdout
 
-            def print_process_output(process):
-                while True:
-                    output = process.stdout.readline()
-                    if output == "" and process.poll() is not None:
-                        break
-                    if output:
-                        stdout.write(output)
-
             # Install package dependencies.
-            process = subprocess.Popen(
-                [python_bin, "-m", "pip", "install", *args],
-                encoding="utf-8",
-                bufsize=1,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-            )
-            print_process_output(process)
+            process = run_pip_install(*args, python_bin=python_bin)
+            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                stdout.write(line)
 
             # AiiDA plugins require reentry run to be found by AiiDA.
-            process = subprocess.Popen(
-                ["reentry", "scan"],
-                encoding="utf-8",
-                bufsize=1,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-            )
-            print_process_output(process)
+            process = run_reentry_scan()
+            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                stdout.write(line)
 
             # Restarting the AiiDA daemon to import newly installed plugins.
-            process = subprocess.Popen(
-                ["verdi", "daemon", "restart"],
-                encoding="utf-8",
-                bufsize=1,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-            )
-            print_process_output(process)
+            process = run_verdi_daemon_restart()
+            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                stdout.write(line)
 
         for path in (self.path.joinpath(".aiidalab"), self.path):
             if path.exists():
