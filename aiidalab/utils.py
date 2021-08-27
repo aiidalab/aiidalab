@@ -4,6 +4,7 @@ import sys
 import json
 import time
 import logging
+import subprocess
 from collections import defaultdict
 from functools import wraps
 from pathlib import Path
@@ -156,3 +157,30 @@ def split_git_url(git_url):
 def this_or_only_subdir(path):
     members = list(path.iterdir())
     return members[0] if len(members) == 1 and members[0].is_dir() else path
+
+
+def run_pip_install(*args, python_bin=sys.executable):
+    return subprocess.Popen(
+        [python_bin, "-m", "pip", "install", *args],
+        bufsize=1,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+
+def run_reentry_scan():
+    return subprocess.Popen(
+        ["reentry", "scan"],
+        bufsize=1,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+
+def run_verdi_daemon_restart():
+    return subprocess.Popen(
+        ["verdi", "daemon", "restart"],
+        bufsize=1,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
