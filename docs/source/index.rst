@@ -2,7 +2,14 @@
 Welcome to AiiDAlab's documentation!
 ####################################
 
-AiiDAlab is an environment for users with diverse expertise to access and run computational workflows embedded in AiiDAlab apps.
+AiiDAlab is a web platform that enables computational scientists to package scientific workflows and computational environments into "apps" and to share those apps with their collaborators and peers.
+
+AiiDAlab builds on
+
+   * `AiiDA <https://www.aiida.net/>`_ as the computational workflow engine
+   * the `Jupyter <https://jupyter.org/>`_ environment (notebooks, widgets, ...) for writing and sharing apps
+   * `GitHub <http://github.com/>`_ for collaboration on app development
+
 
 .. toctree::
    :maxdepth: 1
@@ -12,10 +19,6 @@ AiiDAlab is an environment for users with diverse expertise to access and run co
    Develop AiiDAlab apps <app_development/index.rst>
    Develop AiiDAlab <development/index.rst>
    API documentation <apidoc/aiidalab>
-
-
-``aiidalab`` is released under the MIT license.
-
 
 
 Indices and tables
