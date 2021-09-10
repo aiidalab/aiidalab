@@ -8,8 +8,6 @@ AiiDAlab builds on
 
    * `AiiDA <https://www.aiida.net/>`_ as the computational workflow engine
    * the `Jupyter <https://jupyter.org/>`_ environment (notebooks, widgets, ...) for writing and sharing apps
-   * `GitHub <http://github.com/>`_ for collaboration on app development
-
 
 .. toctree::
    :maxdepth: 1
