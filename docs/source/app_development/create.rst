@@ -1,8 +1,8 @@
 .. _develop-apps:create-app:
 
-*******************
-Create AiiDAlab app
-*******************
+************************
+Create your AiiDAlab app
+************************
 
 .. _develop-apps:create-app:variant-a_cookiecutter:
 
