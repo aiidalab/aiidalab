@@ -1,7 +1,7 @@
 .. _develop-apps:widgets:
 
 ########################
-Widgets for AiiDAlab app
+Using AiiDAlab widgets
 ########################
 
 AiiDAlab largely dependents on Jupyter widgets for the graphical user interface (GUI).

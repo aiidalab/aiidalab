@@ -1,8 +1,8 @@
-.. _develop-apps:example-qe_bands:
+.. _develop-apps:examples:
 
-****************************************************
-Build an app - AiiDA Quantum ESPRESSO bands workflow
-****************************************************
+************
+Example apps
+************
 
 Here we will have an example of how to build an AiiDAlab app that utilizes `AiiDA <https://www.aiida.net>`__ with the `AiiDA-Quantum ESPRESSO plugin <https://aiida-quantumespresso.readthedocs.io/>`__ to calculate the band structure for a compound.
 
