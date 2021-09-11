@@ -7,9 +7,9 @@ Use AiiDAlab widgets
 AiiDAlab largely relies on `Jupyter widgets <https://ipywidgets.readthedocs.io/en/latest/>`_, also known as ``ipywidgets``, for the graphical user interface (GUI).
 We have created a collection of reusable widgets that are already integrated with AiiDA and help you accomplish common tasks.
 
-*********************
-AiiDAlab base widgets
-*********************
+****************
+AiiDAlab widgets
+****************
 
 AiiDAlab apps typically involve some of following steps:
 
@@ -18,7 +18,7 @@ AiiDAlab apps typically involve some of following steps:
  * monitor a running calculation
  * find and analyze the results of a calculation
 
-The AiiDAlab base widgets help with these common tasks and are preinstalled in the AiiDAlab environment.
+The AiiDAlab widgets help with these common tasks and are preinstalled in the AiiDAlab environment.
 Please see `https://aiidalab-widgets-base.readthedocs.io <https://aiidalab-widgets-base.readthedocs.io/>`_ for documentation on the individual widgets.
 
 .. image:: ./include/aiidalab-widgets-base.gif
@@ -83,7 +83,7 @@ Each ipywidget consists of a Python component that defines how to interact with 
 and a Javascript (or TypeScript) component that is responsible for the graphical representation of the widget and communicates updates back to the Jupyter kernel.
 
 If your goal is to combine existing widgets into new, reusable components, this can be done in Python without touching the Javascript component.
-See e.g. the `implementation of the AiiDAlab base widgets <https://github.com/aiidalab/aiidalab-widgets-base>`_, most of which are of this type.
+See e.g. the `implementation of the AiiDAlab widgets <https://github.com/aiidalab/aiidalab-widgets-base>`_, most of which are of this type.
 
 If you would like to modify the appearance of an existing widget or create an entirely new visualization, you will need to write Javascript/TypeScript.
 See the detailed `tutorial <https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20Custom.html>`_ on how to develop a custom widget or have a look at some of the examples from :ref:`develop-apps:widgets:more-widgets`.
