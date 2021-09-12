@@ -13,10 +13,10 @@ AiiDAlab widgets
 
 AiiDAlab apps typically involve some of the following steps:
 
- * prepare the input for a calculation (e.g. an atomic structure)
- * select computational resources and submit a calculation to AiiDA
- * monitor a running calculation
- * find and analyze the results of a calculation
+ * Prepare the input for a calculation (e.g. an atomic structure).
+ * Select computational resources and submit a calculation to AiiDA.
+ * Monitor a running calculation.
+ * Find and analyze the results of a calculation.
 
 The AiiDAlab widgets help with these common tasks and are preinstalled in the AiiDAlab environment.
 Please see `https://aiidalab-widgets-base.readthedocs.io <https://aiidalab-widgets-base.readthedocs.io/>`_ for documentation on the individual widgets.
@@ -46,7 +46,7 @@ Terminology and background
 Widgets and traitlets
 ======================
 
-Widgets are eventful Python objects that display GUI components, such as a sliders, buttons, progress bars, drowdowns, etc.
+Widgets are Python objects that display GUI components, such as a sliders, buttons, progress bars, drowdowns, etc.
 `ipywidgets`_ is a Python package that provides interactive widgets for the use in Jupyter notebooks.
 
 Widgets can have one or more attributes, whose value can be _ovserved_ and accessed from Python such that we can react to changes to their values.
@@ -69,8 +69,6 @@ For example, try the following code in a Jupyter notebook:
 
         This function is called when the slider value is changed by the user.
         """
-        print(change["old"])
-        print(change["new"])
         if change["new"] > 373.0:
             print("Boiling now!")
 
