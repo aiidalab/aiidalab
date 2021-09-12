@@ -11,7 +11,7 @@ We have created a collection of reusable widgets that are already integrated wit
 AiiDAlab widgets
 ****************
 
-AiiDAlab apps typically involve some of following steps:
+AiiDAlab apps typically involve some of the following steps:
 
  * prepare the input for a calculation (e.g. an atomic structure)
  * select computational resources and submit a calculation to AiiDA
@@ -49,7 +49,7 @@ Widgets and traitlets
 Widgets are eventful Python objects that display GUI components, such as a sliders, buttons, progress bars, drowdowns, etc.
 `ipywidgets`_ is a Python package that provides interactive widgets for the use in Jupyter notebooks.
 
-An Ipywidget has a parameter, whose value can be ovserved and accessed from Python.
+Widgets can have one or more attributes, whose value can be _ovserved_ and accessed from Python such that we can react to changes to their values.
 This is implemented using `traitlets <https://traitlets.readthedocs.io/>`_.
 
 For example, try the following code in a Jupyter notebook:
@@ -79,13 +79,13 @@ For example, try the following code in a Jupyter notebook:
 Creating your own widgets
 =========================
 
-Each ipywidget consists of a Python component that defines how to interact with the widget from Python,
+Each widget consists of a Python component that defines how to interact with the widget from Python,
 and a Javascript (or TypeScript) component that is responsible for the graphical representation of the widget and communicates updates back to the Jupyter kernel.
 
-If your goal is to combine existing widgets into new, reusable components, this can be done in Python without touching the Javascript component.
-See e.g. the `implementation of the AiiDAlab widgets <https://github.com/aiidalab/aiidalab-widgets-base>`_, most of which are of this type.
+If the goal is to combine existing widgets into new, reusable components, this can be done in Python without touching the Javascript component.
+See for example the `implementation of the AiiDAlab widgets <https://github.com/aiidalab/aiidalab-widgets-base>`_, most of which are of this type.
 
-If you would like to modify the appearance of an existing widget or create an entirely new visualization, you will need to write Javascript/TypeScript.
+To modify the appearance of an existing widget or to create an entirely new visualization, one needs to write Javascript/TypeScript.
 See the detailed `tutorial <https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20Custom.html>`_ on how to develop a custom widget or have a look at some of the examples from :ref:`develop-apps:widgets:more-widgets`.
 
 .. _ipywidgets: https://ipywidgets.readthedocs.io
