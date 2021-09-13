@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import time
+
 import aiidalab
 
 # Add any Sphinx extension module names here, as strings. They can be

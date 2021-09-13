@@ -2,16 +2,15 @@
 """Module to manage AiiDAlab apps."""
 
 import errno
-import logging
 import io
+import logging
 import os
 import shutil
 import sys
 import tarfile
 import tempfile
 from contextlib import contextmanager
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from itertools import repeat
 from pathlib import Path
@@ -19,9 +18,7 @@ from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
 from typing import List
-from urllib.parse import urldefrag
-from urllib.parse import urlsplit
-from urllib.parse import urlunsplit
+from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
 import requests
@@ -33,19 +30,19 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
-
 from .config import AIIDALAB_APPS
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
-from .utils import find_installed_packages
-from .utils import load_app_registry_entry
-from .utils import split_git_url
-from .utils import this_or_only_subdir
-from .utils import throttled
-from .utils import run_pip_install
-from .utils import run_verdi_daemon_restart
-from .utils import run_reentry_scan
-
+from .utils import (
+    find_installed_packages,
+    load_app_registry_entry,
+    run_pip_install,
+    run_reentry_scan,
+    run_verdi_daemon_restart,
+    split_git_url,
+    this_or_only_subdir,
+    throttled,
+)
 
 logger = logging.getLogger(__name__)
 

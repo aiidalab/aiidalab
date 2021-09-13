@@ -2,11 +2,10 @@
 """Utility module for git-managed AiiDAlab apps."""
 import re
 from enum import Enum
-from subprocess import CalledProcessError
-from subprocess import run
+from subprocess import CalledProcessError, run
 
+from dulwich.porcelain import branch_list, status
 from dulwich.repo import Repo
-from dulwich.porcelain import status, branch_list
 
 
 class BranchTrackingStatus(Enum):
