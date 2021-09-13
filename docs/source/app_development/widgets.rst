@@ -49,7 +49,7 @@ Widgets and traitlets
 Widgets are Python objects that display GUI components, such as a sliders, buttons, progress bars, drowdowns, etc.
 `ipywidgets`_ is a Python package that provides interactive widgets for the use in Jupyter notebooks.
 
-Widgets can have one or more attributes, whose value can be _ovserved_ and accessed from Python such that we can react to changes to their values.
+Widgets can have one or more attributes, whose value can be _observed_ and accessed from Python such that we can react to changes to their values.
 This is implemented using `traitlets <https://traitlets.readthedocs.io/>`_.
 
 For example, try the following code in a Jupyter notebook:
