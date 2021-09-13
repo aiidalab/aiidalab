@@ -4,8 +4,6 @@
 Develop AiiDAlab apps
 #####################
 
-Overview of the separate in-depth sections in this part of the documentation:
-
 .. toctree::
     :maxdepth: 1
 
