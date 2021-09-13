@@ -7,23 +7,19 @@ from collections import defaultdict
 from contextlib import contextmanager
 from fnmatch import fnmatch
 from pathlib import Path
-from textwrap import indent
-from textwrap import wrap
+from textwrap import indent, wrap
 
 import click
 from click_spinner import spinner
-from packaging.requirements import InvalidRequirement
-from packaging.requirements import Requirement
+from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
 from tabulate import tabulate
 
 from . import __version__
 from .app import AppVersion
 from .app import _AiidaLabApp as AiidaLabApp
-from .config import AIIDALAB_APPS
-from .config import AIIDALAB_REGISTRY
+from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 from .utils import load_app_registry_index
-
 
 ICON_DETACHED = "\U000025AC"  # ▬
 ICON_MODIFIED = "\U00002022"  # •

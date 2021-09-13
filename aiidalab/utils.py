@@ -1,24 +1,22 @@
 """Helpful utilities for the AiiDAlab tools."""
 
-import sys
 import json
-import time
 import logging
 import subprocess
+import sys
+import time
 from collections import defaultdict
 from functools import wraps
 from pathlib import Path
 from subprocess import run
 from threading import Lock
-from urllib.parse import urlsplit
-from urllib.parse import urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
-from cachetools import cached, TTLCache
+from cachetools import TTLCache, cached
 from packaging.utils import canonicalize_name
 
 from .config import AIIDALAB_REGISTRY
-
 
 logger = logging.getLogger(__name__)
 
