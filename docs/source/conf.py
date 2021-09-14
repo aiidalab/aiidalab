@@ -82,6 +82,26 @@ exclude_patterns = []
 
 html_theme = "pydata_sphinx_theme"
 
+html_theme_options = {
+    "external_links": [
+        {"url": "https://www.materialscloud.org/aiidalab", "name": "AiiDAlab"}
+    ],
+    "github_url": "https://github.com/aiidalab/aiidalab",
+    "use_edit_page_button": True,
+}
+
+# for "edit on github" button
+html_context = {
+    "github_user": "aiidalab",
+    "github_repo": "aiidalab",
+    "github_version": "develop",
+    "doc_path": "docs/source",
+}
+
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = "_static/aiidalab_logo.png"
+
 
 def run_apidoc(_):
     """Runs sphinx-apidoc when building the documentation.
