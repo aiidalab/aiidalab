@@ -55,5 +55,5 @@ Please see the `corresponding git repository <https://github.com/aiidalab/ansibl
 Deploy AiiDAlab on a Kubernetes cluster
 ***************************************
 
-If you are expecting to a large number of users (>50), consider deploying AiiDAlab on a scalable Kubernetes cluster.
+If you are expecting a large number of users (>50), consider deploying AiiDAlab on a scalable Kubernetes cluster.
 To deploy AiiDAlab in a Kubernetes environment, you might want to follow the `instructions <https://github.com/aiidalab/aiidalab-k8s>`__ that we have prepared to simplify the setup process.
