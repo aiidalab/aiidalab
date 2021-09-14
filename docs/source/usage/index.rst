@@ -1,7 +1,49 @@
-============
-Use AiiDAlab
-============
+==========
+User guide
+==========
 
+
+***************
+Access AiiDAlab
+***************
+
+As a user, you have two options to access AiiDAlab:
+
+ 1. Log into one of the `open AiiDAlab servers <https://materialscloud.org/aiidalab>`_.
+ 2. Run the AiiDAlab docker container on your local machine.
+
+.. _usage:run-locally:
+
+Run AiiDAlab locally
+====================
+
+Prerequisites
+-------------
+
+Linux or MacOS with `Docker installed <https://www.docker.com/get-started>`__
+
+
+Instructions
+------------
+
+Clone the `AiiDAlab Docker Stack <https://github.com/aiidalab/aiidalab-docker-stack>`__ repository and enter the cloned directory:
+
+   .. code-block:: console
+
+       $ git clone https://github.com/aiidalab/aiidalab-docker-stack
+       $ cd aiidalab-docker-stack
+
+Start AiiDAlab by running:
+
+   .. code-block:: console
+
+       $ ./run.sh 8888 ~/aiidalab
+
+Feel free to choose a different port and directory (path needs to be absolute).
+
+The startup procedure can take a while, particularly when you run it for the first time.
+Once it is done, open the link provided at the bottom of the console in your web browser.
+You should now see the AiiDAlab home page.
 
 ******************
 AiiDAlab Home page
