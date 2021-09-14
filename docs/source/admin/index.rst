@@ -1,6 +1,27 @@
-*****************
-Maintain AiiDAlab
-*****************
+*******************
+Administrator guide
+*******************
+
+This guide explains how to deploy and manage AiiDAlab servers for multiple users.
+See :ref:`usage:run-locally` for how to run the AiiDAlab docker container locally (e.g. for testing purposes).
+
+Multi-user deployment
+=====================
+
+Single-server deployment
+-------------------------
+
+For medium-sized deployments (a handful of users), an AiiDAlab multi-user server can deployed on a single (virtual or bare-metal) machine.
+
+Since deploying a multi-user server requires additional packages, such as `JupyterHub <https://jupyter.org/hub>`__, `DockerSpawner <https://github.com/jupyterhub/dockerspawner>`__, `Apache HTTP Server <https://www.apache.org/>`__, and `Docker <http://www.docker.com>`__, we provide the ``aiidalab-server`` `Ansible <https://www.ansible.com/>`__ role which automates the setup of the server.
+Please see the `corresponding git repository <https://github.com/aiidalab/ansible-role-aiidalab-server>`__ for more information.
+
+
+Kubernetes deployment
+---------------------
+
+If you are expecting a large number of users (>50), consider deploying AiiDAlab on a scalable Kubernetes cluster.
+We provide `instructions and deployment scripts <https://github.com/aiidalab/aiidalab-k8s>`__ for this use case.
 
 Run a separate registry
 =======================

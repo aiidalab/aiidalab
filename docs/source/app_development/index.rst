@@ -1,8 +1,10 @@
 .. _develop-apps:
 
-#####################
-Develop AiiDAlab apps
-#####################
+###################
+App developer guide
+###################
+
+This guide explains how to get started with developing AiiDAlab apps.
 
 .. toctree::
     :maxdepth: 1
