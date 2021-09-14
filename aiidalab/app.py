@@ -552,11 +552,11 @@ class AiidaLabApp(traitlets.HasTraits):
                 self._app.find_incompatibilities(version=app_version)
             )
             self.compatibility_info = {
-                    app_version: [
-                        f"({eco_system}) {requirement}"
-                        for eco_system, requirement in incompatibilities.items()
-                    ]
-                }
+                app_version: [
+                    f"({eco_system}) {requirement}"
+                    for eco_system, requirement in incompatibilities.items()
+                ]
+            }
 
             return not any(incompatibilities)
         except KeyError:
