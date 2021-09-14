@@ -12,6 +12,7 @@ AiiDAlab builds on `AiiDA <https://www.aiida.net/>`_ as the computational workfl
    Deploy AiiDAlab <deployment/index>
    Use AiiDAlab <usage/index>
    Develop AiiDAlab apps <app_development/index.rst>
+   Maintain AiiDAlab <maintain/index.rst>
    Develop AiiDAlab <development/index.rst>
    API documentation <apidoc/aiidalab>
 

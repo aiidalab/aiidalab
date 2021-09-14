@@ -31,7 +31,7 @@ repos:
     - id: setup-cfg-fmt
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.6.4
+    rev: 5.9.3
     hooks:
       - id: isort
         args: ["--profile", "black", "--filter-files"]

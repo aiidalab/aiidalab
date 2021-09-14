@@ -80,6 +80,8 @@ htmlhelp_basename = "aiidalab-doc"
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+html_theme = "pydata_sphinx_theme"
+
 
 def run_apidoc(_):
     """Runs sphinx-apidoc when building the documentation.
