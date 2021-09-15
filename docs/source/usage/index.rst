@@ -63,6 +63,13 @@ You should now see the AiiDAlab home page.
         ./run.sh 8888 ~/aiidalab
 
 
+Cheat sheet
+-----------
+
+ * Enter container: ``docker exec --user aiida -it aiidalab bash``
+ * Remove container: ``docker rm -f aiidalab``
+ * Show container logs: ``docker logs aiidalab``
+
 ******************
 AiiDAlab Home page
 ******************
