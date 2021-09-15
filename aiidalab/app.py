@@ -34,6 +34,7 @@ from .config import AIIDALAB_APPS
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
 from .utils import (
+    _TTL_CACHE,
     find_installed_packages,
     load_app_registry_entry,
     run_pip_install,
@@ -518,6 +519,7 @@ class AiidaLabApp(traitlets.HasTraits):
         """Installing the app."""
         with self._show_busy():
             self._app.install(version=version, stdout=stdout)
+            _TTL_CACHE.clear()
             self.refresh()
             return self._installed_version()
 
@@ -527,6 +529,7 @@ class AiidaLabApp(traitlets.HasTraits):
             # Installing with version=None automatically selects latest
             # available version.
             version = self.install_app(version=None, stdout=stdout)
+            _TTL_CACHE.clear()
             self.refresh()
             return version
 
