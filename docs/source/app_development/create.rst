@@ -1,8 +1,8 @@
 .. _develop-apps:create-app:
 
-*******************
-Create AiiDAlab app
-*******************
+************************
+Create your AiiDAlab app
+************************
 
 .. _develop-apps:create-app:variant-a_cookiecutter:
 
@@ -34,7 +34,7 @@ The newly created app will show up with a rendered banner on the start page afte
         ~/apps/my-app$ git add -A                       - add all files
         ~/apps/my-app$ git commit -m "initial commit"   - create initial commit
 
-**Next:** :ref:`develop-apps:first-app`
+**Next:** :ref:`develop-apps:widgets`
 
 .. _develop-apps:create-app:variant-b_from-scratch:
 
@@ -135,4 +135,6 @@ Rename the file to ``main`` and then add the following line into the first cell:
 Save the notebook and close it.
 Now go back to AiiDAlab start page and click on the ``My App`` link again - it should bring you to a page that says "Welcome to my app!"
 
-**Next:** :ref:`develop-apps:first-app`
+In case you encounter any issues, compare your app to the source code of the `hello world app <https://github.com/aiidalab/aiidalab-hello-world>`_ that was templated by the cookiecutter approach.
+
+**Next:** :ref:`develop-apps:widgets`

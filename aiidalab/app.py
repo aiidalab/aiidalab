@@ -2,6 +2,7 @@
 """Module to manage AiiDAlab apps."""
 
 import errno
+import io
 import logging
 import os
 import shutil
@@ -9,17 +10,15 @@ import sys
 import tarfile
 import tempfile
 from contextlib import contextmanager
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from itertools import repeat
 from pathlib import Path
+from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
 from typing import List
-from urllib.parse import urldefrag
-from urllib.parse import urlsplit
-from urllib.parse import urlunsplit
+from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
 import requests
@@ -31,16 +30,20 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
-
 from .config import AIIDALAB_APPS
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
-from .utils import find_installed_packages
-from .utils import load_app_registry_entry
-from .utils import split_git_url
-from .utils import this_or_only_subdir
-from .utils import throttled
-
+from .utils import (
+    FIND_INSTALLED_PACKAGES_CACHE,
+    find_installed_packages,
+    load_app_registry_entry,
+    run_pip_install,
+    run_reentry_scan,
+    run_verdi_daemon_restart,
+    split_git_url,
+    this_or_only_subdir,
+    throttled,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +100,8 @@ class _AiidaLabApp:
 
     def installed_version(self):
         if self._repo:
+            if self.dirty():
+                return AppVersion.UNKNOWN
             try:
                 head_commit = self._repo.head().decode()
                 versions_by_commit = {
@@ -120,11 +125,19 @@ class _AiidaLabApp:
         """The app is installed if the corresponding folder is present."""
         return self.path.exists()
 
-    def uninstall(self):
+    def _move_to_trash(self):
         trash_path = Path.home().joinpath(".trash", f"{self.name}-{uuid4()!s}")
         if self.path.exists():
             trash_path.parent.mkdir(parents=True, exist_ok=True)
             self.path.rename(trash_path)
+            return trash_path
+
+    def _restore_from(self, trash_path):
+        self._move_to_trash()
+        trash_path.rename(self.path)
+
+    def uninstall(self):
+        self._move_to_trash()
 
     def find_matching_releases(self, specifier, prereleases=None):
         matching_releases = list(
@@ -158,6 +171,49 @@ class _AiidaLabApp:
     def is_compatible(self, version, python_bin=None):
         return not any(self.find_incompatibilities(version, python_bin))
 
+    def _install_dependencies(self, python_bin, stdout=None):
+        """Try to install the app dependencies with pip (if specified)."""
+
+        def _pip_install(*args, stdout=None):
+            # The implementation of this function is taken and adapted from:
+            # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
+            stdout = stdout or sys.stdout
+
+            # Install package dependencies.
+            process = run_pip_install(*args, python_bin=python_bin)
+            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                stdout.write(line)
+
+            # AiiDA plugins require reentry run to be found by AiiDA.
+            process = run_reentry_scan()
+            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                stdout.write(line)
+
+            # Restarting the AiiDA daemon to import newly installed plugins.
+            process = run_verdi_daemon_restart()
+            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                stdout.write(line)
+
+        for path in (self.path.joinpath(".aiidalab"), self.path):
+            if path.exists():
+                try:
+                    if path.joinpath("setup.py").is_file():
+                        _pip_install(
+                            "--use-feature=in-tree-build", str(path), stdout=stdout
+                        )
+                    elif path.joinpath("requirements.txt").is_file():
+                        _pip_install(
+                            f"--requirement={path.joinpath('requirements.txt')}",
+                            stdout=stdout,
+                        )
+                    else:
+                        logger.warning(
+                            f"Warning: App '{self.name}' does not declare any dependencies."
+                        )
+                    break
+                except CalledProcessError:
+                    raise RuntimeError("Failed to install dependencies.")
+
     def _install_from_path(self, path):
         if path.is_dir():
             shutil.copytree(this_or_only_subdir(path), self.path)
@@ -185,14 +241,18 @@ class _AiidaLabApp:
         base_url, ref = split_git_url(git_url)
         git_clone(base_url, ref, self.path)
 
-    def install(self, version=None):
+    def install(
+        self, version=None, python_bin=None, install_dependencies=True, stdout=None
+    ):
         if version is None:
             try:
                 version = list(sorted(self.releases, key=parse))[-1]
             except IndexError:
                 raise ValueError("No versions available for '{self}'.")
+        if python_bin is None:
+            python_bin = sys.executable
 
-        self.uninstall()
+        trash_path = self._move_to_trash()
 
         url = self.releases[version]["url"]
         split_url = urlsplit(url)
@@ -213,11 +273,27 @@ class _AiidaLabApp:
                 raise NotImplementedError(
                     "Unsupported scheme: {split_url.scheme} ({url})"
                 )
+
+            # Install dependencies
+            if install_dependencies:
+                self._install_dependencies(python_bin, stdout=stdout)
         except RuntimeError as error:
-            raise RuntimeError(
-                f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
-                f", due to error: {error}"
-            )
+            try:
+                if trash_path is None:
+                    # App, was not previously installed, just remove it.
+                    logger.info("Removing partially installed app.")
+                    self._move_to_trash()
+                else:
+                    # Attempt rollback to previous version.
+                    logger.info("Performing rollback to previously installed version.")
+                    self._restore_from(trash_path)
+            except RuntimeError as error:
+                logger.warning(f"Rollback failed due to error: {error}!")
+            finally:
+                raise RuntimeError(
+                    f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
+                    f", due to error: {error}"
+                )
 
 
 class AppNotInstalledException(Exception):
@@ -439,19 +515,21 @@ class AiidaLabApp(traitlets.HasTraits):
         except NotGitRepository:
             return False
 
-    def install_app(self, version=None):
+    def install_app(self, version=None, stdout=None):
         """Installing the app."""
         with self._show_busy():
-            self._app.install(version=version)
+            self._app.install(version=version, stdout=stdout)
+            FIND_INSTALLED_PACKAGES_CACHE.clear()
             self.refresh()
             return self._installed_version()
 
-    def update_app(self, _=None):
+    def update_app(self, _=None, stdout=None):
         """Perform app update."""
         with self._show_busy():
             # Installing with version=None automatically selects latest
             # available version.
-            version = self.install_app(version=None)
+            version = self.install_app(version=None, stdout=stdout)
+            FIND_INSTALLED_PACKAGES_CACHE.clear()
             self.refresh()
             return version
 
@@ -461,12 +539,6 @@ class AiidaLabApp(traitlets.HasTraits):
         with self._show_busy():
             self._app.uninstall()
             self.refresh()
-
-    def _available_versions(self):
-        """Return all available and compatible versions."""
-        for version in sorted(self._app.releases, key=parse, reverse=True):
-            if self._is_compatible(version):
-                yield version
 
     def _installed_version(self):
         """Determine the currently installed version."""
@@ -482,14 +554,13 @@ class AiidaLabApp(traitlets.HasTraits):
             incompatibilities = dict(
                 self._app.find_incompatibilities(version=app_version)
             )
-            self.compatibility_info.update(
-                {
-                    app_version: [
-                        f"({eco_system}) {requirement}"
-                        for eco_system, requirement in incompatibilities.items()
-                    ]
-                }
-            )
+            self.compatibility_info = {
+                app_version: [
+                    f"({eco_system}) {requirement}"
+                    for eco_system, requirement in incompatibilities.items()
+                ]
+            }
+
             return not any(incompatibilities)
         except KeyError:
             return None  # compatibility indetermined for given version
@@ -508,7 +579,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return False
 
     def _refresh_versions(self):
-        all_available_versions = list(self._available_versions())
+        all_available_versions = sorted(self._app.releases, key=parse, reverse=True)
         self.has_prereleases = any(
             parse(version).is_prerelease for version in all_available_versions
         )

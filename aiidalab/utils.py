@@ -1,26 +1,25 @@
 """Helpful utilities for the AiiDAlab tools."""
 
-import sys
 import json
-import time
 import logging
+import subprocess
+import sys
+import time
 from collections import defaultdict
 from functools import wraps
 from pathlib import Path
 from subprocess import run
 from threading import Lock
-from urllib.parse import urlsplit
-from urllib.parse import urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
-from cachetools import cached, TTLCache
+from cachetools import TTLCache, cached
 from packaging.utils import canonicalize_name
 
 from .config import AIIDALAB_REGISTRY
 
-
 logger = logging.getLogger(__name__)
-
+FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)
 
 # Warning: try-except is a fix for Quantum Mobile release v19.03.0 where
 # requests_cache is not installed.
@@ -125,7 +124,7 @@ class Package:
         )
 
 
-@cached(cache=TTLCache(maxsize=32, ttl=60))
+@cached(cache=FIND_INSTALLED_PACKAGES_CACHE)
 def find_installed_packages(python_bin=None):
     """Return all currently installed packages."""
     if python_bin is None:
@@ -156,3 +155,30 @@ def split_git_url(git_url):
 def this_or_only_subdir(path):
     members = list(path.iterdir())
     return members[0] if len(members) == 1 and members[0].is_dir() else path
+
+
+def run_pip_install(*args, python_bin=sys.executable):
+    return subprocess.Popen(
+        [python_bin, "-m", "pip", "install", *args],
+        bufsize=1,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+
+def run_reentry_scan():
+    return subprocess.Popen(
+        ["reentry", "scan"],
+        bufsize=1,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+
+def run_verdi_daemon_restart():
+    return subprocess.Popen(
+        ["verdi", "daemon", "restart"],
+        bufsize=1,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )

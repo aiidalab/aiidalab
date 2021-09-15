@@ -1,6 +1,6 @@
 """Module to manange AiiDAlab configuration."""
-from pathlib import Path
 from os import getenv
+from pathlib import Path
 
 import click
 import toml

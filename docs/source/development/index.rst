@@ -1,6 +1,8 @@
-****************
-Develop AiiDAlab
-****************
+*****************
+Development guide
+*****************
+
+This guide is intended for developers of the AiiDAlab platform itself and covers topics such as the overall architecture, release workflow, etc.
 
 Key AiiDAlab components
 =======================
