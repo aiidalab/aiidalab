@@ -124,7 +124,7 @@ class Package:
         )
 
 
-@cached(cache=_TTL_CACHE)
+@cached(cache=FIND_INSTALLED_PACKAGES_CACHE)
 def find_installed_packages(python_bin=None):
     """Return all currently installed packages."""
     if python_bin is None:
