@@ -34,6 +34,7 @@ from .config import AIIDALAB_APPS
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
 from .utils import (
+    FIND_INSTALLED_PACKAGES_CACHE,
     find_installed_packages,
     load_app_registry_entry,
     run_pip_install,
@@ -99,6 +100,8 @@ class _AiidaLabApp:
 
     def installed_version(self):
         if self._repo:
+            if self.dirty():
+                return AppVersion.UNKNOWN
             try:
                 head_commit = self._repo.head().decode()
                 versions_by_commit = {
@@ -516,6 +519,7 @@ class AiidaLabApp(traitlets.HasTraits):
         """Installing the app."""
         with self._show_busy():
             self._app.install(version=version, stdout=stdout)
+            FIND_INSTALLED_PACKAGES_CACHE.clear()
             self.refresh()
             return self._installed_version()
 
@@ -525,6 +529,7 @@ class AiidaLabApp(traitlets.HasTraits):
             # Installing with version=None automatically selects latest
             # available version.
             version = self.install_app(version=None, stdout=stdout)
+            FIND_INSTALLED_PACKAGES_CACHE.clear()
             self.refresh()
             return version
 
@@ -534,12 +539,6 @@ class AiidaLabApp(traitlets.HasTraits):
         with self._show_busy():
             self._app.uninstall()
             self.refresh()
-
-    def _available_versions(self):
-        """Return all available and compatible versions."""
-        for version in sorted(self._app.releases, key=parse, reverse=True):
-            if self._is_compatible(version):
-                yield version
 
     def _installed_version(self):
         """Determine the currently installed version."""
@@ -555,14 +554,13 @@ class AiidaLabApp(traitlets.HasTraits):
             incompatibilities = dict(
                 self._app.find_incompatibilities(version=app_version)
             )
-            self.compatibility_info.update(
-                {
-                    app_version: [
-                        f"({eco_system}) {requirement}"
-                        for eco_system, requirement in incompatibilities.items()
-                    ]
-                }
-            )
+            self.compatibility_info = {
+                app_version: [
+                    f"({eco_system}) {requirement}"
+                    for eco_system, requirement in incompatibilities.items()
+                ]
+            }
+
             return not any(incompatibilities)
         except KeyError:
             return None  # compatibility indetermined for given version
@@ -581,7 +579,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return False
 
     def _refresh_versions(self):
-        all_available_versions = list(self._available_versions())
+        all_available_versions = sorted(self._app.releases, key=parse, reverse=True)
         self.has_prereleases = any(
             parse(version).is_prerelease for version in all_available_versions
         )

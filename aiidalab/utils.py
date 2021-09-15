@@ -19,7 +19,7 @@ from packaging.utils import canonicalize_name
 from .config import AIIDALAB_REGISTRY
 
 logger = logging.getLogger(__name__)
-
+FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)
 
 # Warning: try-except is a fix for Quantum Mobile release v19.03.0 where
 # requests_cache is not installed.
@@ -124,7 +124,7 @@ class Package:
         )
 
 
-@cached(cache=TTLCache(maxsize=32, ttl=60))
+@cached(cache=FIND_INSTALLED_PACKAGES_CACHE)
 def find_installed_packages(python_bin=None):
     """Return all currently installed packages."""
     if python_bin is None:
