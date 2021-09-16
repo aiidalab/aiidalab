@@ -167,17 +167,23 @@ def _parse_requirement(app_requirement):
         )
 
 
-def _find_app_from_id(name):
+def _find_registered_app_from_id(name):
     """Find app for a given requirement."""
     try:
-        return AiidaLabApp.from_id(name)
+        app = AiidaLabApp.from_id(name)
+        if app.releases is None:
+            raise click.ClickException(
+                f"Unable to identify releases for app '{name}'. App was likely "
+                "installed locally and/or is not registered."
+            )
+        return app
     except KeyError:
         raise click.ClickException(f"Did not find entry for app with name '{name}'.")
 
 
 def _find_app_and_releases(app_requirement):
     """Find app and a suitable release for a given requirement."""
-    app = _find_app_from_id(app_requirement.name)
+    app = _find_registered_app_from_id(app_requirement.name)
     matching_releases = app.find_matching_releases(app_requirement.specifier)
     return app, matching_releases
 
@@ -371,7 +377,7 @@ def install(
         install_candidates = {
             requirement: _find_version_to_install(
                 requirement,
-                _find_app_from_id(requirement.name),
+                _find_registered_app_from_id(requirement.name),
                 dependencies=dependencies,
                 force=force,
                 python_bin=python_bin,
