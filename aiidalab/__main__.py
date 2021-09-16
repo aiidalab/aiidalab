@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Module that implements a basic command line interface (CLI) for AiiDAlab."""
-
 import json
+import logging
 import shutil
 from collections import defaultdict
 from contextlib import contextmanager
@@ -20,6 +20,10 @@ from .app import AppVersion
 from .app import _AiidaLabApp as AiidaLabApp
 from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 from .utils import load_app_registry_index
+from .utils import parse_app_repo as parse_app_repository
+
+logging.basicConfig(level=logging.INFO)
+
 
 ICON_DETACHED = "\U000025AC"  # ▬
 ICON_MODIFIED = "\U00002022"  # •
@@ -176,6 +180,41 @@ def _find_app_and_releases(app_requirement):
     app = _find_app_from_id(app_requirement.name)
     matching_releases = app.find_matching_releases(app_requirement.specifier)
     return app, matching_releases
+
+
+@cli.command()
+@click.argument("repository")
+def parse_app_repo(repository):
+    """Parse an app repo for metadata and other information.
+
+    Use this command to parse a local or remote app repository for the app
+    metadata and environment specification.
+
+    Examples:
+
+    For a local app repository, provide the absolute or relative path:
+
+        parse-app-repo /path/to/aiidalab-hello-world
+
+    For a remote app repository, provide a PEP 508 compliant URL, for example:
+
+        parse-app-repo git+https://github.com/aiidalab/aiidalab-hello-world.git@v1.0.0
+    """
+    click.echo(f"Parsing {repository} ...", err=True)
+    try:
+        click.echo(json.dumps(parse_app_repository(repository)))
+    except ValueError as error:
+        click.secho(
+            f"Failed to parse metadata from '{repository}': {error!s}",
+            err=True,
+            fg="red",
+        )
+    except TypeError as error:
+        click.secho(
+            f"Failed to parse metadata from '{repository}': {error!s}",
+            err=True,
+            fg="red",
+        )
 
 
 @cli.command()

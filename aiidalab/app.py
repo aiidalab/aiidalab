@@ -10,7 +10,7 @@ import sys
 import tarfile
 import tempfile
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from enum import Enum, auto
 from itertools import repeat
 from pathlib import Path
@@ -18,10 +18,9 @@ from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
 from typing import List
-from urllib.parse import urldefrag, urlsplit, urlunsplit
+from urllib.parse import urlsplit
 from uuid import uuid4
 
-import requests
 import traitlets
 from dulwich.errors import NotGitRepository
 from packaging.requirements import Requirement
@@ -31,8 +30,10 @@ from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
 from .config import AIIDALAB_APPS
+from .environment import Environment
+from .fetch import fetch_from_url
 from .git_util import GitManagedAppRepo as Repo
-from .git_util import git_clone
+from .metadata import Metadata
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     find_installed_packages,
@@ -78,18 +79,43 @@ class _AiidaLabApp:
             },
         )
 
+    @staticmethod
+    def _migrate_registry_entry_to_v1(entry):
+        entry["logo"] = entry["metadata"].pop("logo", None)
+        entry["categories"] = entry["metadata"].pop("categories", None)
+        return entry
+
+    @classmethod
+    def _registry_entry_from_path(cls, path):
+        try:
+            entry = {
+                "name": path.stem,
+                "metadata": asdict(Metadata.parse(path)),
+                "releases": None,
+            }
+            return cls._migrate_registry_entry_to_v1(entry)
+        except TypeError:
+            return {
+                "name": None,
+                "metadata": None,
+                "releases": None,
+                "logo": None,
+                "categories": None,
+            }
+
     @classmethod
     def from_id(cls, app_id, registry_entry=None, apps_path=None):
-        if registry_entry is None:
-            registry_entry = load_app_registry_entry(app_id) or dict(
-                name=app_id, metadata=dict()
-            )
         if apps_path is None:
             apps_path = AIIDALAB_APPS
 
-        return cls.from_registry_entry(
-            path=Path(apps_path).joinpath(app_id), registry_entry=registry_entry
-        )
+        app_path = Path(apps_path).joinpath(app_id)
+
+        if registry_entry is None:
+            local_registry_entry = cls._registry_entry_from_path(app_path)
+            remote_registry_entry = load_app_registry_entry(app_id)
+            registry_entry = remote_registry_entry or local_registry_entry
+
+        return cls.from_registry_entry(path=app_path, registry_entry=registry_entry)
 
     @property
     def _repo(self):
@@ -102,17 +128,24 @@ class _AiidaLabApp:
         if self._repo:
             if self.dirty():
                 return AppVersion.UNKNOWN
-            try:
-                head_commit = self._repo.head().decode()
-                versions_by_commit = {
-                    split_git_url(release["url"])[1]: version
-                    for version, release in self.releases.items()
-                    if urlsplit(release["url"]).scheme.startswith("git+")
-                }
-                return versions_by_commit.get(head_commit, AppVersion.UNKNOWN)
-            except Exception as error:
-                logger.debug(f"Encountered error while determining version: {error}")
-                return AppVersion.UNKNOWN
+            elif self.releases is None:
+                return self.metadata.get("version", AppVersion.UNKNOWN)
+            else:
+                try:
+                    head_commit = self._repo.head().decode()
+                    versions_by_commit = {
+                        split_git_url(release["url"])[1]: version
+                        for version, release in self.releases.items()
+                        if urlsplit(release["url"]).scheme.startswith("git+")
+                    }
+                    return versions_by_commit.get(
+                        head_commit, self.metadata.get("version", AppVersion.UNKNOWN)
+                    )
+                except Exception as error:
+                    logger.debug(
+                        f"Encountered error while determining version: {error}"
+                    )
+                    return AppVersion.UNKNOWN
         elif self.path.exists():
             return AppVersion.UNKNOWN
         return AppVersion.NOT_INSTALLED
@@ -158,7 +191,13 @@ class _AiidaLabApp:
     def find_incompatibilities(self, version, python_bin=None):
         if python_bin is None:
             python_bin = sys.executable
-        environment = self.releases[version].get("environment")
+
+        if self.releases is None:
+            assert version == self.installed_version()
+            environment = asdict(Environment.scan(self.path))
+        else:
+            environment = self.releases[version].get("environment")
+
         for key, spec in environment.items():
             if key == "python_requirements":
                 yield from zip(
@@ -223,24 +262,6 @@ class _AiidaLabApp:
                     tar_file.extractall(path=tmp_dir)
                     self._install_from_path(Path(tmp_dir))
 
-    def _install_from_https(self, url):
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        content = response.content
-
-        with tempfile.NamedTemporaryFile() as tmp_file:
-            tmp_file.write(content)
-            tmp_file.flush()
-            self._install_from_path(Path(tmp_file.name))
-
-    def _install_from_git_repository(self, git_url):
-        if urldefrag(git_url).fragment:
-            raise NotImplementedError(
-                "Path specification via fragment not yet supported."
-            )
-        base_url, ref = split_git_url(git_url)
-        git_clone(base_url, ref, self.path)
-
     def install(
         self, version=None, python_bin=None, install_dependencies=True, stdout=None
     ):
@@ -255,24 +276,9 @@ class _AiidaLabApp:
         trash_path = self._move_to_trash()
 
         url = self.releases[version]["url"]
-        split_url = urlsplit(url)
         try:
-            if split_url.scheme in ("", "file"):
-                self._install_from_path(Path(split_url.path))
-            elif split_url.scheme == "https":
-                self._install_from_https(url)
-            elif split_url.scheme == "git+file":
-                self._install_from_git_repository(
-                    urlunsplit(split_url._replace(scheme="file"))
-                )
-            elif split_url.scheme == "git+https":
-                self._install_from_git_repository(
-                    urlunsplit(split_url._replace(scheme="https"))
-                )
-            else:
-                raise NotImplementedError(
-                    "Unsupported scheme: {split_url.scheme} ({url})"
-                )
+            with fetch_from_url(url) as repo:
+                self._install_from_path(Path(repo))
 
             # Install dependencies
             if install_dependencies:
@@ -579,20 +585,24 @@ class AiidaLabApp(traitlets.HasTraits):
         return False
 
     def _refresh_versions(self):
-        all_available_versions = sorted(self._app.releases, key=parse, reverse=True)
-        self.has_prereleases = any(
-            parse(version).is_prerelease for version in all_available_versions
-        )
         self.installed_version = self._installed_version()
         self.include_prereleases = self.include_prereleases or (
             isinstance(self.installed_version, str)
             and parse(self.installed_version).is_prerelease
         )
-        self.available_versions = [
-            str(version)
-            for version in all_available_versions
-            if self.include_prereleases or not parse(version).is_prerelease
-        ]
+
+        if self._app.releases is None:
+            self.available_versions = [self.installed_version]
+        else:
+            all_available_versions = sorted(self._app.releases, key=parse, reverse=True)
+            self.has_prereleases = any(
+                parse(version).is_prerelease for version in all_available_versions
+            )
+            self.available_versions = [
+                str(version)
+                for version in all_available_versions
+                if self.include_prereleases or not parse(version).is_prerelease
+            ]
 
     @throttled(calls_per_second=1)
     def refresh(self):
