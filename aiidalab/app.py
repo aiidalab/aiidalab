@@ -58,6 +58,10 @@ class AppVersion(Enum):
     NOT_INSTALLED = auto()
 
 
+class PEP508CompliantUrl(str):
+    pass
+
+
 @dataclass
 class _AiidaLabApp:
 
@@ -276,9 +280,13 @@ class _AiidaLabApp:
         if python_bin is None:
             python_bin = sys.executable
 
+        if isinstance(version, PEP508CompliantUrl):
+            url = version
+        else:
+            url = self.releases[version]["url"]
+
         trash_path = self._move_to_trash()
 
-        url = self.releases[version]["url"]
         try:
             with fetch_from_url(url) as repo:
                 self._install_from_path(Path(repo))
