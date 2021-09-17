@@ -13,6 +13,7 @@ from fnmatch import fnmatch
 from functools import partial
 from pathlib import Path
 from textwrap import indent, wrap
+from threading import Thread
 
 import click
 import pkg_resources
@@ -23,6 +24,8 @@ from jsonschema.exceptions import RefResolutionError, ValidationError
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
 from tabulate import tabulate
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 from . import __version__
 from .app import AppVersion
@@ -713,6 +716,12 @@ def build(
 @click.option("--static", type=click.Path(), default="static/")
 @click.option("-p", "--port", type=click.INT, default=8000)
 @click.option(
+    "--watch/--no-watch",
+    help="Automatically rebuild the registry when relevant files on the file system are changed.",
+    default=True,
+    show_default=True,
+)
+@click.option(
     "--validate/--no-validate",
     is_flag=True,
     default=True,
@@ -727,7 +736,7 @@ def build(
     help="Mock the schemas endpoints such that the local versions are used insted of the published ones.",
 )
 @click.pass_context
-def serve(ctx, apps, categories, port, static, validate, mock_schemas):
+def serve(ctx, apps, categories, port, watch, static, validate, mock_schemas):
     """Serve the app store website and API endpoints for testing.
 
     Most arguments are identical to those of the 'build' command.
@@ -736,21 +745,49 @@ def serve(ctx, apps, categories, port, static, validate, mock_schemas):
 
         serve --apps=apps.yaml --categories=categories.yaml --port=8888
     """
+
     with tempfile.TemporaryDirectory() as html_dir:
-        ctx.invoke(
-            build,
-            out=html_dir,
-            apps=apps,
-            categories=categories,
-            static=static,
-            validate=validate,
-            mock_schemas=mock_schemas,
-        )
+
+        def build_registry():
+            click.echo("Building registry...", err=True)
+            ctx.invoke(
+                build,
+                out=html_dir,
+                apps=apps,
+                categories=categories,
+                static=static,
+                validate=validate,
+                mock_schemas=mock_schemas,
+            )
+
+        if watch:
+
+            class _EventHandler(FileSystemEventHandler):
+                def on_any_event(self, event):
+                    build_registry()
+
+            event_handler = _EventHandler()
+
+            observer = Observer()
+            observer.schedule(event_handler, apps)
+            observer.schedule(event_handler, categories)
+            if Path(static).exists():
+                observer.schedule(event_handler, static, recursive=True)
+            observer_thread = Thread(target=observer.start)
+            observer_thread.start()
+
+        build_registry()
 
         Handler = partial(http.server.SimpleHTTPRequestHandler, directory=html_dir)
         with socketserver.TCPServer(("", port), Handler) as httpd:
             click.echo(f"Serving registry at port: {port} ...")
-            httpd.serve_forever()
+            try:
+                httpd.serve_forever()
+            except KeyboardInterrupt:
+                click.echo("Stopping... ", err=True, nl=False)
+                if watch:
+                    observer.stop()
+                click.echo("Stopped.", err=True)
 
 
 if __name__ == "__main__":
