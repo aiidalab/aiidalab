@@ -3,30 +3,6 @@
 import json
 
 from .apps_index import generate_apps_index, validate_apps_index_and_apps
-from .apps_meta import generate_apps_meta, validate_apps_meta
-
-
-def build_api_v0(base_path, data):
-    """Build tree for API endpoint v0."""
-    # Generate apps_meta file from data.
-    apps_meta = generate_apps_meta(data=data)
-
-    # Create base path if necessary.
-    base_path.mkdir(parents=True, exist_ok=True)
-
-    # Write apps_meta.json file.
-    outfile = base_path / "apps_meta.json"
-    rendered = json.dumps(apps_meta, ensure_ascii=False)
-    outfile.write_text(rendered, encoding="utf-8")
-    yield outfile
-
-
-def validate_api_v0(base_path, schemas):
-    """Validate tree for API endpoint v0."""
-    validate_apps_meta(
-        json.loads(base_path.joinpath("apps_meta.json").read_text()),
-        apps_meta_schema=schemas.apps_meta,
-    )
 
 
 def build_api_v1(base_path, data, scan_app_repository):

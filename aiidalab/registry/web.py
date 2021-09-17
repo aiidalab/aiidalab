@@ -88,7 +88,6 @@ def build(
         # Build the html pages.
         build_html(base_path=root, data=deepcopy(data)),
         # Build the API endpoints.
-        api.build_api_v0(base_path=root, data=deepcopy(data)),
         api.build_api_v1(
             base_path=root / "api" / "v1",
             data=deepcopy(data),
@@ -98,5 +97,4 @@ def build(
         logger.info(f"  - {outfile.relative_to(root)}")
 
     if validate_output:
-        api.validate_api_v0(base_path=root, schemas=schemas)
         api.validate_api_v1(base_path=root / "api" / "v1", schemas=schemas)
