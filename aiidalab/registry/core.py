@@ -16,7 +16,6 @@ class AppRegistrySchemas:
     app: dict
     apps: dict
     apps_index: dict
-    apps_meta: dict
     categories: dict
     environment: dict
     metadata: dict
@@ -36,7 +35,7 @@ class AppRegistrySchemas:
             **{
                 field.name: json.loads(
                     pkg_resources.resource_string(
-                        "aiidalab.registry", f"schemas/v1/{field.name}.schema.json"
+                        "aiidalab.registry", f"schemas/v2/{field.name}.schema.json"
                     )
                 )
                 for field in fields(cls)

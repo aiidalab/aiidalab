@@ -44,7 +44,12 @@ def _fetch_app_data(app_id, app_data, scan_app_repository):
         version: asdict(release)
         for version, release in gather_releases(app_data, scan_app_repository)
     }
-    return app_data
+    if len(app_data["releases"]):
+        # Sort all releases semantically to determine the latest version.
+        latest_version = sorted(app_data["releases"], key=parse, reverse=True)[0]
+        # The metadata of the latest release is considered authoritative for the whole app.
+        app_data["metadata"] = app_data["releases"][latest_version]["metadata"]
+        return app_data
 
 
 def generate_apps_index(data, scan_app_repository):
@@ -63,20 +68,14 @@ def generate_apps_index(data, scan_app_repository):
 
     for app_id in sorted(data.apps.keys()):
         logger.info(f"  - {app_id}")
-        apps_data[app_id] = _fetch_app_data(
+        app_data = _fetch_app_data(
             app_id, deepcopy(data.apps[app_id]), scan_app_repository
         )
-
-        # Sort all releases semantically to determine the latest version.
-        releases = sorted(apps_data[app_id]["releases"], key=parse, reverse=True)
-
-        if len(releases):  # Only add app to index if it had at least one release.
-            # Source the categories from the metadata of the latest release.
-            app_metadata = apps_data[app_id]["releases"][releases[0]]["metadata"]
-
+        if app_data is not None:  # would be None if the app had no release yet.
+            apps_data[app_id] = app_data
             index["apps"][app_id] = {
-                "name": apps_data[app_id]["name"],
-                "categories": app_metadata.get("categories", []),
+                "name": app_data["name"],
+                "categories": app_data["metadata"].get("categories", []),
             }
 
     return index, apps_data

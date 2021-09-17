@@ -2,15 +2,11 @@
 """Generate API endpoints."""
 import json
 
-from .apps_index import generate_apps_index, validate_apps_index_and_apps
+from .apps_index import validate_apps_index_and_apps
 
 
-def build_api_v1(base_path, data, scan_app_repository):
-    """Build tree for API endpoint v1."""
-    # Compile the apps index
-    apps_index, apps_data = generate_apps_index(
-        data=data, scan_app_repository=scan_app_repository
-    )
+def build_api_v2(base_path, apps_index, apps_data, scan_app_repository):
+    """Build tree for API endpoint v2."""
 
     # Create base path if necessary.
     base_path.mkdir(parents=True, exist_ok=True)
@@ -30,8 +26,8 @@ def build_api_v1(base_path, data, scan_app_repository):
         yield outfile
 
 
-def validate_api_v1(base_path, schemas):
-    """Validate tree for API endpoint v1."""
+def validate_api_v2(base_path, schemas):
+    """Validate tree for API endpoint v2."""
     apps_index = json.loads(base_path.joinpath("apps_index.json").read_text())
     apps = [
         json.loads(base_path.joinpath("apps", f"{app_id}.json").read_text())

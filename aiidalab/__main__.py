@@ -538,6 +538,27 @@ def uninstall(app_name, yes, dry_run, force):
                     )
 
 
+@contextmanager
+def _mock_schemas_endpoints():
+    schema_paths = [
+        path
+        for path in pkg_resources.resource_listdir(
+            f"{__package__}.registry", "schemas/v2"
+        )
+        if path.endswith(".schema.json")
+    ]
+
+    with requests_mock.Mocker(real_http=True) as mocker:
+        for schema_path in schema_paths:
+            schema = json.loads(
+                pkg_resources.resource_string(
+                    f"{__package__}.registry", f"schemas/v2/{schema_path}"
+                )
+            )
+            mocker.get(schema["$id"], text=json.dumps(schema))
+        yield
+
+
 @cli.group()
 def registry():
     """Functions related to managing an app registry."""
@@ -570,28 +591,6 @@ def parse_app_repo(url):
             err=True,
             fg="red",
         )
-
-
-@contextmanager
-def _mock_schemas_endpoints():
-    schema_paths = [
-        path
-        for path in pkg_resources.resource_listdir(
-            f"{__package__}.registry", "schemas/v1"
-        )
-        if path.endswith(".schema.json")
-    ]
-
-    with requests_mock.Mocker(real_http=True) as mocker:
-        for schema_path in schema_paths:
-            schema = json.loads(
-                pkg_resources.resource_string(
-                    f"{__package__}.registry", f"schemas/v1/{schema_path}"
-                )
-            )
-            mocker.get(schema["$id"], text=json.dumps(schema))
-        yield
-
 
 
 @registry.command(help="Build the app store website and API endpoints.")

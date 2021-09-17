@@ -4,15 +4,12 @@
 import logging
 import os
 import shutil
-from copy import deepcopy
 from itertools import chain
 from pathlib import Path
 
-from aiidalab.environment import Environment
-from aiidalab.fetch import fetch_from_url
-from aiidalab.metadata import Metadata
-
+from ..utils import parse_app_repo
 from . import api, yaml
+from .apps_index import generate_apps_index
 from .core import AppRegistryData, AppRegistrySchemas
 from .html import build_html
 
@@ -61,21 +58,9 @@ def build(
     shutil.rmtree(root, ignore_errors=True)
     root.mkdir(parents=True, exist_ok=True)
 
-    # Prepare environment command
-    def scan_app_repository(url):
-        search_dirs = [".aiidalab/", "./"]
-        with fetch_from_url(url) as repo:
-            for path in (repo.joinpath(dir_) for dir_ in search_dirs):
-                if path.is_dir():
-                    try:
-                        metadata = Metadata.parse(path)
-                    except TypeError as error:
-                        logger.debug(f"Failed to parse metadata for '{url}': {error}")
-                        metadata = None
-                    return dict(
-                        environment=Environment.scan(path),
-                        metadata=metadata,
-                    )
+    apps_index, apps_data = generate_apps_index(
+        data=data, scan_app_repository=parse_app_repo
+    )
 
     # Build the website and API endpoints.
     for outfile in chain(
@@ -86,15 +71,20 @@ def build(
             else ()
         ),
         # Build the html pages.
-        build_html(base_path=root, data=deepcopy(data)),
+        build_html(
+            base_path=root,
+            apps_index=apps_index,
+            apps_data=apps_data,
+        ),
         # Build the API endpoints.
-        api.build_api_v1(
-            base_path=root / "api" / "v1",
-            data=deepcopy(data),
-            scan_app_repository=scan_app_repository,
+        api.build_api_v2(
+            base_path=root / "api" / "v2",
+            apps_index=apps_index,
+            apps_data=apps_data,
+            scan_app_repository=parse_app_repo,
         ),
     ):
         logger.info(f"  - {outfile.relative_to(root)}")
 
     if validate_output:
-        api.validate_api_v1(base_path=root / "api" / "v1", schemas=schemas)
+        api.validate_api_v2(base_path=root / "api" / "v2", schemas=schemas)

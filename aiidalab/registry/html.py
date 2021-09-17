@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """Generate the app registry website HTML pages."""
-from copy import deepcopy
-from dataclasses import asdict
+from collections import defaultdict
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 
-def build_html(base_path, data):
+def build_html(base_path, apps_index, apps_data):
     """Generate the app registry website at the base_path path."""
 
     # Create base_path directory if needed
@@ -22,19 +21,24 @@ def build_html(base_path, data):
 
     # Make single-entry pages based on singlepage.html
     base_path.joinpath("apps").mkdir()
-    for app_id, app_data in data.apps.items():
+    html_template_data = defaultdict(dict)
+
+    for app_id in apps_index["apps"]:
         subpage = base_path.joinpath("apps", app_id, "index.html")
-        app_data["subpage"] = str(subpage.relative_to(base_path))
+        html_template_data[app_id]["subpage"] = str(subpage.relative_to(base_path))
+        html_template_data[app_id]["metadata"] = apps_data[app_id]["metadata"]
 
         subpage.parent.mkdir()
         subpage.write_text(
-            singlepage_template.render(category_map=data.categories, **app_data),
+            singlepage_template.render(
+                category_map=apps_index["categories"], **html_template_data[app_id]
+            ),
             encoding="utf-8",
         )
         yield subpage
 
     # Make index page based on main_index.html
-    rendered = main_index_template.render(**asdict(deepcopy(data)))
+    rendered = main_index_template.render(apps=html_template_data)
     outfile = base_path / "index.html"
     outfile.write_text(rendered, encoding="utf-8")
     yield outfile
