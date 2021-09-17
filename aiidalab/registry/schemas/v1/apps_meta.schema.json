@@ -1,0 +1,120 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://aiidalab.github.io/aiidalab-registry/schemas/v1/apps_meta.schema.json",
+    "$ref": "#/definitions/Welcome",
+    "definitions": {
+        "App": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "git_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-extensions": [
+                        ".git"
+                    ],
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                },
+                "gitinfo": {
+                    "$ref": "#/definitions/AppGitinfo"
+                },
+                "hosted_on": {
+                    "type": "string"
+                },
+                "logo": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                },
+                "meta_url": {
+                    "type": "string"
+                },
+                "metainfo": {
+                    "$ref": "https://aiidalab.github.io/aiidalab-registry/schemas/v1/metadata.schema.json#/definitions/Welcome"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subpage": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "categories",
+                "git_url",
+                "gitinfo",
+                "hosted_on",
+                "meta_url",
+                "metainfo"
+            ],
+            "title": "App"
+        },
+        "AppGitinfo": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                ".*": {
+                    "type": "string"
+                }
+            },
+            "propertyNames": {
+                "pattern": "^(HEAD)|(refs/(heads|pull|tags))/.+$"
+            },
+            "title": "AppGitinfo"
+        },
+        "Apps": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                ".*": {
+                    "$ref": "#/definitions/App"
+                }
+            },
+            "title": "Apps"
+        },
+        "Categories": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                ".*": {
+                    "$ref": "https://aiidalab.github.io/aiidalab-registry/schemas/v1/categories.schema.json#/definitions/Category"
+                }
+            }
+        },
+        "State": {
+            "type": "string",
+            "enum": [
+                "registered",
+                "development",
+                "stable"
+            ]
+        },
+        "Welcome": {
+            "type": "object",
+            "properties": {
+                "apps": {
+                    "$ref": "#/definitions/Apps"
+                },
+                "categories": {
+                    "$ref": "#/definitions/Categories"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "apps",
+                "categories"
+            ],
+            "title": "Welcome"
+        }
+    }
+}

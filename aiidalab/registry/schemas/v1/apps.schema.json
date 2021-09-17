@@ -1,0 +1,81 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://aiidalab.github.io/aiidalab-registry/schemas/v1/apps.schema.json",
+    "$ref": "#/definitions/Apps",
+    "definitions": {
+        "App": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "logo": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "metadata": {
+                    "$ref": "https://aiidalab.github.io/aiidalab-registry/schemas/v1/metadata.schema.json#/definitions/Welcome"
+                },
+                "releases": {
+                    "$ref": "#definitions/ReleaseSpecifications"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "metadata",
+                "releases"
+            ],
+            "title": "AiiDAlab apps registry app entry"
+        },
+        "Apps": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                ".*": {
+                    "$ref": "#/definitions/App"
+                }
+            },
+            "propertyNames": {
+                "pattern": "^[A-Za-z][A-Za-z0-9-_]*$"
+            },
+            "title": "Schema for the AiiDAlab apps registry."
+        },
+        "ReleaseSpecification": {
+            "type": "object",
+            "properties": {
+                "environment": {
+                    "$ref": "https://aiidalab.github.io/aiidalab-registry/schemas/v1/environment.schema.json#definitions/Environment"
+                },
+                "url": {
+                    "$ref": "#definitions/ReleaseSpecificationUrl"
+                },
+                "version": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "url"
+            ]
+        },
+        "ReleaseSpecificationUrl": {
+            "type": "string"
+        },
+        "ReleaseSpecifications": {
+            "type": "array",
+            "items": {
+                "oneOf": [
+                    {
+                        "$ref": "#definitions/ReleaseSpecification"
+                    },
+                    {
+                        "$ref": "#definitions/ReleaseSpecificationUrl"
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -4,13 +4,15 @@ import json
 import logging
 import shutil
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import asdict
 from fnmatch import fnmatch
 from pathlib import Path
 from textwrap import indent, wrap
 
 import click
+import pkg_resources
+import requests_mock
 from click_spinner import spinner
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
@@ -22,8 +24,10 @@ from .app import _AiidaLabApp as AiidaLabApp
 from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 from .fetch import fetch_from_url
 from .metadata import Metadata
-from .utils import PEP508CompliantUrl, load_app_registry_index
+from .utils import PEP508CompliantUrl
+from .utils import load_app_registry_index
 from .utils import parse_app_repo as _parse_app_repo
+from .registry import build as build_registry
 
 logging.basicConfig(level=logging.INFO)
 
@@ -201,34 +205,6 @@ def _find_app_and_releases(app_requirement):
     matching_releases = app.find_matching_releases(app_requirement.specifier)
     return app, matching_releases
 
-
-@cli.command()
-@click.argument("url")
-def parse_app_repo(url):
-    """Parse an app repo for metadata and other information.
-
-    Use this command to parse a local or remote app repository for the app
-    metadata and environment specification.
-
-    Examples:
-
-    For a local app repository, provide the absolute or relative path:
-
-        parse-app-repo /path/to/aiidalab-hello-world
-
-    For a remote app repository, provide a PEP 508 compliant URL, for example:
-
-        parse-app-repo git+https://github.com/aiidalab/aiidalab-hello-world.git@v1.0.0
-    """
-    click.echo(f"Parsing {url} ...", err=True)
-    try:
-        click.echo(json.dumps(_parse_app_repo(url)))
-    except (ValueError, TypeError) as error:
-        click.secho(
-            f"Failed to parse metadata from '{url}': {error!s}",
-            err=True,
-            fg="red",
-        )
 
 
 @cli.command()
@@ -560,6 +536,102 @@ def uninstall(app_name, yes, dry_run, force):
                         f"Uninstalled '{app.name}' ('{app.path!s}').",
                         err=True,
                     )
+
+
+@cli.group()
+def registry():
+    """Functions related to managing an app registry."""
+
+
+@registry.command()
+@click.argument("url")
+def parse_app_repo(url):
+    """Parse an app repo for metadata and other information.
+
+    Use this command to parse a local or remote app repository for the app
+    metadata and environment specification.
+
+    Examples:
+
+    For a local app repository, provide the absolute or relative path:
+
+        parse-app-repo /path/to/aiidalab-hello-world
+
+    For a remote app repository, provide a PEP 508 compliant URL, for example:
+
+        parse-app-repo git+https://github.com/aiidalab/aiidalab-hello-world.git@v1.0.0
+    """
+    click.echo(f"Parsing {url} ...", err=True)
+    try:
+        click.echo(json.dumps(_parse_app_repo(url)))
+    except (ValueError, TypeError) as error:
+        click.secho(
+            f"Failed to parse metadata from '{url}': {error!s}",
+            err=True,
+            fg="red",
+        )
+
+
+@contextmanager
+def _mock_schemas_endpoints():
+    schema_paths = [
+        path
+        for path in pkg_resources.resource_listdir(
+            f"{__package__}.registry", "schemas/v1"
+        )
+        if path.endswith(".schema.json")
+    ]
+
+    with requests_mock.Mocker(real_http=True) as mocker:
+        for schema_path in schema_paths:
+            schema = json.loads(
+                pkg_resources.resource_string(
+                    f"{__package__}.registry", f"schemas/v1/{schema_path}"
+                )
+            )
+            mocker.get(schema["$id"], text=json.dumps(schema))
+        yield
+
+
+
+@registry.command(help="Build the app store website and API endpoints.")
+@click.option(
+    "--apps", type=click.Path(exists=True, dir_okay=False), default="apps.yaml"
+)
+@click.option(
+    "--categories",
+    type=click.Path(exists=True, dir_okay=False),
+    default="categories.yaml",
+)
+@click.option(
+    "-o", "--out", type=click.Path(file_okay=False, writable=True), default="html/"
+)
+@click.option("--static", type=click.Path(), default="static/")
+@click.option(
+    "--validate/--no-validate",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Validate inputs and outputs against the published or local schemas.",
+)
+@click.option(
+    "-m",
+    "--mock-schemas-endpoints",
+    "mock_schemas",
+    is_flag=True,
+    help="Mock the schemas endpoints such that the local versions are used insted of the published ones.",
+)
+def build(apps, categories, out, static, validate, mock_schemas):
+    maybe_mock = _mock_schemas_endpoints() if mock_schemas else nullcontext()
+    with maybe_mock:
+        build_registry(
+            Path(apps),
+            Path(categories),
+            Path(out),
+            Path(static),
+            validate_output=validate,
+            validate_input=validate,
+        )
 
 
 if __name__ == "__main__":
