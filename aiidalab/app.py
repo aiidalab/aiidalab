@@ -95,9 +95,10 @@ class _AiidaLabApp:
             }
             return cls._migrate_registry_entry_to_v1(entry)
         except TypeError:
+            logger.warning(f"Unable to parse metadata from '{path}'")
             return {
-                "name": None,
-                "metadata": None,
+                "name": path.stem,
+                "metadata": dict(title=path.stem, description=""),
                 "releases": None,
                 "logo": None,
                 "categories": None,
