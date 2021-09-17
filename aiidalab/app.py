@@ -148,7 +148,7 @@ class _AiidaLabApp:
                     )
                     return AppVersion.UNKNOWN
         elif self.path.exists():
-            return AppVersion.UNKNOWN
+            return self.metadata.get("version", AppVersion.UNKNOWN)
         return AppVersion.NOT_INSTALLED
 
     def dirty(self):
