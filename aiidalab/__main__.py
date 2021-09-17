@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """Module that implements a basic command line interface (CLI) for AiiDAlab."""
+import http.server
 import json
 import logging
 import shutil
+import socketserver
+import tempfile
 from collections import defaultdict
 from contextlib import contextmanager, nullcontext
 from dataclasses import asdict
 from fnmatch import fnmatch
+from functools import partial
 from pathlib import Path
 from textwrap import indent, wrap
 
@@ -695,6 +699,50 @@ def build(
             raise click.ClickException(
                 f"Failed to resolve JSON reference: {error.reference}\n{error.cause}"
             )
+
+
+@registry.command(help="Serve the app store website and API endpoints.")
+@click.option(
+    "--apps", type=click.Path(exists=True, dir_okay=False), default="apps.yaml"
+)
+@click.option(
+    "--categories",
+    type=click.Path(exists=True, dir_okay=False),
+    default="categories.yaml",
+)
+@click.option("--static", type=click.Path(), default="static/")
+@click.option("-p", "--port", type=click.INT, default=8000)
+@click.option(
+    "--validate/--no-validate",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Validate inputs and outputs against the published or local schemas.",
+)
+@click.option(
+    "-m",
+    "--mock-schemas-endpoints",
+    "mock_schemas",
+    is_flag=True,
+    help="Mock the schemas endpoints such that the local versions are used insted of the published ones.",
+)
+@click.pass_context
+def serve(ctx, apps, categories, port, static, validate, mock_schemas):
+    with tempfile.TemporaryDirectory() as html_dir:
+        ctx.invoke(
+            build,
+            out=html_dir,
+            apps=apps,
+            categories=categories,
+            static=static,
+            validate=validate,
+            mock_schemas=mock_schemas,
+        )
+
+        Handler = partial(http.server.SimpleHTTPRequestHandler, directory=html_dir)
+        with socketserver.TCPServer(("", port), Handler) as httpd:
+            click.echo(f"Serving registry at port: {port} ...")
+            httpd.serve_forever()
 
 
 if __name__ == "__main__":
