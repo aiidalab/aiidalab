@@ -593,7 +593,7 @@ def parse_app_repo(url):
         )
 
 
-@registry.command(help="Build the app store website and API endpoints.")
+@registry.command()
 @click.option(
     "--apps", type=click.Path(exists=True, dir_okay=False), default="apps.yaml"
 )
@@ -621,6 +621,12 @@ def parse_app_repo(url):
     help="Mock the schemas endpoints such that the local versions are used insted of the published ones.",
 )
 def build(apps, categories, out, static, validate, mock_schemas):
+    """Build the app store website and API endpoints.
+
+    Example:
+
+        build --apps=apps.yaml --categories=categories.yaml --out=./html/
+    """
     maybe_mock = _mock_schemas_endpoints() if mock_schemas else nullcontext()
     with maybe_mock:
         build_registry(
