@@ -701,7 +701,7 @@ def build(
             )
 
 
-@registry.command(help="Serve the app store website and API endpoints.")
+@registry.command()
 @click.option(
     "--apps", type=click.Path(exists=True, dir_okay=False), default="apps.yaml"
 )
@@ -728,6 +728,14 @@ def build(
 )
 @click.pass_context
 def serve(ctx, apps, categories, port, static, validate, mock_schemas):
+    """Serve the app store website and API endpoints for testing.
+
+    Most arguments are identical to those of the 'build' command.
+
+    Example:
+
+        serve --apps=apps.yaml --categories=categories.yaml --port=8888
+    """
     with tempfile.TemporaryDirectory() as html_dir:
         ctx.invoke(
             build,
