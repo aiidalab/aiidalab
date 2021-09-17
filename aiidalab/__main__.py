@@ -209,13 +209,7 @@ def parse_app_repo(repository):
     click.echo(f"Parsing {repository} ...", err=True)
     try:
         click.echo(json.dumps(parse_app_repository(repository)))
-    except ValueError as error:
-        click.secho(
-            f"Failed to parse metadata from '{repository}': {error!s}",
-            err=True,
-            fg="red",
-        )
-    except TypeError as error:
+    except (ValueError, TypeError) as error:
         click.secho(
             f"Failed to parse metadata from '{repository}': {error!s}",
             err=True,
