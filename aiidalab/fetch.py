@@ -1,5 +1,7 @@
+import logging
 import tarfile
 import tempfile
+import zipfile
 from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
@@ -9,6 +11,8 @@ import dulwich
 import requests
 
 from .git_util import GitPath, GitRepo
+
+logger = logging.getLogger(__name__)
 
 
 def _this_or_only_subdir(path):
@@ -22,9 +26,19 @@ def _fetch_from_path(path):
         yield path
     else:
         with tempfile.TemporaryDirectory() as tmp_dir:
-            with tarfile.open(fileobj=BytesIO(path.read_bytes())) as tar_file:
-                tar_file.extractall(path=tmp_dir)
-                yield _this_or_only_subdir(Path(tmp_dir))
+            try:
+                with tarfile.open(fileobj=BytesIO(path.read_bytes())) as tar_file:
+                    tar_file.extractall(path=tmp_dir)
+                    yield _this_or_only_subdir(Path(tmp_dir))
+            except tarfile.ReadError as error:
+                logger.debug(str(error))
+                try:
+                    with zipfile.ZipFile(BytesIO(path.read_bytes())) as zip_file:
+                        zip_file.extractall(path=tmp_dir)
+                        yield _this_or_only_subdir(Path(tmp_dir))
+                except zipfile.BadZipFile as error:
+                    logger.debug(str(error))
+                    raise RuntimeError("Failed to extract archive from file.")
 
 
 @contextmanager
@@ -35,8 +49,11 @@ def _fetch_from_https(url):
     with tempfile.NamedTemporaryFile() as tmp_file:
         tmp_file.write(content)
         tmp_file.flush()
-        with _fetch_from_path(Path(tmp_file.name)) as path:
-            yield path
+        try:
+            with _fetch_from_path(Path(tmp_file.name)) as path:
+                yield path
+        except RuntimeError as error:
+            raise RuntimeError(f"Unable to read from '{url}': {error}")
 
 
 def _parse_git_url(git_url):
