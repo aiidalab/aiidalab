@@ -130,11 +130,9 @@ class _AiidaLabApp:
             return None
 
     def installed_version(self):
-        if self._repo:
+        if self._repo and self.is_registered:
             if self.dirty():
                 return AppVersion.UNKNOWN
-            elif not self.is_registered:
-                return self.metadata.get("version", AppVersion.UNKNOWN)
             else:
                 try:
                     head_commit = self._repo.head().decode()
