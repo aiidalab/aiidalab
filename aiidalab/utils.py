@@ -56,9 +56,8 @@ def load_app_registry_index():
     """Load apps' information from the AiiDAlab registry."""
     try:
         return requests.get(f"{AIIDALAB_REGISTRY}/apps_index.json").json()
-    except (ValueError, requests.ConnectionError):
-        print("Registry server is unavailable! Can't check for the updates")
-        return dict(apps=dict(), catgories=dict())
+    except (ValueError, requests.ConnectionError) as error:
+        raise RuntimeError(f"Unable to load registry index: '{error}'")
 
 
 def load_app_registry_entry(app_id):
