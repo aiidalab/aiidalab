@@ -171,12 +171,12 @@ def _find_registered_app_from_id(name):
     """Find app for a given requirement."""
     try:
         app = AiidaLabApp.from_id(name)
-        if app.releases is None:
+        if app.is_registered:
+            return app
+        else:
             raise click.ClickException(
-                f"Unable to identify releases for app '{name}'. App was likely "
-                "installed locally and/or is not registered."
+                f"App '{app}' was installed locally and/or is not registered."
             )
-        return app
     except KeyError:
         raise click.ClickException(f"Did not find entry for app with name '{name}'.")
 

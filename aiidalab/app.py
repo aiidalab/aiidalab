@@ -119,6 +119,10 @@ class _AiidaLabApp:
         return cls.from_registry_entry(path=app_path, registry_entry=registry_entry)
 
     @property
+    def is_registered(self):
+        return self.releases is not None
+
+    @property
     def _repo(self):
         try:
             return Repo(str(self.path))
@@ -129,7 +133,7 @@ class _AiidaLabApp:
         if self._repo:
             if self.dirty():
                 return AppVersion.UNKNOWN
-            elif self.releases is None:
+            elif not self.is_registered:
                 return self.metadata.get("version", AppVersion.UNKNOWN)
             else:
                 try:
@@ -193,7 +197,7 @@ class _AiidaLabApp:
         if python_bin is None:
             python_bin = sys.executable
 
-        if self.releases is None:
+        if not self.is_registered:
             assert version == self.installed_version()
             environment = asdict(Environment.scan(self.path))
         else:
@@ -592,7 +596,7 @@ class AiidaLabApp(traitlets.HasTraits):
             and parse(self.installed_version).is_prerelease
         )
 
-        if self._app.releases is None:
+        if not self._app.is_registered:
             self.available_versions = [self.installed_version]
         else:
             all_available_versions = sorted(self._app.releases, key=parse, reverse=True)
