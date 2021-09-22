@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """Module that implements a basic command line interface (CLI) for AiiDAlab."""
-
 import json
+import logging
 import shutil
 from collections import defaultdict
 from contextlib import contextmanager
+from dataclasses import asdict
 from fnmatch import fnmatch
 from pathlib import Path
 from textwrap import indent, wrap
@@ -16,10 +17,16 @@ from packaging.version import parse
 from tabulate import tabulate
 
 from . import __version__
-from .app import AppVersion
+from .app import AppVersion, PEP508CompliantUrl
 from .app import _AiidaLabApp as AiidaLabApp
 from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
+from .fetch import fetch_from_url
+from .metadata import Metadata
 from .utils import load_app_registry_index
+from .utils import parse_app_repo as parse_app_repository
+
+logging.basicConfig(level=logging.INFO)
+
 
 ICON_DETACHED = "\U000025AC"  # ▬
 ICON_MODIFIED = "\U00002022"  # •
@@ -158,24 +165,67 @@ def _parse_requirement(app_requirement):
     try:
         return Requirement(app_requirement)
     except InvalidRequirement as error:
+        from urllib.parse import urlsplit
+
+        if urlsplit(app_requirement).scheme and "@" not in app_requirement:
+            raise click.ClickException(
+                "It looks like you tried to install directly from a PEP 508 "
+                "compliant URL. Make sure to use the 'app-name @ url' syntax "
+                "to provide a name for the app."
+            )
         raise click.ClickException(
-            f"Invalid requirement '{app_requirement}': {error!s}"
+            f"Invalid requirement '{app_requirement}': {error!s}\n"
         )
 
 
-def _find_app_from_id(name):
+def _find_registered_app_from_id(name):
     """Find app for a given requirement."""
     try:
-        return AiidaLabApp.from_id(name)
+        app = AiidaLabApp.from_id(name)
+        if app.is_registered:
+            return app
+        else:
+            raise click.ClickException(
+                f"App '{app}' was installed locally and/or is not registered."
+            )
     except KeyError:
         raise click.ClickException(f"Did not find entry for app with name '{name}'.")
 
 
 def _find_app_and_releases(app_requirement):
     """Find app and a suitable release for a given requirement."""
-    app = _find_app_from_id(app_requirement.name)
+    app = _find_registered_app_from_id(app_requirement.name)
     matching_releases = app.find_matching_releases(app_requirement.specifier)
     return app, matching_releases
+
+
+@cli.command()
+@click.argument("repository")
+def parse_app_repo(repository):
+    """Parse an app repo for metadata and other information.
+
+    Use this command to parse a local or remote app repository for the app
+    metadata and environment specification.
+
+    Examples:
+
+    For a local app repository, provide the absolute or relative path:
+
+        parse-app-repo /path/to/aiidalab-hello-world
+
+    For a remote app repository, provide a PEP 508 compliant URL, for example:
+
+        parse-app-repo git+https://github.com/aiidalab/aiidalab-hello-world.git@v1.0.0
+    """
+    click.echo(f"Parsing {repository} ...", err=True)
+    try:
+        click.echo(json.dumps(parse_app_repository(repository)))
+    except (ValueError, TypeError) as error:
+        click.secho(
+            f"Failed to parse metadata from '{repository}': {error!s}",
+            err=True,
+            fg="red",
+        )
 
 
 @cli.command()
@@ -237,8 +287,27 @@ def show_environment(app_requirement, indent):
 
 
 def _find_version_to_install(
-    app_requirement, app, force, dependencies, python_bin, prereleases
+    app_requirement, force, dependencies, python_bin, prereleases
 ):
+    if app_requirement.url is not None:
+        with fetch_from_url(app_requirement.url) as repo:
+            metadata = Metadata.parse(repo)
+            registry_entry = dict(name=app_requirement.name, metadata=asdict(metadata))
+            app = AiidaLabApp.from_id(
+                app_requirement.name, registry_entry=registry_entry
+            )
+            if not (force or (dependencies in ("install", "ignore"))):
+                raise click.ClickException(
+                    f"Unable to check compatibility for {app_requirement} prior to installation."
+                )
+
+        if force or not app.is_installed():
+            return app, PEP508CompliantUrl(app_requirement.url)
+        else:
+            return app, None
+
+    app = _find_registered_app_from_id(app_requirement.name)
+
     assert dependencies in ("install", "require", "ignore")
     matching_releases = app.find_matching_releases(
         app_requirement.specifier, prereleases
@@ -326,13 +395,15 @@ def install(
     Install the 'hello-world' app with the latest version that matches the specification '>=1.0':
 
         install hello-world>=1.0
-    """
 
+    Install the 'hello-world' app directly from a PEP 508 compliant URL:
+
+        install hello-world@git+https://github.com/aiidalab/aiidalab-hello-world.git
+    """
     with _spinner_with_message("Collecting apps matching requirements... "):
         install_candidates = {
             requirement: _find_version_to_install(
                 requirement,
-                _find_app_from_id(requirement.name),
                 dependencies=dependencies,
                 force=force,
                 python_bin=python_bin,
