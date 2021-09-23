@@ -18,9 +18,10 @@ from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
 from typing import List
-from urllib.parse import urlsplit
+from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
+import requests
 import traitlets
 from dulwich.errors import NotGitRepository
 from packaging.requirements import Requirement
@@ -31,8 +32,8 @@ from watchdog.observers.polling import PollingObserver
 
 from .config import AIIDALAB_APPS
 from .environment import Environment
-from .fetch import fetch_from_url
 from .git_util import GitManagedAppRepo as Repo
+from .git_util import git_clone
 from .metadata import Metadata
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
@@ -310,6 +311,24 @@ class _AiidaLabApp:
                     tar_file.extractall(path=tmp_dir)
                     self._install_from_path(Path(tmp_dir))
 
+    def _install_from_https(self, url):
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        content = response.content
+
+        with tempfile.NamedTemporaryFile() as tmp_file:
+            tmp_file.write(content)
+            tmp_file.flush()
+            self._install_from_path(Path(tmp_file.name))
+
+    def _install_from_git_repository(self, git_url):
+        if urldefrag(git_url).fragment:
+            raise NotImplementedError(
+                "Path specification via fragment not yet supported."
+            )
+        base_url, ref = split_git_url(git_url)
+        git_clone(base_url, ref, self.path)
+
     def install(
         self, version=None, python_bin=None, install_dependencies=True, stdout=None
     ):
@@ -328,9 +347,24 @@ class _AiidaLabApp:
 
         trash_path = self._move_to_trash()
 
+        split_url = urlsplit(url)
         try:
-            with fetch_from_url(url) as repo:
-                self._install_from_path(Path(repo))
+            if split_url.scheme in ("", "file"):
+                self._install_from_path(Path(split_url.path))
+            elif split_url.scheme == "https":
+                self._install_from_https(url)
+            elif split_url.scheme == "git+file":
+                self._install_from_git_repository(
+                    urlunsplit(split_url._replace(scheme="file"))
+                )
+            elif split_url.scheme == "git+https":
+                self._install_from_git_repository(
+                    urlunsplit(split_url._replace(scheme="https"))
+                )
+            else:
+                raise NotImplementedError(
+                    "Unsupported scheme: {split_url.scheme} ({url})"
+                )
 
             # Install dependencies
             if install_dependencies:
