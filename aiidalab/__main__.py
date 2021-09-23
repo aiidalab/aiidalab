@@ -108,7 +108,10 @@ def search(app_query, prereleases):
         try:
             app_requirements = [Requirement(app_query)]
         except InvalidRequirement:  # interpreted as general search query
-            registry = load_app_registry_index()
+            try:
+                registry = load_app_registry_index()
+            except RuntimeError as error:
+                raise click.ClickException(error)
             app_requirements = [
                 Requirement(app_name)
                 for app_name in registry["apps"].keys()
