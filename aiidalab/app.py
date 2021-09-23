@@ -36,6 +36,7 @@ from .git_util import GitManagedAppRepo as Repo
 from .metadata import Metadata
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
+    PEP508CompliantUrl,
     find_installed_packages,
     load_app_registry_entry,
     load_app_registry_index,
@@ -65,10 +66,6 @@ class AppRemoteUpdateStatus(Flag):
     UPDATE_AVAILABLE = auto()
     CANNOT_REACH_REGISTRY = auto()
     DETACHED = auto()
-
-
-class PEP508CompliantUrl(str):
-    pass
 
 
 @dataclass
