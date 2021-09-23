@@ -69,7 +69,13 @@ def load_app_registry_entry(app_id):
         return None
 
 
-def parse_app_repo(repository, search_dirs=None):
+class PEP508CompliantUrl(str):
+    """Represents a PEP 508 compliant URL."""
+
+    pass
+
+
+def parse_app_repo(url, search_dirs=None):
     """Parse an app repo for metadata and other information.
 
     Use this function to parse a local or remote app repository for the app
@@ -79,16 +85,16 @@ def parse_app_repo(repository, search_dirs=None):
 
     For a local app repository, provide the absolute or relative path:
 
-        repository="/path/to/aiidalab-hello-world"
+        url="/path/to/aiidalab-hello-world"
 
     For a remote app repository, provide a PEP 508 compliant URL, for example:
 
-        repository="git+https://github.com/aiidalab/aiidalab-hello-world.git@v1.0.0"
+        url="git+https://github.com/aiidalab/aiidalab-hello-world.git@v1.0.0"
     """
     if search_dirs is None:
         search_dirs = [".aiidalab/", "./"]
 
-    with fetch_from_url(repository) as repo:
+    with fetch_from_url(url) as repo:
         for path in (repo.joinpath(dir_) for dir_ in search_dirs):
             if path.is_dir():
                 metadata = Metadata.parse(path)

@@ -17,13 +17,13 @@ from packaging.version import parse
 from tabulate import tabulate
 
 from . import __version__
-from .app import AppVersion, PEP508CompliantUrl
+from .app import AppVersion
 from .app import _AiidaLabApp as AiidaLabApp
 from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 from .fetch import fetch_from_url
 from .metadata import Metadata
-from .utils import load_app_registry_index
-from .utils import parse_app_repo as parse_app_repository
+from .utils import PEP508CompliantUrl, load_app_registry_index
+from .utils import parse_app_repo as _parse_app_repo
 
 logging.basicConfig(level=logging.INFO)
 
@@ -203,8 +203,8 @@ def _find_app_and_releases(app_requirement):
 
 
 @cli.command()
-@click.argument("repository")
-def parse_app_repo(repository):
+@click.argument("url")
+def parse_app_repo(url):
     """Parse an app repo for metadata and other information.
 
     Use this command to parse a local or remote app repository for the app
@@ -220,12 +220,12 @@ def parse_app_repo(repository):
 
         parse-app-repo git+https://github.com/aiidalab/aiidalab-hello-world.git@v1.0.0
     """
-    click.echo(f"Parsing {repository} ...", err=True)
+    click.echo(f"Parsing {url} ...", err=True)
     try:
-        click.echo(json.dumps(parse_app_repository(repository)))
+        click.echo(json.dumps(_parse_app_repo(url)))
     except (ValueError, TypeError) as error:
         click.secho(
-            f"Failed to parse metadata from '{repository}': {error!s}",
+            f"Failed to parse metadata from '{url}': {error!s}",
             err=True,
             fg="red",
         )
@@ -399,9 +399,11 @@ def install(
 
         install hello-world>=1.0
 
-    Install the 'hello-world' app directly from a PEP 508 compliant URL:
+    Install the 'hello-world' app directly with a PEP 508 compliant URL:
 
         install hello-world@git+https://github.com/aiidalab/aiidalab-hello-world.git
+
+    Note: It is necessary to explicitly specify the app name before the '@'.
     """
     with _spinner_with_message("Collecting apps matching requirements... "):
         install_candidates = {
