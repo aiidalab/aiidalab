@@ -77,8 +77,8 @@ def build(
             apps_data=apps_data,
         ),
         # Build the API endpoints.
-        api.build_api_v2(
-            base_path=root / "api" / "v2",
+        api.build_api_v1(
+            base_path=root / "api" / "v1",
             apps_index=apps_index,
             apps_data=apps_data,
             scan_app_repository=parse_app_repo,
@@ -87,4 +87,4 @@ def build(
         logger.info(f"  - {outfile.relative_to(root)}")
 
     if validate_output:
-        api.validate_api_v2(base_path=root / "api" / "v2", schemas=schemas)
+        api.validate_api_v1(base_path=root / "api" / "v1", schemas=schemas)
