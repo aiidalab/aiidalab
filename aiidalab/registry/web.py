@@ -70,6 +70,7 @@ def build(
     categories_path: Path,
     html_path: Path,
     static_path: Path = None,
+    templates_path: Path = None,
     validate_output: bool = True,
     validate_input: bool = False,
 ):
@@ -105,6 +106,7 @@ def build(
             base_path=root,
             apps_index=apps_index,
             apps_data=apps_data,
+            templates_path=templates_path,
         ),
         # Build the API endpoints.
         api.build_api_v1(

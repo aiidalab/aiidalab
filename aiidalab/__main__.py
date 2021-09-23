@@ -604,6 +604,7 @@ def parse_app_repo(url):
     "-o", "--out", type=click.Path(file_okay=False, writable=True), default="html/"
 )
 @click.option("--static", type=click.Path(file_okay=False, exists=True))
+@click.option("-t", "--templates", type=click.Path(file_okay=False, exists=True))
 @click.option(
     "--validate/--no-validate",
     is_flag=True,
@@ -618,7 +619,7 @@ def parse_app_repo(url):
     is_flag=True,
     help="Mock the schemas endpoints such that the local versions are used insted of the published ones.",
 )
-def build(apps, categories, out, static, validate, mock_schemas):
+def build(apps, categories, out, static, templates, validate, mock_schemas):
     """Build the app store website and API endpoints.
 
     Example:
@@ -632,6 +633,7 @@ def build(apps, categories, out, static, validate, mock_schemas):
             Path(categories),
             Path(out),
             Path(static) if static else None,
+            Path(templates) if templates else None,
             validate_output=validate,
             validate_input=validate,
         )

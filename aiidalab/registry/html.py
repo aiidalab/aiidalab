@@ -2,24 +2,34 @@
 """Generate the app registry website HTML pages."""
 from collections import defaultdict
 
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import (
+    ChoiceLoader,
+    Environment,
+    FileSystemLoader,
+    PackageLoader,
+    select_autoescape,
+)
 
 
-def build_html(base_path, apps_index, apps_data):
+def build_html(base_path, apps_index, apps_data, templates_path):
     """Generate the app registry website at the base_path path."""
 
     # Create base_path directory if needed
     base_path.mkdir(parents=True, exist_ok=True)
 
-    # Load template environment
+    # Setup template environment
+    loaders = [PackageLoader(__name__)]
+    if templates_path:
+        loaders.insert(0, FileSystemLoader(templates_path))
+
     env = Environment(
-        loader=PackageLoader(__name__),
+        loader=ChoiceLoader(loaders),
         autoescape=select_autoescape(["html", "xml"]),
     )
-    singlepage_template = env.get_template("singlepage.html")
-    main_index_template = env.get_template("main_index.html")
+    app_page_template = env.get_template("app_page.html")
+    main_index_template = env.get_template("index.html")
 
-    # Make single-entry pages based on singlepage.html
+    # Make single-entry pages based on app_page.html
     base_path.joinpath("apps").mkdir()
     html_template_data = defaultdict(dict)
 
@@ -30,7 +40,7 @@ def build_html(base_path, apps_index, apps_data):
 
         subpage.parent.mkdir()
         subpage.write_text(
-            singlepage_template.render(
+            app_page_template.render(
                 category_map=apps_index["categories"], **html_template_data[app_id]
             ),
             encoding="utf-8",
