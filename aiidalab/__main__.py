@@ -603,7 +603,7 @@ def parse_app_repo(url):
 @click.option(
     "-o", "--out", type=click.Path(file_okay=False, writable=True), default="html/"
 )
-@click.option("--static", type=click.Path(), default="static/")
+@click.option("--static", type=click.Path(file_okay=False, exists=True))
 @click.option(
     "--validate/--no-validate",
     is_flag=True,
@@ -631,7 +631,7 @@ def build(apps, categories, out, static, validate, mock_schemas):
             Path(apps),
             Path(categories),
             Path(out),
-            Path(static),
+            Path(static) if static else None,
             validate_output=validate,
             validate_input=validate,
         )

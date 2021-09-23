@@ -3,9 +3,12 @@
 
 import logging
 import os
+import os.path
 import shutil
 from itertools import chain
 from pathlib import Path
+
+import pkg_resources
 
 from ..utils import parse_app_repo
 from . import api, yaml
@@ -16,19 +19,50 @@ from .html import build_html
 logger = logging.getLogger(__name__)
 
 
-def copy_static_tree(base_path, static_src):
-    for root, _, files in os.walk(static_src):
+def _copy_static_tree_from_path(base_path, static_path):
+    for root, _, files in os.walk(static_path):
         # Create directory
-        base_path.joinpath(Path(root).relative_to(static_src)).mkdir(
+        base_path.joinpath(Path(root).relative_to(static_path)).mkdir(
             parents=True, exist_ok=True
         )
 
         # Copy all files
         for filename in files:
             src = Path(root).joinpath(filename)
-            dst = base_path.joinpath(Path(root).relative_to(static_src), filename)
+            dst = base_path.joinpath(Path(root).relative_to(static_path), filename)
             dst.write_bytes(src.read_bytes())
             yield dst
+
+
+def _walk_pkg_resources(package, root):
+    paths = pkg_resources.resource_listdir(package, root)
+    for path in paths:
+        dir_paths = [
+            path
+            for path in paths
+            if pkg_resources.resource_isdir(package, os.path.join(root, path))
+        ]
+        yield root, list(set(paths).difference(dir_paths))
+        for dir_path in dir_paths:
+            yield from _walk_pkg_resources(package, os.path.join(root, dir_path))
+
+
+def _copy_static_tree_from_package(base_path, root="static", package=__package__):
+    for directory, files in _walk_pkg_resources(package, root):
+        stem = base_path.joinpath(Path(directory).relative_to(root))
+        stem.mkdir(parents=True, exist_ok=True)
+        for fn in files:
+            src = pkg_resources.resource_stream(package, os.path.join(directory, fn))
+            dst = stem.joinpath(fn)
+            dst.write_bytes(src.read())
+            yield dst
+
+
+def copy_static_tree(base_path, static_path):
+    if static_path is None:
+        yield from _copy_static_tree_from_package(base_path)
+    else:
+        yield from _copy_static_tree_from_path(base_path, static_path)
 
 
 def build(
@@ -65,11 +99,7 @@ def build(
     # Build the website and API endpoints.
     for outfile in chain(
         # Copy static files (if specified)
-        (
-            copy_static_tree(base_path=root, static_src=static_path)
-            if static_path
-            else ()
-        ),
+        copy_static_tree(base_path=root, static_path=static_path),
         # Build the html pages.
         build_html(
             base_path=root,
