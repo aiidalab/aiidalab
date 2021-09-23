@@ -24,10 +24,9 @@ from .app import _AiidaLabApp as AiidaLabApp
 from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 from .fetch import fetch_from_url
 from .metadata import Metadata
-from .utils import PEP508CompliantUrl
-from .utils import load_app_registry_index
-from .utils import parse_app_repo as _parse_app_repo
 from .registry import build as build_registry
+from .utils import PEP508CompliantUrl, load_app_registry_index
+from .utils import parse_app_repo as _parse_app_repo
 
 logging.basicConfig(level=logging.INFO)
 
@@ -204,7 +203,6 @@ def _find_app_and_releases(app_requirement):
     app = _find_registered_app_from_id(app_requirement.name)
     matching_releases = app.find_matching_releases(app_requirement.specifier)
     return app, matching_releases
-
 
 
 @cli.command()
