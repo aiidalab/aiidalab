@@ -1,8 +1,8 @@
 .. _develop-apps:create-app:
 
-************************
-Create your AiiDAlab app
-************************
+**********************
+Create an AiiDAlab app
+**********************
 
 .. _develop-apps:create-app:variant-a_cookiecutter:
 
@@ -41,7 +41,7 @@ The newly created app will show up with a rendered banner on the start page afte
 Variant B: Create app from scratch (step-by-step)
 =================================================
 
-Typically one would prefer to use the cookie-cutter to create a new app, but here are the steps to create an app from scratch.
+Typically one would prefer to use the cookie-cutter (see Variant A) to create a new app, but these are the steps to create an app from scratch.
 
 Step 1: Create the app folder
 -----------------------------
