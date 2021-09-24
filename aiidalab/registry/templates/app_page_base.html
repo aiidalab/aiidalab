@@ -63,7 +63,7 @@
             <strong>Short description</strong>: {{ metadata.description }}
         </p>
         <p>
-            <strong>Most recent version</strong>: {{ metadata.version }}
+	<strong>Most recent version</strong>: {{ releases | sort_semantic | first }}
         </p>
 
     </div>
