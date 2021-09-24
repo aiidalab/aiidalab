@@ -4,7 +4,6 @@
 import logging
 import os
 import os.path
-import shutil
 from itertools import chain
 from pathlib import Path
 
@@ -89,8 +88,9 @@ def build(
 
     root = html_path
 
-    # Remove previous build (if present) and re-create root directory.
-    shutil.rmtree(root, ignore_errors=True)
+    # Scan previous build (if present) and re-create root directory.
+    logger.info("Scanning current directory...")
+    previous_paths = list(root.glob("**/*"))
     root.mkdir(parents=True, exist_ok=True)
 
     apps_index, apps_data = generate_apps_index(
@@ -98,6 +98,7 @@ def build(
     )
 
     # Build the website and API endpoints.
+    new_paths = list()
     for outfile in chain(
         # Copy static files (if specified)
         copy_static_tree(base_path=root, static_path=static_path),
@@ -116,7 +117,21 @@ def build(
             scan_app_repository=parse_app_repo,
         ),
     ):
+        new_paths.append(outfile)
         logger.info(f"  - {outfile.relative_to(root)}")
+
+    # Remove all obsolete files:
+    for path in set(previous_paths).difference(new_paths):
+        if path.is_file():
+            logger.info(f"  - rm {path.relative_to(root)}")
+            path.unlink()
+
+    # Remove all obsolete directories:
+    previous_dirs = {path for path in previous_paths if path.is_dir()}
+    current_dirs = {parent for path in new_paths for parent in path.parents}
+    for path in previous_dirs.difference(current_dirs):
+        logger.info(f"  - rmdir {path.relative_to(root)}")
+        path.rmdir()
 
     if validate_output:
         api.validate_api_v1(base_path=root / "api" / "v1", schemas=schemas)
