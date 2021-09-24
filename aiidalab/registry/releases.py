@@ -135,16 +135,15 @@ def _gather_releases(release_specs, scan_app_repository, app_metadata):
                     metadata_and_environment = scan_app_repository(
                         f"git+file:{os.fspath(repo_path.resolve())}@{sha}"
                     )
-                    if metadata_and_environment["metadata"] is None:
-                        if metadata_override is None:
-                            logger.warning(
-                                f"Failed to parse metadata for {base_url}@{ref} and no override specified, skipping release!"
-                            )
+                    if (
+                        metadata_and_environment["metadata"] is None
+                        and metadata_override is None
+                    ):
+                        logger.warning(
+                            f"Failed to parse metadata for {base_url}@{ref} and no override specified, skipping release!"
+                        )
+                        continue
 
-                        else:
-                            logger.info(
-                                f"Failed to parse metadata for {base_url}@{ref}, using override."
-                            )
                     # Replace release specifier to point to specific commit.
                     path = f"{parsed_url.path.rsplit('@', 1)[0]}@{sha}"
                     release = Release(
