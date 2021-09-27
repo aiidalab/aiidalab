@@ -13,4 +13,10 @@ exclude .flake8
 include .gitmodules
 include LICENSE
 include CHANGELOG.md
+recursive-include aiidalab *.css
+recursive-include aiidalab *.html
+recursive-include aiidalab *.json
+recursive-include aiidalab *.png
+recursive-include aiidalab *.svg
+recursive-include aiidalab *.yaml
 recursive-include jupyter-config *.json

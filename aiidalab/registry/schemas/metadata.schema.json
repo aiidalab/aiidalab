@@ -1,0 +1,73 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$ref": "#/definitions/Welcome",
+    "definitions": {
+        "Requirements": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "title": "Requirements"
+        },
+        "Welcome": {
+            "type": "object",
+            "properties": {
+                "authors": {
+                    "type": "string"
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "documentation_url": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "external_url": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "logo": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                },
+                "requires": {
+                    "type": "object",
+                    "patternProperties": {
+                        ".*": {
+                            "$ref": "#/definitions/Requirements"
+                        }
+                    }
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "registered",
+                        "development",
+                        "stable"
+                    ]
+                },
+                "title": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "description",
+                "title"
+            ],
+            "title": "Welcome"
+        }
+    }
+}

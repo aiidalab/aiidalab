@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 from collections import defaultdict
+from dataclasses import asdict
 from functools import wraps
 from pathlib import Path
 from subprocess import run
@@ -17,6 +18,9 @@ from cachetools import TTLCache, cached
 from packaging.utils import canonicalize_name
 
 from .config import AIIDALAB_REGISTRY
+from .environment import Environment
+from .fetch import fetch_from_url
+from .metadata import Metadata
 
 logger = logging.getLogger(__name__)
 FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)
@@ -52,9 +56,8 @@ def load_app_registry_index():
     """Load apps' information from the AiiDAlab registry."""
     try:
         return requests.get(f"{AIIDALAB_REGISTRY}/apps_index.json").json()
-    except (ValueError, requests.ConnectionError):
-        print("Registry server is unavailable! Can't check for the updates")
-        return dict(apps=dict(), catgories=dict())
+    except (ValueError, requests.ConnectionError) as error:
+        raise RuntimeError(f"Unable to load registry index: '{error}'")
 
 
 def load_app_registry_entry(app_id):
@@ -62,8 +65,48 @@ def load_app_registry_entry(app_id):
     try:
         return requests.get(f"{AIIDALAB_REGISTRY}/apps/{app_id}.json").json()
     except (ValueError, requests.ConnectionError):
-        print(f"Unable to load registry entry for app with id '{app_id}'.")
+        logger.debug(f"Unable to load registry entry for app with id '{app_id}'.")
         return None
+
+
+class PEP508CompliantUrl(str):
+    """Represents a PEP 508 compliant URL."""
+
+    pass
+
+
+def parse_app_repo(url, search_dirs=None, metadata_fallback=None):
+    """Parse an app repo for metadata and other information.
+
+    Use this function to parse a local or remote app repository for the app
+    metadata and environment specification.
+
+    Examples:
+
+    For a local app repository, provide the absolute or relative path:
+
+        url="/path/to/aiidalab-hello-world"
+
+    For a remote app repository, provide a PEP 508 compliant URL, for example:
+
+        url="git+https://github.com/aiidalab/aiidalab-hello-world.git@v1.0.0"
+    """
+    if search_dirs is None:
+        search_dirs = [".aiidalab/", "./"]
+
+    with fetch_from_url(url) as repo:
+        for path in (repo.joinpath(dir_) for dir_ in search_dirs):
+            if path.is_dir():
+                try:
+                    metadata = asdict(Metadata.parse(path))
+                except TypeError as error:
+                    logger.debug(f"Failed to parse metadata for '{url}': {error}")
+                    metadata = metadata_fallback
+
+                return {
+                    "metadata": metadata,
+                    "environment": asdict(Environment.scan(path)),
+                }
 
 
 class throttled:  # pylint: disable=invalid-name

@@ -1,0 +1,63 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://raw.githubusercontent.com/aiidalab/aiidalab/v21.10.0/aiidalab/registry/schemas/apps_index.schema.json",
+    "$ref": "#/definitions/AppsAndCategories",
+    "definitions": {
+        "AppsAndCategories": {
+            "type": "object",
+            "properties": {
+                "apps": {
+                    "$ref": "#/definitions/AppsIndex"
+                },
+                "categories": {
+                    "$ref": "#/definitions/Categories"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "apps",
+                "categories"
+            ],
+            "title": "AppsAndCategories"
+        },
+        "AppsIndex": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                ".*": {
+                    "$ref": "#/definitions/AppsIndexEntry"
+                }
+            },
+            "title": "Apps"
+        },
+        "AppsIndexEntry": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "categories",
+                "name"
+            ],
+            "title": "AppIndexEntry"
+        },
+        "Categories": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                ".*": {
+                    "$ref": "categories.schema.json#/definitions/Category"
+                }
+            }
+        }
+    }
+}

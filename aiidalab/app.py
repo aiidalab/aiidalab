@@ -10,8 +10,8 @@ import sys
 import tarfile
 import tempfile
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from enum import Enum, auto
+from dataclasses import asdict, dataclass, field
+from enum import Enum, Flag, auto
 from itertools import repeat
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -31,12 +31,16 @@ from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
 from .config import AIIDALAB_APPS
+from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
+from .metadata import Metadata
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
+    PEP508CompliantUrl,
     find_installed_packages,
     load_app_registry_entry,
+    load_app_registry_index,
     run_pip_install,
     run_reentry_scan,
     run_verdi_daemon_restart,
@@ -55,6 +59,14 @@ logger = logging.getLogger(__name__)
 class AppVersion(Enum):
     UNKNOWN = auto()
     NOT_INSTALLED = auto()
+
+
+class AppRemoteUpdateStatus(Flag):
+    NOT_REGISTERED = auto()
+    UP_TO_DATE = auto()
+    UPDATE_AVAILABLE = auto()
+    CANNOT_REACH_REGISTRY = auto()
+    DETACHED = auto()
 
 
 @dataclass
@@ -78,18 +90,54 @@ class _AiidaLabApp:
             },
         )
 
+    @staticmethod
+    def _migrate_registry_entry_to_v1(entry):
+        entry["logo"] = entry["metadata"].pop("logo", None)
+        entry["categories"] = entry["metadata"].pop("categories", None)
+        return entry
+
+    @classmethod
+    def _registry_entry_from_path(cls, path):
+        try:
+            entry = {
+                "name": path.stem,
+                "metadata": asdict(Metadata.parse(path)),
+                "releases": None,
+            }
+            return cls._migrate_registry_entry_to_v1(entry)
+        except TypeError:
+            logger.debug(f"Unable to parse metadata from '{path}'")
+            return {
+                "name": path.stem,
+                "metadata": dict(title=path.stem, description=""),
+                "releases": None,
+                "logo": None,
+                "categories": None,
+            }
+
     @classmethod
     def from_id(cls, app_id, registry_entry=None, apps_path=None):
-        if registry_entry is None:
-            registry_entry = load_app_registry_entry(app_id) or dict(
-                name=app_id, metadata=dict()
-            )
         if apps_path is None:
             apps_path = AIIDALAB_APPS
 
-        return cls.from_registry_entry(
-            path=Path(apps_path).joinpath(app_id), registry_entry=registry_entry
-        )
+        app_path = Path(apps_path).joinpath(app_id)
+
+        if registry_entry is None:
+            local_registry_entry = cls._registry_entry_from_path(app_path)
+            remote_registry_entry = load_app_registry_entry(app_id)
+            registry_entry = remote_registry_entry or local_registry_entry
+
+        return cls.from_registry_entry(path=app_path, registry_entry=registry_entry)
+
+    @property
+    def is_registered(self):
+        try:
+            app_registry_index = load_app_registry_index()
+        except RuntimeError as error:
+            logger.warning(str(error))
+            return None
+        else:
+            return self.name in app_registry_index["apps"]
 
     @property
     def _repo(self):
@@ -99,23 +147,32 @@ class _AiidaLabApp:
             return None
 
     def installed_version(self):
-        if self._repo:
+        if self._repo and self.is_registered:
             if self.dirty():
                 return AppVersion.UNKNOWN
-            try:
-                head_commit = self._repo.head().decode()
-                versions_by_commit = {
-                    split_git_url(release["url"])[1]: version
-                    for version, release in self.releases.items()
-                    if urlsplit(release["url"]).scheme.startswith("git+")
-                }
-                return versions_by_commit.get(head_commit, AppVersion.UNKNOWN)
-            except Exception as error:
-                logger.debug(f"Encountered error while determining version: {error}")
-                return AppVersion.UNKNOWN
+            else:
+                try:
+                    head_commit = self._repo.head().decode()
+                    versions_by_commit = {
+                        split_git_url(release["url"])[1]: version
+                        for version, release in self.releases.items()
+                        if urlsplit(release["url"]).scheme.startswith("git+")
+                    }
+                    return versions_by_commit.get(
+                        head_commit, self.metadata.get("version", AppVersion.UNKNOWN)
+                    )
+                except Exception as error:
+                    logger.debug(
+                        f"Encountered error while determining version: {error}"
+                    )
+                    return AppVersion.UNKNOWN
         elif self.path.exists():
-            return AppVersion.UNKNOWN
+            return self.metadata.get("version", AppVersion.UNKNOWN)
         return AppVersion.NOT_INSTALLED
+
+    def available_versions(self):
+        if self.is_registered:
+            yield from sorted(self.releases, key=parse, reverse=True)
 
     def dirty(self):
         if self._repo:
@@ -124,6 +181,31 @@ class _AiidaLabApp:
     def is_installed(self):
         """The app is installed if the corresponding folder is present."""
         return self.path.exists()
+
+    def remote_update_status(self):
+        if self.is_installed():
+
+            # Check whether app is registered.
+            if self.is_registered is None:
+                return AppRemoteUpdateStatus.CANNOT_REACH_REGISTRY
+
+            if self.is_registered is False:
+                return AppRemoteUpdateStatus.NOT_REGISTERED
+
+            # Check whether the locally installed version is a registered release.
+            installed_version = self.installed_version()
+            if installed_version is AppVersion.UNKNOWN:
+                return AppRemoteUpdateStatus.DETACHED
+
+            # Check whether the locally installed version is the latest release.
+            available_versions = list(sorted(self.releases, key=parse, reverse=True))
+            if len(available_versions) and installed_version != available_versions[0]:
+                return AppRemoteUpdateStatus.UPDATE_AVAILABLE
+
+            # App must be up-to-date.
+            return AppRemoteUpdateStatus.UP_TO_DATE
+
+        return AppRemoteUpdateStatus(0)  # app is not installed
 
     def _move_to_trash(self):
         trash_path = Path.home().joinpath(".trash", f"{self.name}-{uuid4()!s}")
@@ -158,7 +240,13 @@ class _AiidaLabApp:
     def find_incompatibilities(self, version, python_bin=None):
         if python_bin is None:
             python_bin = sys.executable
-        environment = self.releases[version].get("environment")
+
+        if not self.is_registered:
+            assert version == self.installed_version()
+            environment = asdict(Environment.scan(self.path))
+        else:
+            environment = self.releases[version].get("environment")
+
         for key, spec in environment.items():
             if key == "python_requirements":
                 yield from zip(
@@ -252,9 +340,13 @@ class _AiidaLabApp:
         if python_bin is None:
             python_bin = sys.executable
 
+        if isinstance(version, PEP508CompliantUrl):
+            url = version
+        else:
+            url = self.releases[version]["url"]
+
         trash_path = self._move_to_trash()
 
-        url = self.releases[version]["url"]
         split_url = urlsplit(url)
         try:
             if split_url.scheme in ("", "file"):
@@ -443,7 +535,9 @@ class AiidaLabApp(traitlets.HasTraits):
     installed_version = traitlets.Union(
         [traitlets.Unicode(), traitlets.UseEnum(AppVersion)]
     )
-    updates_available = traitlets.Bool(readonly=True, allow_none=True)
+    remote_update_status = traitlets.UseEnum(
+        AppRemoteUpdateStatus, readonly=True, allow_none=True
+    )
     has_prereleases = traitlets.Bool()
     include_prereleases = traitlets.Bool()
 
@@ -565,7 +659,7 @@ class AiidaLabApp(traitlets.HasTraits):
         except KeyError:
             return None  # compatibility indetermined for given version
 
-    def _updates_available(self):
+    def _remote_update_status(self):
         """Determine whether there are updates available.
 
         For this the app must be installed in a known version and there must be
@@ -579,20 +673,22 @@ class AiidaLabApp(traitlets.HasTraits):
         return False
 
     def _refresh_versions(self):
-        all_available_versions = sorted(self._app.releases, key=parse, reverse=True)
-        self.has_prereleases = any(
-            parse(version).is_prerelease for version in all_available_versions
-        )
-        self.installed_version = self._installed_version()
+        self.installed_version = self._app.installed_version()
         self.include_prereleases = self.include_prereleases or (
             isinstance(self.installed_version, str)
             and parse(self.installed_version).is_prerelease
         )
-        self.available_versions = [
-            str(version)
-            for version in all_available_versions
-            if self.include_prereleases or not parse(version).is_prerelease
-        ]
+
+        all_available_versions = list(self._app.available_versions())
+        self.has_prereleases = any(
+            parse(version).is_prerelease for version in all_available_versions
+        )
+        if self._app.is_registered:
+            self.available_versions = [
+                version
+                for version in all_available_versions
+                if self.include_prereleases or not parse(version).is_prerelease
+            ]
 
     @throttled(calls_per_second=1)
     def refresh(self):
@@ -603,17 +699,13 @@ class AiidaLabApp(traitlets.HasTraits):
                 self.set_trait(
                     "compatible", self._is_compatible(self.installed_version)
                 )
-                if self.is_installed() and self._has_git_repo():
-                    self.installed_version = self._installed_version()
-                    modified = self._repo.dirty()
-                    self.set_trait(
-                        "detached",
-                        self.installed_version is AppVersion.UNKNOWN or modified,
-                    )
-                    self.set_trait("updates_available", self._updates_available())
-                else:
-                    self.set_trait("updates_available", None)
-                    self.set_trait("detached", None)
+                self.set_trait("remote_update_status", self._app.remote_update_status())
+                self.set_trait(
+                    "detached",
+                    (self.installed_version is AppVersion.UNKNOWN)
+                    if (self._has_git_repo() and self._app.is_registered)
+                    else None,
+                )
 
     def refresh_async(self):
         """Asynchronized (non-blocking) refresh of the app state."""

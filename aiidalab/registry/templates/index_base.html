@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block css %}
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="shortcut icon" type="image/png" href="static/favicon.png">
+{% endblock css %}
+
+{% block body %}
+<main>
+    <h2>Total number of apps: {{ apps | length }}</h2>
+
+    <h1>
+        Available apps (alphabetically sorted)
+    </h1>
+
+    <div id='entrylist'>
+        {% for app_name, app in apps.items() %}
+        <div class="submenu-entry">
+            <div class="submenu-img">
+                <a href="{{ app.subpage }}">
+                {% if app.metadata.logo %}
+                    <img src="{{ app.metadata.logo }}" alt="{{ app.metadata.title }}">
+                {% else %}
+                    <img src="static/favicon.png" alt="{{ app.metadata.title }}">
+                {% endif %}
+                </a>
+            </div>
+            <div class="submenu-text">
+                <h2><a href="{{ app.subpage }}">{{ app.metadata.title }}</a>
+                {% if app.metadata.categories %}
+                    {% for category in app.metadata.ategories %}
+                        <span class="category">{{ categories[category]["title"] }}</span>
+                    {% endfor %}
+                {% endif %}
+                </h2>
+                <p class="currentstate">Current state: {{ app.metadata.state }}
+                    {% if app.metadata.version %} (version {{ app.metadata.version }}){% endif %}
+                </p>
+
+                {% if app.metadata.description %}
+                    <p class=description>{{app.metadata.description}}</p>
+                {% endif %}
+
+                <p>
+                {% if not app.metadata.categories %}
+                    No categories specified.<br>
+                    Ask the app developers to specify categories in <code>apps.json</code>.
+                {% endif %}
+                </p>
+
+                <!-- Summaryinfo has not yet been introduced to the AiiDAlab app registry -->
+                {% if app.summaryinfo %}
+                    <p class="summaryinfo">
+                        {% for summaryinfoelem in app.summaryinfo %}
+                        <span class="badge">
+                            <span class="badge-left {{summaryinfoelem.colorclass}}">{{summaryinfoelem.text}}</span>
+                            <span class="badge-right">{{summaryinfoelem.count}}</span>
+                        </span>
+                        {% endfor %}
+                    </p>
+                {% endif %}
+                <p class='details'><a href="{{ app.subpage }}">Show app details</a></p>
+            </div>
+        </div>
+        {#
+            {% if not loop.last %}
+            <hr>
+            {% endif %}
+        #}
+        {% endfor %}
+    </div>
+
+</main>
+{% endblock body %}

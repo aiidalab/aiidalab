@@ -10,7 +10,8 @@ Access AiiDAlab
 As a user, you have two options to access AiiDAlab:
 
  1. Log into one of the `open AiiDAlab servers <https://materialscloud.org/aiidalab>`_.
- 2. Run the AiiDAlab docker container on your local machine.
+ 2. Download the `Quantum Mobile Virtual Machine <https://quantum-mobile.readthedocs.io/>`_, open a terminal and run ``aiidalab``.
+ 3. Run the AiiDAlab docker container on your local machine (see below).
 
 .. _usage:run-locally:
 
