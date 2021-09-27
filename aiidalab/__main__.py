@@ -14,6 +14,8 @@ import click
 import pkg_resources
 import requests_mock
 from click_spinner import spinner
+from jsonref import JsonRefError
+from jsonschema.exceptions import RefResolutionError, ValidationError
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
 from tabulate import tabulate
@@ -634,15 +636,27 @@ def build(apps, categories, out, static, templates, validate, mock_schemas):
     """
     maybe_mock = _mock_schemas_endpoints() if mock_schemas else nullcontext()
     with maybe_mock:
-        build_registry(
-            Path(apps),
-            Path(categories),
-            Path(out),
-            Path(static) if static else None,
-            Path(templates) if templates else None,
-            validate_output=validate,
-            validate_input=validate,
-        )
+        try:
+            build_registry(
+                Path(apps),
+                Path(categories),
+                Path(out),
+                Path(static) if static else None,
+                Path(templates) if templates else None,
+                validate_output=validate,
+                validate_input=validate,
+            )
+        except ValidationError as error:
+            raise click.ClickException(f"Error during schema validation:\n{error}")
+        except RefResolutionError as error:
+            raise click.ClickException(
+                f"Failed to resolve schema JSON reference: {error}\n\n"
+                "Maybe try to run with `--mock-schemas-endpoints` ?"
+            )
+        except JsonRefError as error:
+            raise click.ClickException(
+                f"Failed to resolve JSON reference: {error.reference}\n{error.cause}"
+            )
 
 
 if __name__ == "__main__":
