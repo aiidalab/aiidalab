@@ -599,22 +599,33 @@ def parse_app_repo(url):
 
 @registry.command()
 @click.option(
-    "--apps", type=click.Path(exists=True, dir_okay=False), default="apps.yaml"
+    "--apps",
+    type=click.Path(exists=True, dir_okay=False),
+    default="apps.yaml",
+    help="Path to the registry's apps.yaml file.",
+    show_default=True,
 )
 @click.option(
     "--categories",
     type=click.Path(exists=True, dir_okay=False),
     default="categories.yaml",
+    help="Path to the registry's categories.yaml file.",
+    show_default=True,
 )
 @click.option(
-    "-o", "--out", type=click.Path(file_okay=False, writable=True), default="build/"
+    "-o",
+    "--out",
+    type=click.Path(file_okay=False, writable=True),
+    default="build/",
+    show_default=True,
+    help="Path to the base directory of where the registry's HTML and API pages are generated.",
 )
 @click.option(
     "--html-path",
     type=str,
-    help="Relative path to the build directory at which the html pages are generated. "
+    help="Relative path to the build directory at which the HTML pages are generated. "
     "Set to an empty value to skip the build of HTML pages entirely.",
-    default="html/",
+    default=".",
     show_default=True,
 )
 @click.option(
@@ -622,7 +633,7 @@ def parse_app_repo(url):
     type=str,
     help="Relative path to the build directory at which the API pages are generated. "
     "Set to an empty value to skip the build of API pages entirely.",
-    default="html/api/v1",
+    default="api/v1",
     show_default=True,
 )
 @click.option("--static", type=click.Path(file_okay=False, exists=True))
@@ -656,7 +667,7 @@ def build(
 
     Example:
 
-        build --apps=apps.yaml --categories=categories.yaml --out=./html/
+        build --apps=apps.yaml --categories=categories.yaml --out=./build/
     """
     if any(path and Path(path).is_absolute() for path in (html_path, api_path)):
         raise click.ClickException("The html- and api-paths must be relative paths.")
