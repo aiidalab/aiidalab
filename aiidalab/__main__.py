@@ -612,14 +612,16 @@ def parse_app_repo(url):
 @click.option(
     "--html-path",
     type=str,
-    help="Relative path to the build directory at which the html pages are generated.",
+    help="Relative path to the build directory at which the html pages are generated. "
+    "Set to an empty value to skip the build of HTML pages entirely.",
     default="html/",
     show_default=True,
 )
 @click.option(
     "--api-path",
     type=str,
-    help="Relative path to the build directory at which the API pages are generated.",
+    help="Relative path to the build directory at which the API pages are generated. "
+    "Set to an empty value to skip the build of API pages entirely.",
     default="html/api/v1",
     show_default=True,
 )
@@ -656,7 +658,7 @@ def build(
 
         build --apps=apps.yaml --categories=categories.yaml --out=./html/
     """
-    if any(Path(path).is_absolute() for path in (html_path, api_path)):
+    if any(path and Path(path).is_absolute() for path in (html_path, api_path)):
         raise click.ClickException("The html- and api-paths must be relative paths.")
 
     maybe_mock = _mock_schemas_endpoints() if mock_schemas else nullcontext()
@@ -666,8 +668,8 @@ def build(
                 apps_path=Path(apps),
                 categories_path=Path(categories),
                 base_path=Path(out),
-                html_path=Path(html_path),
-                api_path=Path(api_path),
+                html_path=Path(html_path) if html_path else None,
+                api_path=Path(api_path) if api_path else None,
                 static_path=Path(static) if static else None,
                 templates_path=Path(templates) if templates else None,
                 validate_output=validate,
