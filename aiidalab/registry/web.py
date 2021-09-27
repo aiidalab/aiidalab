@@ -18,7 +18,8 @@ from .html import build_html
 logger = logging.getLogger(__name__)
 
 
-def _copy_static_tree_from_path(base_path, static_path):
+def copy_static_tree_from_path(base_path, static_path):
+
     for root, _, files in os.walk(static_path):
         # Create directory
         base_path.joinpath(Path(root).relative_to(static_path)).mkdir(
@@ -46,22 +47,17 @@ def _walk_pkg_resources(package, root):
             yield from _walk_pkg_resources(package, os.path.join(root, dir_path))
 
 
-def _copy_static_tree_from_package(base_path, root="static", package=__package__):
-    for directory, files in _walk_pkg_resources(package, root):
+def copy_static_tree_from_package(base_path, root="static"):
+    for directory, files in _walk_pkg_resources(__package__, root):
         stem = base_path.joinpath(Path(directory).relative_to(root))
         stem.mkdir(parents=True, exist_ok=True)
         for fn in files:
-            src = pkg_resources.resource_stream(package, os.path.join(directory, fn))
+            src = pkg_resources.resource_stream(
+                __package__, os.path.join(directory, fn)
+            )
             dst = stem.joinpath(fn)
             dst.write_bytes(src.read())
             yield dst
-
-
-def copy_static_tree(base_path, static_path):
-    if static_path is None:
-        yield from _copy_static_tree_from_package(base_path)
-    else:
-        yield from _copy_static_tree_from_path(base_path, static_path)
 
 
 def build(
@@ -100,8 +96,10 @@ def build(
     # Build the website and API endpoints.
     new_paths = list()
     for outfile in chain(
+        # Copy static files from package
+        copy_static_tree_from_package(base_path=root),
         # Copy static files (if specified)
-        copy_static_tree(base_path=root, static_path=static_path),
+        copy_static_tree_from_path(root, static_path) if static_path else (),
         # Build the html pages.
         build_html(
             base_path=root,
