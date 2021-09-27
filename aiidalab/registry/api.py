@@ -17,7 +17,7 @@ def build_api_v1(api_path, apps_index, apps_data, scan_app_repository):
     outfile.write_text(rendered, encoding="utf-8")
     yield outfile
 
-    api_path.joinpath("apps").mkdir(exist_ok=True)
+    api_path.joinpath("apps").mkdir()
     for app_id, app_data in apps_data.items():
         # Write apps/{appId}.json
         outfile = api_path / "apps" / f"{app_id}.json"

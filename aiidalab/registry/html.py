@@ -34,7 +34,7 @@ def build_html(base_path, apps_index, apps_data, templates_path):
     main_index_template = env.get_template("index.html")
 
     # Make single-entry pages based on app_page.html
-    base_path.joinpath("apps").mkdir(exist_ok=True)
+    base_path.joinpath("apps").mkdir()
     html_template_data = defaultdict(dict)
 
     for app_id in apps_index["apps"]:
@@ -43,7 +43,7 @@ def build_html(base_path, apps_index, apps_data, templates_path):
         html_template_data[app_id]["metadata"] = apps_data[app_id]["metadata"]
         html_template_data[app_id]["releases"] = apps_data[app_id]["releases"]
 
-        subpage.parent.mkdir(exist_ok=True)
+        subpage.parent.mkdir()
         subpage.write_text(
             app_page_template.render(
                 category_map=apps_index["categories"], **html_template_data[app_id]
