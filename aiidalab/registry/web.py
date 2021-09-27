@@ -93,6 +93,7 @@ def build(
     )
 
     # Build the website and API endpoints.
+    logger.info(f"Building registry at: {base_path.resolve()}")
     for outfile in chain(
         # Build the html pages if the html path is specified
         chain(
