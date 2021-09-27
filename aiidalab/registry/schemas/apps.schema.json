@@ -1,0 +1,70 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://raw.githubusercontent.com/aiidalab/aiidalab/v21.10.0/aiidalab/registry/schemas/apps.schema.json",
+    "$ref": "#/definitions/Apps",
+    "definitions": {
+        "App": {
+            "type": "object",
+            "properties": {
+                "releases": {
+                    "$ref": "#definitions/ReleaseSpecifications"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "releases"
+            ],
+            "title": "AiiDAlab apps registry app entry"
+        },
+        "Apps": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                ".*": {
+                    "$ref": "#/definitions/App"
+                }
+            },
+            "propertyNames": {
+                "pattern": "^[A-Za-z][A-Za-z0-9-_]*$"
+            },
+            "title": "Schema for the AiiDAlab apps registry."
+        },
+        "ReleaseSpecification": {
+            "type": "object",
+            "properties": {
+                "environment": {
+		    "$ref": "environment.schema.json#/definitions/Environment"
+                },
+                "metadata": {
+		    "$ref": "metadata.schema.json#/definitions/Welcome"
+                },
+                "url": {
+                    "$ref": "#definitions/ReleaseSpecificationUrl"
+                },
+                "version": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "url"
+            ]
+        },
+        "ReleaseSpecificationUrl": {
+            "type": "string"
+        },
+        "ReleaseSpecifications": {
+            "type": "array",
+            "items": {
+                "oneOf": [
+                    {
+                        "$ref": "#definitions/ReleaseSpecification"
+                    },
+                    {
+                        "$ref": "#definitions/ReleaseSpecificationUrl"
+                    }
+                ]
+            }
+        }
+    }
+}

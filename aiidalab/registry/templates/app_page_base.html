@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+
+{% block css %}
+    <link rel="stylesheet" href="../../static/css/style.css">
+    <link rel="shortcut icon" type="image/png" href="../../static/favicon.png">
+{% endblock css %}
+
+{% block body %}
+<main>
+    <p></p>
+    <p class="go-back"><a href="../../index.html">&lt; Go back to the app summary</a></p>
+
+    <div class="submenu-entry">
+        <div class="submenu-img">
+            {% if metadata.logo %}
+                <img src="{{ metadata.logo }}" alt="{{ metadata.title }}">
+            {% else %}
+                <img src="../../static/favicon.png" alt="{{ metadata.title }}">
+            {% endif %}
+        </div>
+        <div class="app-card-text">
+            <h1>{{ metadata.title }}</h1>
+            <p class="sub-header">
+            {% if metadata.categories %}
+                {% for category in metadata.categories %}
+                    <span class="category">{{ category_map[category]["title"] }}</span>
+                {% endfor %}
+            {% else %}
+                No categories specified.<br>
+                Ask the app developers to specify categories in <code>apps.json</code>.
+            {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <h2>General information</h2>
+
+    {% if metadata.external_url %}
+        <p>
+            <strong>App homepage</strong>: <a href="{{ metadata.external_url }}" target="_blank">Go to app homepage</a>
+        <p>
+    {% endif %}
+
+    {% if metadata.documentation_url %}
+        <p>
+            <strong>Documentation</strong>: <a href="{{ metadata.documentation_url }}" target="_blank">Go to app documentation</a>
+        <p>
+    {% else %}
+        <p>
+            <strong>Documentation</strong>: Documentation not provided by the app author
+        <p>
+    {% endif %}
+
+    <h2>
+        Detailed information
+    </h2>
+    {% if metadata %}
+    <div id='description'>
+        <p>
+            <strong>Author(s)</strong>: {{ metadata.authors }}
+        </p>
+        <p>
+            <strong>Short description</strong>: {{ metadata.description }}
+        </p>
+        <p>
+	<strong>Most recent version</strong>: {{ releases | sort_semantic | first }}
+        </p>
+
+    </div>
+    {% else %}
+    <div id='description'>
+        <p>
+            Unable to retrieve meta information for this app.
+        </p>
+    </div>
+    {% endif %}
+
+</main>
+
+{% endblock body %}

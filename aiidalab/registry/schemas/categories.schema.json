@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$ref": "#/definitions/Welcome",
+    "definitions": {
+        "Category": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "description",
+                "title"
+            ],
+            "title": "Category"
+        },
+        "Welcome": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                "^[a-z][a-z0-9-_]*$": {
+                    "$ref": "#/definitions/Category"
+                }
+            },
+            "title": "JSON-schema for the AiiDAlab categories registry."
+        }
+    }
+}

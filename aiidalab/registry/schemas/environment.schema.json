@@ -1,0 +1,34 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$ref": "#/definitions/Environment",
+    "definitions": {
+        "Environment": {
+            "type": "object",
+            "properties": {
+                "jupyter_requirements": {
+                    "$ref": "#/definitions/JupyterRequirements"
+                },
+                "python_requirements": {
+                    "$ref": "#/definitions/Requirements"
+                }
+            },
+            "additionalProperties": false
+        },
+        "JupyterRequirements": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Requirement"
+            }
+        },
+        "Requirement": {
+            "type": "string"
+        },
+        "Requirements": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Requirement"
+            },
+            "title": "Requirements"
+        }
+    }
+}
