@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://raw.githubusercontent.com/aiidalab/aiidalab/master/aiidalab/registry/schemas/v2/apps.schema.json",
+    "$id": "https://raw.githubusercontent.com/aiidalab/aiidalab/v21.10.0/aiidalab/registry/schemas/apps.schema.json",
     "$ref": "#/definitions/Apps",
     "definitions": {
         "App": {

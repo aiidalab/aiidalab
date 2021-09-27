@@ -33,7 +33,7 @@ from .utils import parse_app_repo as _parse_app_repo
 logging.basicConfig(level=logging.INFO)
 
 
-SCHEMAS_CANONICAL_BASE_URL = "https://raw.githubusercontent.com/aiidalab/aiidalab/master/aiidalab/registry/schemas/v2"
+SCHEMAS_CANONICAL_BASE_URL = "https://raw.githubusercontent.com/aiidalab/aiidalab/v21.10.0/aiidalab/registry/schemas"
 
 
 ICON_DETACHED = "\U000025AC"  # ▬
@@ -545,9 +545,7 @@ def uninstall(app_name, yes, dry_run, force):
 def _mock_schemas_endpoints():
     schema_paths = [
         path
-        for path in pkg_resources.resource_listdir(
-            f"{__package__}.registry", "schemas/v2"
-        )
+        for path in pkg_resources.resource_listdir(f"{__package__}.registry", "schemas")
         if path.endswith(".schema.json")
     ]
 
@@ -555,7 +553,7 @@ def _mock_schemas_endpoints():
         for schema_path in schema_paths:
             schema = json.loads(
                 pkg_resources.resource_string(
-                    f"{__package__}.registry", f"schemas/v2/{schema_path}"
+                    f"{__package__}.registry", f"schemas/{schema_path}"
                 )
             )
             mocker.get(

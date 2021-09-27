@@ -35,7 +35,7 @@ class AppRegistrySchemas:
             **{
                 field.name: json.loads(
                     pkg_resources.resource_string(
-                        "aiidalab.registry", f"schemas/v2/{field.name}.schema.json"
+                        "aiidalab.registry", f"schemas/{field.name}.schema.json"
                     )
                 )
                 for field in fields(cls)
