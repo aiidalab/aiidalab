@@ -607,7 +607,21 @@ def parse_app_repo(url):
     default="categories.yaml",
 )
 @click.option(
-    "-o", "--out", type=click.Path(file_okay=False, writable=True), default="html/"
+    "-o", "--out", type=click.Path(file_okay=False, writable=True), default="build/"
+)
+@click.option(
+    "--html-path",
+    type=str,
+    help="Relative path to the build directory at which the html pages are generated.",
+    default="html/",
+    show_default=True,
+)
+@click.option(
+    "--api-path",
+    type=str,
+    help="Relative path to the build directory at which the API pages are generated.",
+    default="html/api/v1",
+    show_default=True,
 )
 @click.option("--static", type=click.Path(file_okay=False, exists=True))
 @click.option("-t", "--templates", type=click.Path(file_okay=False, exists=True))
@@ -625,22 +639,37 @@ def parse_app_repo(url):
     is_flag=True,
     help="Mock the schemas endpoints such that the local versions are used insted of the published ones.",
 )
-def build(apps, categories, out, static, templates, validate, mock_schemas):
+def build(
+    apps,
+    categories,
+    out,
+    html_path,
+    api_path,
+    static,
+    templates,
+    validate,
+    mock_schemas,
+):
     """Build the app store website and API endpoints.
 
     Example:
 
         build --apps=apps.yaml --categories=categories.yaml --out=./html/
     """
+    if any(Path(path).is_absolute() for path in (html_path, api_path)):
+        raise click.ClickException("The html- and api-paths must be relative paths.")
+
     maybe_mock = _mock_schemas_endpoints() if mock_schemas else nullcontext()
     with maybe_mock:
         try:
             build_registry(
-                Path(apps),
-                Path(categories),
-                Path(out),
-                Path(static) if static else None,
-                Path(templates) if templates else None,
+                apps_path=Path(apps),
+                categories_path=Path(categories),
+                base_path=Path(out),
+                html_path=Path(html_path),
+                api_path=Path(api_path),
+                static_path=Path(static) if static else None,
+                templates_path=Path(templates) if templates else None,
                 validate_output=validate,
                 validate_input=validate,
             )

@@ -47,9 +47,9 @@ def _walk_pkg_resources(package, root):
             yield from _walk_pkg_resources(package, os.path.join(root, dir_path))
 
 
-def copy_static_tree_from_package(base_path, root="static"):
+def copy_static_tree_from_package(html_path, root="static"):
     for directory, files in _walk_pkg_resources(__package__, root):
-        stem = base_path.joinpath(Path(directory).relative_to(root))
+        stem = html_path.joinpath(Path(directory).relative_to(root))
         stem.mkdir(parents=True, exist_ok=True)
         for fn in files:
             src = pkg_resources.resource_stream(
@@ -63,14 +63,15 @@ def copy_static_tree_from_package(base_path, root="static"):
 def build(
     apps_path: Path,
     categories_path: Path,
+    base_path: Path,
     html_path: Path,
+    api_path: Path,
     static_path: Path = None,
     templates_path: Path = None,
     validate_output: bool = True,
     validate_input: bool = False,
 ):
     """Build the app registry website (including schema files)."""
-
     # Parse the schemas shipped with the package.
     schemas = AppRegistrySchemas.from_package()
 
@@ -82,12 +83,10 @@ def build(
     if validate_input:
         data.validate(schemas)
 
-    root = html_path
-
-    # Scan previous build (if present) and re-create root directory.
+    # Scan previous build (if present) and re-create the base directory.
     logger.info("Scanning current directory...")
-    previous_paths = list(root.glob("**/*"))
-    root.mkdir(parents=True, exist_ok=True)
+    previous_paths = list(base_path.glob("**/*"))
+    base_path.mkdir(parents=True, exist_ok=True)
 
     apps_index, apps_data = generate_apps_index(
         data=data, scan_app_repository=parse_app_repo
@@ -97,39 +96,41 @@ def build(
     new_paths = list()
     for outfile in chain(
         # Copy static files from package
-        copy_static_tree_from_package(base_path=root),
+        copy_static_tree_from_package(html_path=base_path / html_path),
         # Copy static files (if specified)
-        copy_static_tree_from_path(root, static_path) if static_path else (),
+        copy_static_tree_from_path(base_path / html_path, static_path)
+        if static_path
+        else (),
         # Build the html pages.
         build_html(
-            base_path=root,
+            base_path=base_path / html_path,
             apps_index=apps_index,
             apps_data=apps_data,
             templates_path=templates_path,
         ),
         # Build the API endpoints.
         api.build_api_v1(
-            base_path=root / "api" / "v1",
+            api_path=base_path / api_path,
             apps_index=apps_index,
             apps_data=apps_data,
             scan_app_repository=parse_app_repo,
         ),
     ):
         new_paths.append(outfile)
-        logger.info(f"  - {outfile.relative_to(root)}")
+        logger.info(f"  - {outfile.relative_to(base_path)}")
 
     # Remove all obsolete files:
     for path in set(previous_paths).difference(new_paths):
         if path.is_file():
-            logger.info(f"  - rm {path.relative_to(root)}")
+            logger.info(f"  - rm {path.relative_to(base_path)}")
             path.unlink()
 
     # Remove all obsolete directories:
     previous_dirs = {path for path in previous_paths if path.is_dir()}
     current_dirs = {parent for path in new_paths for parent in path.parents}
     for path in previous_dirs.difference(current_dirs):
-        logger.info(f"  - rmdir {path.relative_to(root)}")
+        logger.info(f"  - rmdir {path.relative_to(base_path)}")
         path.rmdir()
 
     if validate_output:
-        api.validate_api_v1(base_path=root / "api" / "v1", schemas=schemas)
+        api.validate_api_v1(api_path=base_path / api_path, schemas=schemas)
