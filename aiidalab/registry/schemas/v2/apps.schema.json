@@ -33,10 +33,10 @@
             "type": "object",
             "properties": {
                 "environment": {
-                    "$ref": "https://raw.githubusercontent.com/aiidalab/aiidalab/master/aiidalab/registry/schemas/v2/environment.schema.json#definitions/Environment"
+		    "$ref": "environment.schema.json#/definitions/Environment"
                 },
                 "metadata": {
-                    "$ref": "https://raw.githubusercontent.com/aiidalab/aiidalab/master/aiidalab/registry/schemas/v2/metadata.schema.json#/definitions/Welcome"
+		    "$ref": "metadata.schema.json#/definitions/Welcome"
                 },
                 "url": {
                     "$ref": "#definitions/ReleaseSpecificationUrl"

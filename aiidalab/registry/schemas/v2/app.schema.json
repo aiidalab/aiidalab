@@ -7,7 +7,7 @@
             "type": "object",
             "properties": {
                 "metadata": {
-                    "$ref": "https://raw.githubusercontent.com/aiidalab/aiidalab/master/aiidalab/registry/schemas/v2/metadata.schema.json#/definitions/Welcome"
+		    "$ref": "metadata.schema.json#/definitions/Welcome"
                 },
                 "name": {
                     "type": "string"
@@ -34,10 +34,10 @@
         "Release": {
             "properties": {
                 "metadata": {
-                    "$ref": "https://raw.githubusercontent.com/aiidalab/aiidalab/master/aiidalab/registry/schemas/v2/metadata.schema.json#/definitions/Welcome"
+		    "$ref": "metadata.schema.json#/definitions/Welcome"
                 },
                 "environment": {
-                    "$ref": "https://raw.githubusercontent.com/aiidalab/aiidalab/master/aiidalab/registry/schemas/v2/environment.schema.json#/definitions/Environment"
+		    "$ref": "environment.schema.json#/definitions/Environment"
                 },
                 "url": {
                     "type": "string"

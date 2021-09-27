@@ -31,6 +31,9 @@ from .utils import parse_app_repo as _parse_app_repo
 logging.basicConfig(level=logging.INFO)
 
 
+SCHEMAS_CANONICAL_BASE_URL = "https://raw.githubusercontent.com/aiidalab/aiidalab/master/aiidalab/registry/schemas/v2"
+
+
 ICON_DETACHED = "\U000025AC"  # ▬
 ICON_MODIFIED = "\U00002022"  # •
 
@@ -553,7 +556,10 @@ def _mock_schemas_endpoints():
                     f"{__package__}.registry", f"schemas/v2/{schema_path}"
                 )
             )
-            mocker.get(schema["$id"], text=json.dumps(schema))
+            mocker.get(
+                schema.get("$id", f"{SCHEMAS_CANONICAL_BASE_URL}/{schema_path}"),
+                text=json.dumps(schema),
+            )
         yield
 
 

@@ -55,7 +55,7 @@
             "additionalProperties": false,
             "patternProperties": {
                 ".*": {
-                    "$ref": "https://aiidalab.github.io/aiidalab-registry/schemas/v1/categories.schema.json#/definitions/Category"
+                    "$ref": "categories.schema.json#/definitions/Category"
                 }
             }
         }
