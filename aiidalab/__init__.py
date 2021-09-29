@@ -3,4 +3,4 @@ from .config import _DEVELOP_MODE as DEVELOP_MODE
 
 __all__ = ["DEVELOP_MODE"]
 
-__version__ = "21.10.0"
+__version__ = "21.10.1"
