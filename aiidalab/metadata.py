@@ -20,10 +20,12 @@ def _map_development_state(classifiers):
         for classifier in (
             "Development Status :: 2 - Pre-Alpha",
             "Development Status :: 3 - Alpha",
-            "development" "Development Status :: 4 - Beta",
+            "Development Status :: 4 - Beta",
         )
     ):
         return "development"
+    else:
+        return "registered"
 
 
 def _parse_config_dict(dict_):

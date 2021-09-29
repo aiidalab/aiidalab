@@ -18,7 +18,11 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "sphinxcontrib.contentui",
+    "sphinx_panels",
 ]
+
+# The pydata-sphinx-theme already loads the bootstrap css.
+panels_add_bootstrap_css = False
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.7", None),
