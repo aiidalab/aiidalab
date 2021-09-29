@@ -24,6 +24,8 @@ def _map_development_state(classifiers):
         )
     ):
         return "development"
+    else:
+        return "registered"
 
 
 def _parse_config_dict(dict_):
