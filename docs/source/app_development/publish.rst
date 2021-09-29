@@ -79,6 +79,8 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
 
    ---
 
+.. _develop-apps:publish-app:register:
+
    **Register the app**
 
    The app registry uses a *pull* approach, meaning it regularly scans the registered app repositories for new releases. [#f5]_
