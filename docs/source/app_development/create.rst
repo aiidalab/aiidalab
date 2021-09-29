@@ -26,7 +26,7 @@ There are two approaches to develop a new AiiDAlab app:
 Create app with cookiecutter
 ============================
 
-Open the terminal from the AiiDAlab app start page by clicking on the "Terminal" :fa:`terminal` icon on the start page.
+Open the terminal from the AiiDAlab app start page by clicking on the "Terminal" (:fa:`terminal`) icon on the start page.
 
 Then, execute the following steps:
 
@@ -101,6 +101,7 @@ Typically one would prefer to use the cookie-cutter to create a new app, but her
    .. tabbed:: Jupyter interface
 
       #. Open the file manager by clicking on the :fa:`file-alt` icon on the AiiDAlab start page.
+      #. Navigate to the :file:`~/apps/my-app` directory.
       #. Click on "New" and then "Text file" to create a new file.
       #. Rename the file to :file:`setup.cfg` by clicking on :file:`untitled.txt` at the top and entering the new name.
       #. Copy the following snippet into the file and adjust it for your needs:
