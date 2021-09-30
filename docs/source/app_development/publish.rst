@@ -79,7 +79,7 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
 
    ---
 
-.. _develop-apps:publish-app:register:
+   .. _develop-apps:publish-app:register:
 
    **Register the app**
 
