@@ -336,7 +336,7 @@ class _AiidaLabApp:
             try:
                 version = list(sorted(self.releases, key=parse))[-1]
             except IndexError:
-                raise ValueError("No versions available for '{self}'.")
+                raise ValueError(f"No versions available for '{self}'.")
         if python_bin is None:
             python_bin = sys.executable
 
