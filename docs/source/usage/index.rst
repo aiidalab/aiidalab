@@ -7,7 +7,7 @@ User guide
 Access AiiDAlab
 ***************
 
-As a user, you have two options to access AiiDAlab:
+As a user, you have three options to access AiiDAlab:
 
  1. Log into one of the `open AiiDAlab servers <https://materialscloud.org/aiidalab>`_.
  2. Download the `Quantum Mobile Virtual Machine <https://quantum-mobile.readthedocs.io/>`_, open a terminal and run ``aiidalab``.
