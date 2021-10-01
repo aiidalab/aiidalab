@@ -25,11 +25,11 @@ We provide `instructions and deployment scripts <https://github.com/aiidalab/aii
 
 .. _admin-guide:maintain-app-registry:
 
-Maintaining an apps registry
-============================
+Maintaining an app registry
+===========================
 
 By default, AiiDAlab is configured to use the `AiiDAlab application registry <https://aiidalab.github.io/aiidalab-registry/>`_ maintained by the AiiDAlab team for installing new apps.
-However, organizations are encouraged to maintain their own registry with apps suitable for their organization's needs.
+We encourage organizations to use this registry and register their apps there, unless they have specific reasons for needing to maintain their own registry.
 Here we describe how to maintain and publish a dedicated AiiDAlab apps registry.
 
 .. panels::
@@ -39,6 +39,11 @@ Here we describe how to maintain and publish a dedicated AiiDAlab apps registry.
    .. _admin-guide:maintain-app-registry:create:
 
    **Create the new registry**
+
+   .. tip::
+
+       Instead of creating a new repository from scratch, you can also fork the official `AiiDAlab registry repository <https://github.com/aiidalab/aiidalab-registry>`_ and adjust it to your needs.
+
 
    To create a registry, first make sure to install the ``aiidalab`` package on the machine that you want to *build* the registry on.
 
@@ -85,10 +90,6 @@ Here we describe how to maintain and publish a dedicated AiiDAlab apps registry.
          description: Apps for performing quantum-mechanical calculations.
          title: Quantum
 
-   .. tip::
-
-        Instead of creating a new repository from scratch, you can also fork the official `AiiDAlab registry repository <https://github.com/aiidalab/aiidalab-registry>`_ and adjust it for your needs.
-
    ---
 
    .. _admin-guide:maintain-app-registry:build:
@@ -110,6 +111,11 @@ Here we describe how to maintain and publish a dedicated AiiDAlab apps registry.
    .. _admin-guide:maintain-app-registry:serve:
 
    **Serve the new registry**
+
+     .. note::
+
+         The official `AiiDAlab registry repository <https://github.com/aiidalab/aiidalab-registry>`_ is automatically published on `GitHub pages <https://pages.github.com/>`__ via a `GitHub actions <https://github.com/features/actions>`__ integration.
+         If you forked the repository, it should automatically publish the registry under your GitHub pages domain.
 
    The registry is generated via static HTML pages and can therefore be easily published with any standard web server.
    For a quick test, you could use the Python built-in web server, with:
@@ -135,11 +141,6 @@ Here we describe how to maintain and publish a dedicated AiiDAlab apps registry.
 
         First, `install ngrok <https://ngrok.com/download>`__, then start your local web server as described above, and in a separate terminal run ``ngrok http 8000``.
         This will give you a public address that you can use as the base URL for your registry address.
-
-   .. note::
-
-        The official `AiiDAlab registry repository <https://github.com/aiidalab/aiidalab-registry>`_ is automatically published on `GitHub pages <https://pages.github.com/>`__ via a `GitHub actions <https://github.com/features/actions>`__ integration.
-        If you forked the repository, it should automatically publish the registry under your GitHub pages domain.
 
    ---
 
