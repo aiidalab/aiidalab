@@ -108,13 +108,14 @@ def git_clone(url, commit, path):
             encoding="utf-8",
             check=True,
         )
-        run(
-            ["git", "checkout", str(commit)],
-            capture_output=True,
-            encoding="utf-8",
-            check=True,
-            cwd=str(path),
-        )
+        if commit is not None:
+            run(
+                ["git", "checkout", str(commit)],
+                capture_output=True,
+                encoding="utf-8",
+                check=True,
+                cwd=str(path),
+            )
     except CalledProcessError as error:
         raise RuntimeError(error.stderr)
 
