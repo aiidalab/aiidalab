@@ -71,7 +71,7 @@ def _list_apps(apps_path):
 @click.version_option(version=__version__, prog_name="AiiDAlab")
 @click.option("-v", "--verbose", count=True)
 def cli(verbose):
-    logging.basicConfig(level=logging.WARNING - 10 * verbose)
+    logging.basicConfig(level=max(0, logging.WARNING - 10 * verbose))
 
 
 @cli.command()
