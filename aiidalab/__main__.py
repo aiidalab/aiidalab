@@ -30,9 +30,6 @@ from .registry import build as build_registry
 from .utils import PEP508CompliantUrl, load_app_registry_index
 from .utils import parse_app_repo as _parse_app_repo
 
-logging.basicConfig(level=logging.INFO)
-
-
 SCHEMAS_CANONICAL_BASE_URL = "https://raw.githubusercontent.com/aiidalab/aiidalab/v21.10.0/aiidalab/registry/schemas"
 
 
@@ -72,8 +69,9 @@ def _list_apps(apps_path):
 
 @click.group()
 @click.version_option(version=__version__, prog_name="AiiDAlab")
-def cli():
-    pass
+@click.option("-v", "--verbose", count=True)
+def cli(verbose):
+    logging.basicConfig(level=max(0, logging.WARNING - 10 * verbose))
 
 
 @cli.command()
