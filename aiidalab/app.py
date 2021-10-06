@@ -342,11 +342,20 @@ class _AiidaLabApp:
         git_clone(base_url, ref, self.path)
 
     def install(
-        self, version=None, python_bin=None, install_dependencies=True, stdout=None
+        self,
+        version=None,
+        python_bin=None,
+        install_dependencies=True,
+        stdout=None,
+        prereleases=False,
     ):
         if version is None:
             try:
-                version = list(sorted(self.releases, key=parse))[-1]
+                version = [
+                    version
+                    for version in sorted(self.releases, key=parse)
+                    if prereleases or not parse(version).is_prerelease
+                ][-1]
             except IndexError:
                 raise ValueError(f"No versions available for '{self}'.")
         if python_bin is None:
@@ -624,7 +633,9 @@ class AiidaLabApp(traitlets.HasTraits):
     def install_app(self, version=None, stdout=None):
         """Installing the app."""
         with self._show_busy():
-            self._app.install(version=version, stdout=stdout)
+            self._app.install(
+                version=version, stdout=stdout, prereleases=self.include_prereleases
+            )
             FIND_INSTALLED_PACKAGES_CACHE.clear()
             self.refresh()
             return self._installed_version()
