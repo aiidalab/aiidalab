@@ -182,7 +182,15 @@ class _AiidaLabApp:
         """The app is installed if the corresponding folder is present."""
         return self.path.exists()
 
-    def remote_update_status(self):
+    def remote_update_status(self, prereleases=False):
+        """Determine the remote update satus.
+
+        Arguments:
+            prereleases (Bool):
+                Set to True to include available preleases. Defaults to False.
+        Returns:
+            AppRemoteUpdateStatus
+        """
         if self.is_installed():
 
             # Check whether app is registered.
@@ -198,7 +206,11 @@ class _AiidaLabApp:
                 return AppRemoteUpdateStatus.DETACHED
 
             # Check whether the locally installed version is the latest release.
-            available_versions = list(sorted(self.releases, key=parse, reverse=True))
+            available_versions = [
+                version
+                for version in sorted(self.releases, key=parse, reverse=True)
+                if prereleases or not parse(version).is_prerelease
+            ]
             if len(available_versions) and installed_version != available_versions[0]:
                 return AppRemoteUpdateStatus.UPDATE_AVAILABLE
 
@@ -330,11 +342,20 @@ class _AiidaLabApp:
         git_clone(base_url, ref, self.path)
 
     def install(
-        self, version=None, python_bin=None, install_dependencies=True, stdout=None
+        self,
+        version=None,
+        python_bin=None,
+        install_dependencies=True,
+        stdout=None,
+        prereleases=False,
     ):
         if version is None:
             try:
-                version = list(sorted(self.releases, key=parse))[-1]
+                version = [
+                    version
+                    for version in sorted(self.releases, key=parse)
+                    if prereleases or not parse(version).is_prerelease
+                ][-1]
             except IndexError:
                 raise ValueError(f"No versions available for '{self}'.")
         if python_bin is None:
@@ -612,7 +633,9 @@ class AiidaLabApp(traitlets.HasTraits):
     def install_app(self, version=None, stdout=None):
         """Installing the app."""
         with self._show_busy():
-            self._app.install(version=version, stdout=stdout)
+            self._app.install(
+                version=version, stdout=stdout, prereleases=self.include_prereleases
+            )
             FIND_INSTALLED_PACKAGES_CACHE.clear()
             self.refresh()
             return self._installed_version()
@@ -699,7 +722,12 @@ class AiidaLabApp(traitlets.HasTraits):
                 self.set_trait(
                     "compatible", self._is_compatible(self.installed_version)
                 )
-                self.set_trait("remote_update_status", self._app.remote_update_status())
+                self.set_trait(
+                    "remote_update_status",
+                    self._app.remote_update_status(
+                        prereleases=self.include_prereleases
+                    ),
+                )
                 self.set_trait(
                     "detached",
                     (self.installed_version is AppVersion.UNKNOWN)
