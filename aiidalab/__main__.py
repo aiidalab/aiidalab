@@ -88,6 +88,12 @@ def info():
     "--pre",
     "prereleases",
     is_flag=True,
+    # The default value for this flag is 'None', because we do not explicitly
+    # _disallow_ prereleases when the option is not set, but it depends on the
+    # provided requirement. That means when the query includes a prerelease
+    # version (e.g. my-app>=1.0rc), then results will include prereleases,
+    # whether this option is set or not. Otherwise, the results will only
+    # include prereleases when this option is set.
     default=None,
     help="Include prereleases among the search candidates. Note: Prereleases "
     "are automatically included if an app has only prereleases.",
@@ -361,6 +367,14 @@ def _find_version_to_install(
     "--pre",
     "prereleases",
     is_flag=True,
+    # The default value for this flag is 'None', because we do not explicitly
+    # _disallow_ prereleases when the option is not set, but it depends on the
+    # provided requirement. That means when the query includes a prerelease
+    # version (e.g. my-app>=1.0rc), then the list of potential installation
+    # candidates will include prereleases regardless of whether this option is
+    # set or not.  Otherwise, prereleases are only considered when this option
+    # is set.
+    default=None,
     help="Include prereleases among the candidates for installation.",
 )
 def install(
