@@ -75,7 +75,7 @@ class PEP508CompliantUrl(str):
     pass
 
 
-def parse_app_repo(url, search_dirs=None, metadata_fallback=None):
+def parse_app_repo(url, metadata_fallback=None):
     """Parse an app repo for metadata and other information.
 
     Use this function to parse a local or remote app repository for the app
@@ -91,22 +91,17 @@ def parse_app_repo(url, search_dirs=None, metadata_fallback=None):
 
         url="git+https://github.com/aiidalab/aiidalab-hello-world.git@v1.0.0"
     """
-    if search_dirs is None:
-        search_dirs = [".aiidalab/", "./"]
-
     with fetch_from_url(url) as repo:
-        for path in (repo.joinpath(dir_) for dir_ in search_dirs):
-            if path.is_dir():
-                try:
-                    metadata = asdict(Metadata.parse(path))
-                except TypeError as error:
-                    logger.debug(f"Failed to parse metadata for '{url}': {error}")
-                    metadata = metadata_fallback
+        try:
+            metadata = asdict(Metadata.parse(repo))
+        except TypeError as error:
+            logger.debug(f"Failed to parse metadata for '{url}': {error}")
+            metadata = metadata_fallback
 
-                return {
-                    "metadata": metadata,
-                    "environment": asdict(Environment.scan(path)),
-                }
+        return {
+            "metadata": metadata,
+            "environment": asdict(Environment.scan(repo)),
+        }
 
 
 class throttled:  # pylint: disable=invalid-name
