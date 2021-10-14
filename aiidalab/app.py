@@ -87,12 +87,6 @@ class _AiidaLabApp:
             },
         )
 
-    @staticmethod
-    def _migrate_registry_entry_to_v1(entry):
-        entry["logo"] = entry["metadata"].pop("logo", None)
-        entry["categories"] = entry["metadata"].pop("categories", None)
-        return entry
-
     @classmethod
     def _registry_entry_from_path(cls, path):
         try:
@@ -101,15 +95,13 @@ class _AiidaLabApp:
                 "metadata": asdict(Metadata.parse(path)),
                 "releases": None,
             }
-            return cls._migrate_registry_entry_to_v1(entry)
+            return entry
         except TypeError:
             logger.debug(f"Unable to parse metadata from '{path}'")
             return {
                 "name": path.stem,
                 "metadata": dict(title=path.stem, description=""),
                 "releases": None,
-                "logo": None,
-                "categories": None,
             }
 
     @classmethod
