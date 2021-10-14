@@ -90,12 +90,11 @@ class _AiidaLabApp:
     @classmethod
     def _registry_entry_from_path(cls, path):
         try:
-            entry = {
+            return {
                 "name": path.stem,
                 "metadata": asdict(Metadata.parse(path)),
                 "releases": None,
             }
-            return entry
         except TypeError:
             logger.debug(f"Unable to parse metadata from '{path}'")
             return {
