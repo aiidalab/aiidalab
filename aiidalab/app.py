@@ -17,7 +17,6 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
-from typing import List
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
@@ -75,8 +74,6 @@ class _AiidaLabApp:
     metadata: dict
     name: str
     path: Path
-    logo: str = field(default_factory=str)
-    categories: List[str] = field(default_factory=list)
     releases: dict = field(default_factory=dict)
 
     @classmethod
@@ -86,33 +83,24 @@ class _AiidaLabApp:
             **{
                 key: value
                 for key, value in registry_entry.items()
-                if key in ("categories", "logo", "metadata", "name", "releases")
+                if key in ("metadata", "name", "releases")
             },
         )
-
-    @staticmethod
-    def _migrate_registry_entry_to_v1(entry):
-        entry["logo"] = entry["metadata"].pop("logo", None)
-        entry["categories"] = entry["metadata"].pop("categories", None)
-        return entry
 
     @classmethod
     def _registry_entry_from_path(cls, path):
         try:
-            entry = {
+            return {
                 "name": path.stem,
                 "metadata": asdict(Metadata.parse(path)),
                 "releases": None,
             }
-            return cls._migrate_registry_entry_to_v1(entry)
         except TypeError:
             logger.debug(f"Unable to parse metadata from '{path}'")
             return {
                 "name": path.stem,
                 "metadata": dict(title=path.stem, description=""),
                 "releases": None,
-                "logo": None,
-                "categories": None,
             }
 
     @classmethod
@@ -574,7 +562,8 @@ class AiidaLabApp(traitlets.HasTraits):
         super().__init__()
 
         self.name = self._app.name
-        self.logo = self._app.logo
+        self.logo = self._app.metadata["logo"]
+        self.categories = self._app.metadata["categories"]
         self.is_installed = self._app.is_installed
         self.path = str(self._app.path)
         self.refresh_async()
@@ -620,7 +609,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
-        return category in self._registry_data.categories
+        return category in self.categories
 
     def _has_git_repo(self):
         """Check if the app has a .git folder in it."""
