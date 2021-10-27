@@ -19,8 +19,8 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
    In preparation of registering your AiiDAlab app in the `AiiDAlab registry`_, ensure you have a valid and updated ``setup.cfg`` file in the root of your app's repository.
    The ``setup.cfg`` file can alternatively also be placed within a hidden ``.aiidalab/`` directory in which case it will be parsed with precedence.
 
-   AiiDAlab parses the ``setup.cfg`` file for metadata and will recognize keys both from the standard `[metadata] <https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#metadata>`__ section and a dedicated ``[aiidalab]`` section.
-   App developers are free to declare metadata within either section [#f0]_ , with the understanding that values declared within the ``[aiidalab]`` section take precedence.
+   AiiDAlab parses the ``setup.cfg`` file for metadata and will recognize fields both from the standard `[metadata] <https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#metadata>`__ section and a dedicated ``[aiidalab]`` section (fields declared within the ``[aiidalab]`` section take precedence).
+   We suggest using the ``[aiidalab]`` section only for the ``title`` and ``categories`` fields, and the ``[metadata]`` for all others.
 
    .. dropdown:: List of all recognized keys and their correspondence (where applicable) between the ``[metadata]`` and the ``[aiidalab]`` sections.
 
@@ -79,7 +79,7 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
 
    ---
 
-.. _develop-apps:publish-app:register:
+   .. _develop-apps:publish-app:register:
 
    **Register the app**
 

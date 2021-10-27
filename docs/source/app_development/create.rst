@@ -20,6 +20,10 @@ There are two approaches to develop a new AiiDAlab app:
 
    Of course, one can also create an app :ref:`step by step from scratch <develop-apps:create-app:variant-b_from-scratch>`.
 
+.. tip::
+
+    When developing apps directly on the host machine via bind mount, a difference in the user's ``UID`` and ``GID`` between the AiiDAlab environment and the host machine might cause permission issues.
+    In case that you use `vscode <https://code.visualstudio.com/>`_ as your IDE, you might find the `Attach to a running container <https://code.visualstudio.com/docs/remote/attach-container>`_ feature useful that allows you to edit files directly inside the container without needing to mess with the onwership of files.
 
 .. _develop-apps:create-app:variant-a_cookiecutter:
 

@@ -30,9 +30,6 @@ from .registry import build as build_registry
 from .utils import PEP508CompliantUrl, load_app_registry_index
 from .utils import parse_app_repo as _parse_app_repo
 
-logging.basicConfig(level=logging.INFO)
-
-
 SCHEMAS_CANONICAL_BASE_URL = "https://raw.githubusercontent.com/aiidalab/aiidalab/v21.10.0/aiidalab/registry/schemas"
 
 
@@ -72,8 +69,9 @@ def _list_apps(apps_path):
 
 @click.group()
 @click.version_option(version=__version__, prog_name="AiiDAlab")
-def cli():
-    pass
+@click.option("-v", "--verbose", count=True)
+def cli(verbose):
+    logging.basicConfig(level=max(0, logging.WARNING - 10 * verbose))
 
 
 @cli.command()
@@ -90,6 +88,12 @@ def info():
     "--pre",
     "prereleases",
     is_flag=True,
+    # The default value for this flag is 'None', because we do not explicitly
+    # _disallow_ prereleases when the option is not set, but it depends on the
+    # provided requirement. That means when the query includes a prerelease
+    # version (e.g. my-app>=1.0rc), then results will include prereleases,
+    # whether this option is set or not. Otherwise, the results will only
+    # include prereleases when this option is set.
     default=None,
     help="Include prereleases among the search candidates. Note: Prereleases "
     "are automatically included if an app has only prereleases.",
@@ -363,6 +367,14 @@ def _find_version_to_install(
     "--pre",
     "prereleases",
     is_flag=True,
+    # The default value for this flag is 'None', because we do not explicitly
+    # _disallow_ prereleases when the option is not set, but it depends on the
+    # provided requirement. That means when the query includes a prerelease
+    # version (e.g. my-app>=1.0rc), then the list of potential installation
+    # candidates will include prereleases regardless of whether this option is
+    # set or not.  Otherwise, prereleases are only considered when this option
+    # is set.
+    default=None,
     help="Include prereleases among the candidates for installation.",
 )
 def install(
