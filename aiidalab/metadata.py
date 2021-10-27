@@ -82,6 +82,8 @@ class Metadata:
     categories: List[str] = field(default_factory=list)
     version: str = None
 
+    _search_dirs = (".aiidalab", "./")
+
     @staticmethod
     def _parse(path):
 
@@ -104,4 +106,8 @@ class Metadata:
         section, but falls back to the standard fields defined as part of the
         PEP 426-compliant metadata section for any missing values.
         """
-        return cls(**dict(cls._parse(root)))
+        for path in (root.joinpath(dir_) for dir_ in cls._search_dirs):
+            if path.is_dir():
+                return cls(**dict(cls._parse(path)))
+
+        raise ValueError(f"Directory '{root}' does not exist.")
