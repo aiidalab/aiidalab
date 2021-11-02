@@ -95,7 +95,7 @@ class _AiidaLabApp:
                 "metadata": asdict(Metadata.parse(path)),
                 "releases": None,
             }
-        except TypeError:
+        except (TypeError, ValueError):
             logger.debug(f"Unable to parse metadata from '{path}'")
             return {
                 "name": path.stem,
