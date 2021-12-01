@@ -182,10 +182,10 @@ def _parse_requirement(app_requirement):
     except InvalidRequirement as error:
         from urllib.parse import urlsplit
 
-        if urlsplit(app_requirement).scheme and "@" not in app_requirement:
+        if urlsplit(app_requirement).scheme:
             raise click.ClickException(
                 "It looks like you tried to install directly from a PEP 508 "
-                "compliant URL. Make sure to use the 'app-name @ url' syntax "
+                "compliant URL. Make sure to use the 'app-name@url' syntax "
                 "to provide a name for the app."
             )
         raise click.ClickException(

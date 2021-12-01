@@ -172,7 +172,10 @@ def find_installed_packages(python_bin=None):
         encoding="utf-8",
         capture_output=True,
     ).stdout
-    return [Package(**package) for package in json.loads(output)]
+    return [
+        Package(name=package["name"], version=package["version"])
+        for package in json.loads(output)
+    ]
 
 
 def split_git_url(git_url):
