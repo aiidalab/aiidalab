@@ -1,41 +1,42 @@
+---
 name: continuous-integration
 
 on: [push, pull_request]
 
 jobs:
 
-  pre-commit:
+    pre-commit:
 
-    runs-on: ubuntu-latest
+        runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - uses: pre-commit/action@v2.0.0
+        steps:
+            - uses: actions/checkout@v2
+            - name: Set up Python 3.8
+              uses: actions/setup-python@v2
+              with:
+                  python-version: 3.8
+            - uses: pre-commit/action@v2.0.0
 
-  test-package:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    test-package:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
 
-    steps:
+        steps:
 
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          submodules: true
+            - uses: actions/checkout@v2
+              with:
+                  fetch-depth: 0
+                  submodules: true
 
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
+            - uses: actions/setup-python@v2
+              with:
+                  python-version: 3.7
 
-      - name: Install package
-        run: |
-          which python
-          python -m pip install -e .[tests]
-          python -m pip freeze
+            - name: Install package
+              run: |
+                  which python
+                  python -m pip install -e .[tests]
+                  python -m pip freeze
 
-      - name: Run tests
-        run: python -m pytest -v
+            - name: Run tests
+              run: python -m pytest -v
