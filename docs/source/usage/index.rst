@@ -18,51 +18,52 @@ As a user, you have three options to access AiiDAlab:
 Run AiiDAlab locally
 ====================
 
-Prerequisites
--------------
+To run AiiDAlab on your own workstation or laptop you can either
 
-Linux or MacOS with `Docker installed <https://www.docker.com/get-started>`__
+ - run the image directly with: ```docker run aiidalab-docker-stack -p 8888:8888```, or
+ - *(recommended)* use the :ref:`aiidalab-launch <usage:aiidalab-launch>` tool which is a thin docker wrapper.
+
+.. _usage:aiidalab-launch:
+
+AiiDAlab Launch
+---------------
+
+To use AiiDAlab launch you will have to
 
 
-Instructions
-------------
-
-Pull the AiiDAlab docker image from DockerHub and tag it so that the startup script recognizes it:
-
-   .. code-block:: console
-
-       $ docker pull aiidalab/aiidalab-docker-stack:latest
-       $ docker tag aiidalab/aiidalab-docker-stack:latest aiidalab-docker-stack:develop
-
-Clone the `AiiDAlab Docker Stack <https://github.com/aiidalab/aiidalab-docker-stack>`__ repository and enter the cloned directory:
+#. `Install Docker on your workstation or laptop. <https://docs.docker.com/get-docker/>`_
+#. Install AiiDAlab launch with `pipx <https://pypa.github.io/pipx/installation/>`_ (**recommended**):
 
    .. code-block:: console
 
-       $ git clone https://github.com/aiidalab/aiidalab-docker-stack
-       $ cd aiidalab-docker-stack
+      pipx install aiidalab-launch
 
-Start AiiDAlab by running:
+   Or directly with pip (``pip install aiidalab-launch``).
+
+#. Start AiiDAlab with
 
    .. code-block:: console
 
-       $ ./run.sh --no-build 8888 ~/aiidalab
+       aiidalab-launch start
 
+#. Follow the instructions on screen to open AiiDAlab in the browser.
 
-  * ``8888`` is the port under which the AiiDAlab web interface will be available.
-  * ``~/aiidalab`` is the **absolute** path to the directory that will be mounted as the persistent home directory inside the container.
-    If the directory does not exist, it will be created.
+See ``aiidalab-launch --help`` for detailed help.
 
-The startup procedure can take a while, particularly when you run it for the first time.
-Once it is done, open the link provided at the bottom of the console in your web browser.
-You should now see the AiiDAlab home page.
+Instance Management
+^^^^^^^^^^^^^^^^^^^
 
-.. note::
+You can inspect the status of all configured AiiDAlab profiles with:
 
-    The instructions above use the pre-built AiiDAlab docker image from DockerHub.
-    In order to build the image yourself (e.g. to apply modifications), simply run the script without the ``--no-build`` option::
+.. code-block:: console
 
-        ./run.sh 8888 ~/aiidalab
+   aiidalab-launch status
 
+Profile Management
+^^^^^^^^^^^^^^^^^^
+
+The tool allows to manage multiple profiles, e.g., with different home directories or ports.
+See ``aiidalab-launch profiles --help`` for more information.
 
 ******************
 AiiDAlab Home page
