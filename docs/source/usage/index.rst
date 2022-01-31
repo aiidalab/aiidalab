@@ -80,8 +80,53 @@ Its main features are:
 - **Help**: links to the AiiDAlab documentation.
 
 
-****************************
-Install/update/delete an app
-****************************
+**************
+App Management
+**************
 
-[Related issue: `#152 <https://github.com/aiidalab/aiidalab/issues/152>`_]
+To install a new app, you can either open the Terminal and simply run ``aiiadalab install <app-name>``, where you replace ``<app-name>`` with the name of the app you would like to install (run ``aiidalab search`` to show a list of available apps), or, you use the app manager of the home app.
+
+To use the app manager:
+
+.. panels::
+   :container: container-lg pb-3
+   :column: col-lg-12 p-2
+
+   **Step 1: Open the app manager.**
+
+   Simply open AiiDAlab in the browser and click on the :fa:`puzzle-piece` icon in the top navigation bar.
+
+   ---
+
+   **Step 2: Search for the app you would like to install.**
+
+   Optionally, filter by any of the presented categories,
+
+   .. image:: ../_static/app-management-app-store.png
+
+   and then scroll down until you find the app you would like to install.
+   An app that is not installed yet, will be presented like this:
+
+   .. image:: ../_static/app-management-app-not-installed.png
+
+   Clicking on the **Install** button will install the app and its dependencies.
+
+   ---
+
+   **Step 3: Wait for the installation process to complete.**
+
+   The current process for installing the app and its dependencies will be displayed via a terminal widget.
+   Wait until the process has completed:
+
+   .. image:: ../_static/app-management-app-instalation-finished.png
+
+   ---
+
+   **Step 4: Start the app from the start page.**
+
+   The newly installed app should now show up on the start page.
+
+   .. image:: ../_static/app-management-start-page.png
+
+   Each app banner also shows an indicator about whether there is an update available (see screenshot above).
+   To *update the app*, click on **Manage App** and then on the **Update**.
