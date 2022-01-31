@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Module that implements a basic command line interface (CLI) for AiiDAlab."""
 import json
 import logging

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Core data classes for the app registry."""
 import json
 from dataclasses import dataclass, fields

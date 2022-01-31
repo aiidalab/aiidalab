@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Module to manage AiiDAlab apps."""
 
 import errno
@@ -737,7 +736,7 @@ class AiidaLabApp(traitlets.HasTraits):
     def _get_from_metadata(self, what):
         """Get information from metadata."""
         try:
-            return "{}".format(self._app.metadata[what])
+            return f"{self._app.metadata[what]}"
         except KeyError:
             return f'Field "{what}" is not present in app metadata.'
 
@@ -760,7 +759,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     @property
     def more(self):
-        return """<a href=./single_app.ipynb?app={}>Manage App</a>""".format(self.name)
+        return f"""<a href=./single_app.ipynb?app={self.name}>Manage App</a>"""
 
     @property
     def _repo(self):

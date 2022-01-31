@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utility functions for the application registry."""
 
 import json
