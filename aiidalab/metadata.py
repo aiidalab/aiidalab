@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """App metadata specification"""
 from configparser import ConfigParser
 from dataclasses import dataclass, field

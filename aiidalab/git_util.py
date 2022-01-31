@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utility module for git-managed AiiDAlab apps."""
 import locale
 import os

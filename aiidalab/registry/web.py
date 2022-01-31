@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Generate the app registry website."""
 
 import logging

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """App environment specification
 
 The specification is used to describe a reproducible environment for a

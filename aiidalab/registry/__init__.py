@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Manage a registry of applications."""
 
 from .core import AppRegistryData, AppRegistrySchemas

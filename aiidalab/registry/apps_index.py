@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Generate the apps index including all aggregated metadata."""
 import logging
 from collections import OrderedDict

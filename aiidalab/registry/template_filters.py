@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Custom filters for the Jinja2 template engine."""
 from packaging.version import parse
 
