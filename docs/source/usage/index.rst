@@ -94,65 +94,92 @@ These apps can be installed, updated, and removed either via the command line us
 Install a new app
 =================
 
-To install a new app, you can either open the :fa:`terminal` **Terminal** and simply run ``aiiadalab install <app-name>``, where you replace ``<app-name>`` with the name of the app you would like to install (run ``aiidalab search`` to show a list of available apps), or, you use the app manager of the home app.
+You can install new apps either using the graphical user interface via the :fa:`puzzle-piece` **App Store** or on the command line (:fa:`terminal` **Terminal**).
 
-.. tip::
+.. tabbed:: App Store
 
-   You can use the AiiDAlab Launch ``exec`` function also for app management:
+    .. panels::
+       :container: container-lg pb-3
+       :column: col-lg-12 p-2
 
-   .. code-block:: console
+       **Step 1: Open the App Store.**
 
-      aiidalab-launch exec -- aiidalab install <app-name>
+       Simply open AiiDAlab in the browser and click on the :fa:`puzzle-piece` icon in the top navigation bar.
 
-.. panels::
-   :container: container-lg pb-3
-   :column: col-lg-12 p-2
+       .. image:: ../_static/nav-bar-app-store.png
 
-   **Step 1: Open the App Store.**
+       This will open the app store page in a new window or tab.
 
-   Simply open AiiDAlab in the browser and click on the :fa:`puzzle-piece` icon in the top navigation bar.
+       ---
 
-   .. image:: ../_static/app-management-start-page-nav-bar.png
+       **Step 2: Search for the app you would like to install.**
 
-   This will open the app store page in a new window or tab.
+       Optionally, select one or multiple categories to filter by:
 
-   ---
+       .. image:: ../_static/app-management-app-store.png
 
-   **Step 2: Search for the app you would like to install.**
+       Then scroll down until you find the app you would like to install.
+       An app that is not installed yet, will be presented like this:
 
-   Optionally, select one or multiple categories to filter by:
+       .. image:: ../_static/app-management-app-not-installed.png
 
-   .. image:: ../_static/app-management-app-store.png
+       Clicking on the **Install** button will install the app and its dependencies.
 
-   Then scroll down until you find the app you would like to install.
-   An app that is not installed yet, will be presented like this:
+       In some cases the app developers will push prereleases which can be installed by clicking on the *Include prereleases* check box.
+       Use this option only if you require access to a not yet released feature or you would like to test a new app version and provide feedback to the developer(s).
 
-   .. image:: ../_static/app-management-app-not-installed.png
+       ---
 
-   Clicking on the **Install** button will install the app and its dependencies.
+       **Step 3: Wait for the installation process to complete.**
 
-   In some cases the app developers will push prereleases which can be installed by clicking on the *Include prereleases* check box.
-   Use this option only if you require access to a not yet released feature or you would like to test a new app version and provide feedback to the developer(s).
+       The current process for installing the app and its dependencies will be displayed via a terminal widget.
+       Wait until the process has completed:
 
-   ---
+       .. image:: ../_static/app-management-app-installation-completed.png
 
-   **Step 3: Wait for the installation process to complete.**
+       ---
 
-   The current process for installing the app and its dependencies will be displayed via a terminal widget.
-   Wait until the process has completed:
+       **Step 4: Start the app from the start page.**
 
-   .. image:: ../_static/app-management-app-installation-completed.png
+       The newly installed app should now show up on the start page.
 
-   ---
+       .. image:: ../_static/app-management-start-page.png
 
-   **Step 4: Start the app from the start page.**
+       Each app banner also shows an indicator about whether there is an update available (see screenshot above).
+       To *update the app*, click on **Manage App** and then on the **Update** buttons.
 
-   The newly installed app should now show up on the start page.
 
-   .. image:: ../_static/app-management-start-page.png
+.. tabbed:: Terminal
 
-   Each app banner also shows an indicator about whether there is an update available (see screenshot above).
-   To *update the app*, click on **Manage App** and then on the **Update** buttons.
+    .. panels::
+       :container: container-lg pb-3
+       :column: col-lg-12 p-2
+
+       **Step 1: Open the Terminal.**
+
+       Open the :fa:`terminal` by clicking on the corresponding icon in the nav bar.
+
+        .. image:: ../_static/nav-bar-terminal.png
+
+       ---
+
+       **Step 2: Install the app with the aiidalab command**
+
+       .. code-block:: console
+
+          ~$ aiidalab install <app-name>
+
+       Replace ``<app-name>`` with the name of the app you would like to install, e.g., ``aiidalab install quantum-espresso``.
+       Use ``aiidalab search`` to list all available apps (versions).
+
+       .. tip::
+
+          You can use the AiiDAlab Launch ``exec`` function also for app management:
+
+          .. code-block:: console
+
+             $ aiidalab-launch exec -- aiidalab install <app-name>
+
 
 .. _app-store:upgrade:
 
@@ -181,7 +208,7 @@ Upgrade (or downgrade) an app
 
    Click on the :fa:`arrow-circle-up` **Update** button to upgrade the app.
 
-   By default, the app will be updated to the latest available version, howevever you can alternatively select any available version, including a version that is lower than the currently installed one.
+   By default, the app will be upgraded to the latest available version, howevever you can alternatively select any available version, including a version that is lower than the currently installed one.
 
 .. _app-store:uninstall:
 
