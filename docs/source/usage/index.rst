@@ -88,6 +88,14 @@ App Store
 AiiDAlab provides for the distribution of a collection of notebooks in the form of apps through the `AiiDAlab app store`_.
 These apps can be installed, updated, and removed either via the command line using the ``aiidalab`` command, or via the App store.
 
+.. tip::
+
+   All :fa:`terminal` **Terminal** commands shown below, can in principle also be executed directly from the host via AiiDAlab launch's ``exec`` function, for example:
+
+   .. code-block:: console
+
+      $ aiidalab-launch exec -- aiidalab install <app-name>
+
 
 .. _app-store:install:
 
@@ -170,15 +178,8 @@ You can install new apps either using the graphical user interface via the :fa:`
           ~$ aiidalab install <app-name>
 
        Replace ``<app-name>`` with the name of the app you would like to install, e.g., ``aiidalab install quantum-espresso``.
-       Use ``aiidalab search`` to list all available apps (versions).
-
-       .. tip::
-
-          You can use the AiiDAlab Launch ``exec`` function also for app management:
-
-          .. code-block:: console
-
-             $ aiidalab-launch exec -- aiidalab install <app-name>
+       Use ``aiidalab search`` to search among available apps and their versions.
+       Similarly, the ``aiidalab list`` lists all currently installed apps and their versions.
 
 
 .. _app-store:upgrade:
@@ -186,64 +187,95 @@ You can install new apps either using the graphical user interface via the :fa:`
 Upgrade (or downgrade) an app
 =============================
 
-.. panels::
-   :container: container-lg pb-3
-   :column: col-lg-12 p-2
+.. tabbed:: App Store
 
-   **Step 1: Find the app you would like to upgrade on the start page.**
+    .. panels::
+       :container: container-lg pb-3
+       :column: col-lg-12 p-2
 
-   On the home app start page, simply look for the app you would like to upgrade.
+       **Step 1: Find the app you would like to upgrade on the start page.**
 
-   .. image:: ../_static/app-management-start-page-upgrade-available.png
+       On the home app start page, simply look for the app you would like to upgrade.
 
-   Click on the **Manage App** button to open the app manager.
+       .. image:: ../_static/app-management-start-page-upgrade-available.png
 
-   ---
+       Click on the **Manage App** button to open the app manager.
 
-   **Step 2: Open the App Management page**
+       ---
 
-   The green :fa:`arrow-circle-up` **Update** button indicates that there is a newer version of the app available.
+       **Step 2: Open the App Management page**
 
-   .. image:: ../_static/app-management-upgrade-available.png
+       The green :fa:`arrow-circle-up` **Update** button indicates that there is a newer version of the app available.
 
-   Click on the :fa:`arrow-circle-up` **Update** button to upgrade the app.
+       .. image:: ../_static/app-management-upgrade-available.png
 
-   By default, the app will be upgraded to the latest available version, howevever you can alternatively select any available version, including a version that is lower than the currently installed one.
+       Click on the :fa:`arrow-circle-up` **Update** button to upgrade the app.
+
+       By default, the app will be upgraded to the latest available version, howevever you can alternatively select any available version, including a version that is lower than the currently installed one.
+
+.. tabbed:: Terminal
+
+    Within the :fa:`terminal` Terminal, execute the following command to upgrade:
+
+    .. code-block:: console
+
+       ~$ aiidalab install <app-name>
+
+    This will install the most recent version of an app, regardless of whether it is already installed or not.
+    You will be prompted to confirm the operation.
+
+    You can install a specific version, by using standard `PEP 440 version specifiers`_, for example:
+
+    .. code-block:: console
+
+       ~$ aiidalab install quantum-espresso==v22.01.0
 
 .. _app-store:uninstall:
 
 Uninstall an app
 ================
 
-Uninstalling app works similar to upgrading or downgrading an app via the **Manage App** page.
+Uninstalling an app works similar to upgrading or downgrading an app via the **Manage App** page or on the Terminal.
 
-.. panels::
-   :container: container-lg pb-3
-   :column: col-lg-12 p-2
+.. tabbed:: App Store
 
-   **Step 1: Find the app you would like to uninstall on the start page.**
+    .. panels::
+       :container: container-lg pb-3
+       :column: col-lg-12 p-2
 
-   On the home app start page, simply look for the app you would like to uninstall.
+       **Step 1: Find the app you would like to uninstall on the start page.**
 
-   .. image:: ../_static/app-management-start-page.png
+       On the home app start page, simply look for the app you would like to uninstall.
 
-   Click on the **Manage App** button to open the app manager:
+       .. image:: ../_static/app-management-start-page.png
 
-   ---
+       Click on the **Manage App** button to open the app manager:
 
-   **Step 2: Uninstall via the app store**
+       ---
 
-   The app manager allows you to uninstall the app or to install a different version.
+       **Step 2: Uninstall via the app store**
 
-   .. image:: ../_static/app-management-app-installed.png
+       The app manager allows you to uninstall the app or to install a different version.
 
-   Click on the :fa:`trash` **Uninstall** button to uninstall the app.
+       .. image:: ../_static/app-management-app-installed.png
 
-   .. note::
+       Click on the :fa:`trash` **Uninstall** button to uninstall the app.
 
-      In some cases you will see a warning that uninstalling the app might lead to data loss.
-      That warning indicates that there are local modifications to the app source code.
-      You can safely ignore this warning and click on the "Ignore" check box in case that you are sure that any local modifications are safe to delete.
+       .. note::
 
+          In some cases you will see a warning that uninstalling the app might lead to data loss.
+          That warning indicates that there are local modifications to the app source code.
+          You can safely ignore this warning and click on the "Ignore" check box in case that you are sure that any local modifications are safe to delete.
+
+.. tabbed:: Terminal
+
+    Within the :fa:`terminal` Terminal, execute the following command to uninstall an app:
+
+    .. code-block:: console
+
+       ~$ aiidalab uninstall <app-name>
+
+    You will be prompted to confirm the operation.
 
 .. _AiiDAlab app store: https://aiidalab.github.io/aiidalab-registry
+.. _PEP 440 version specifiers: https://www.python.org/dev/peps/pep-0440/#version-specifiers
