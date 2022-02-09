@@ -104,7 +104,7 @@ Install a new app
 
 You can install new apps either using the graphical user interface via the :fa:`puzzle-piece` **App Store** or on the command line (:fa:`terminal` **Terminal**).
 
-.. tabbed:: App Store
+.. tabbed:: App Manager
 
     .. panels::
        :container: container-lg pb-3
@@ -187,7 +187,7 @@ You can install new apps either using the graphical user interface via the :fa:`
 Upgrade (or downgrade) an app
 =============================
 
-.. tabbed:: App Store
+.. tabbed:: App Manager
 
     .. panels::
        :container: container-lg pb-3
@@ -237,7 +237,7 @@ Uninstall an app
 
 Uninstalling an app works similar to upgrading or downgrading an app via the **Manage App** page or on the Terminal.
 
-.. tabbed:: App Store
+.. tabbed:: App Manager
 
     .. panels::
        :container: container-lg pb-3
@@ -253,7 +253,7 @@ Uninstalling an app works similar to upgrading or downgrading an app via the **M
 
        ---
 
-       **Step 2: Uninstall via the app store**
+       **Step 2: Uninstall**
 
        The app manager allows you to uninstall the app or to install a different version.
 
