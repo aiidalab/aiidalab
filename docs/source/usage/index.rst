@@ -175,7 +175,7 @@ You can install new apps either using the graphical user interface via the :fa:`
 
        .. code-block:: console
 
-          ~$ aiidalab install <app-name>
+          $ aiidalab install <app-name>
 
        Replace ``<app-name>`` with the name of the app you would like to install, e.g., ``aiidalab install quantum-espresso``.
        Use ``aiidalab search`` to search among available apps and their versions.
@@ -219,7 +219,7 @@ Upgrade (or downgrade) an app
 
     .. code-block:: console
 
-       ~$ aiidalab install <app-name>
+       $ aiidalab install <app-name>
 
     This will install the most recent version of an app, regardless of whether it is already installed or not.
     You will be prompted to confirm the operation.
@@ -228,7 +228,7 @@ Upgrade (or downgrade) an app
 
     .. code-block:: console
 
-       ~$ aiidalab install quantum-espresso==v22.01.0
+       $ aiidalab install quantum-espresso==v22.01.0
 
 .. _app-store:uninstall:
 
@@ -273,7 +273,7 @@ Uninstalling an app works similar to upgrading or downgrading an app via the **M
 
     .. code-block:: console
 
-       ~$ aiidalab uninstall <app-name>
+       $ aiidalab uninstall <app-name>
 
     You will be prompted to confirm the operation.
 
