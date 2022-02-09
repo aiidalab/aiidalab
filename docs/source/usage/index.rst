@@ -249,7 +249,7 @@ Uninstalling an app works similar to upgrading or downgrading an app via the **M
 
        .. image:: ../_static/app-management-start-page.png
 
-       Click on the **Manage App** button to open the app manager:
+       Click on the **Manage App** button to open the app manager.
 
        ---
 
