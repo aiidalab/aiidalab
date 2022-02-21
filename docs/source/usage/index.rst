@@ -10,26 +10,21 @@ Access AiiDAlab
 As a user, you have three options to access AiiDAlab:
 
  1. Log into one of the `open AiiDAlab servers <https://materialscloud.org/aiidalab>`_.
- 2. Download the `Quantum Mobile Virtual Machine <https://quantum-mobile.readthedocs.io/>`_, open a terminal and run ``aiidalab``.
- 3. Run the AiiDAlab docker container on your local machine (see below).
+ 2. Run the AiiDAlab docker container directly :ref:`on your local machine <usage:run-locally>`.
+ 3. Download the `Quantum Mobile Virtual Machine <https://quantum-mobile.readthedocs.io/>`_, open a terminal and run ``aiidalab``.
 
 .. _usage:run-locally:
+.. _usage:aiidalab-launch:
 
-Run AiiDAlab locally
-====================
+AiiDAlab launch
+===============
 
 To run AiiDAlab on your own workstation or laptop you can either
 
  - run the image directly with: ```docker run aiidalab-docker-stack -p 8888:8888```, or
  - *(recommended)* use the :ref:`aiidalab-launch <usage:aiidalab-launch>` tool which is a thin docker wrapper.
 
-.. _usage:aiidalab-launch:
-
-AiiDAlab Launch
----------------
-
-To use AiiDAlab launch you will have to
-
+To use **AiiDAlab launch** you will have to
 
 #. `Install Docker on your workstation or laptop. <https://docs.docker.com/get-docker/>`_
 #. Install AiiDAlab launch with `pipx <https://pypa.github.io/pipx/installation/>`_ (**recommended**):
