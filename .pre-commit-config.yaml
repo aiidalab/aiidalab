@@ -15,7 +15,7 @@ repos:
     #      - id: check-manifest
 
     - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
-      rev: 0.1.1
+      rev: 0.2.1
       hooks:
           - id: yamlfmt
 
@@ -48,7 +48,7 @@ repos:
           - id: check-github-workflows
 
     - repo: https://github.com/asottile/pyupgrade
-      rev: v2.32.0
+      rev: v2.32.1
       hooks:
           - id: pyupgrade
             args: [--py37-plus]
