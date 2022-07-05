@@ -223,3 +223,12 @@ def run_verdi_daemon_restart():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
+
+
+def run_post_install_script(post_install_script_path):
+    return subprocess.Popen(
+        f"./{post_install_script_path.resolve().stem}",
+        cwd=post_install_script_path.resolve().parent,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
+    )

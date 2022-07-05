@@ -40,6 +40,7 @@ from .utils import (
     load_app_registry_entry,
     load_app_registry_index,
     run_pip_install,
+    run_post_install_script,
     run_reentry_scan,
     run_verdi_daemon_restart,
     split_git_url,
@@ -261,10 +262,9 @@ class _AiidaLabApp:
     def _install_dependencies(self, python_bin, stdout=None):
         """Try to install the app dependencies with pip (if specified)."""
 
-        def _pip_install(*args, stdout=None):
+        def _pip_install(*args, stdout):
             # The implementation of this function is taken and adapted from:
             # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
-            stdout = stdout or sys.stdout
 
             # Install package dependencies.
             process = run_pip_install(*args, python_bin=python_bin)
@@ -301,6 +301,21 @@ class _AiidaLabApp:
                 except CalledProcessError:
                     raise RuntimeError("Failed to install dependencies.")
 
+    def _post_install_triggers(self):
+        """Run a post_install script.
+
+        Typically used to execute additional commands after the app installation.
+        """
+        post_install_file = self.path.joinpath("post_install")
+        if post_install_file.exists():
+            logger.info(f"Running post_install script: {post_install_file}")
+            # We do not track of the output for the execution of the
+            # post_install script, because it may prevent intentional
+            # detachment of child processes. For example, an app might trigger
+            # a background process that is supposed to finish after the
+            # installation is technically completed.
+            run_post_install_script(post_install_file)
+
     def _install_from_path(self, path):
         if path.is_dir():
             shutil.copytree(this_or_only_subdir(path), self.path)
@@ -333,8 +348,9 @@ class _AiidaLabApp:
         version=None,
         python_bin=None,
         install_dependencies=True,
-        stdout=None,
+        stdout=sys.stdout,
         prereleases=False,
+        post_install_triggers=True,
     ):
         if version is None:
             try:
@@ -377,6 +393,11 @@ class _AiidaLabApp:
             # Install dependencies
             if install_dependencies:
                 self._install_dependencies(python_bin, stdout=stdout)
+
+            # Run post-installation triggers.
+            if post_install_triggers:
+                self._post_install_triggers()
+
         except RuntimeError as error:
             try:
                 if trash_path is None:
