@@ -199,12 +199,8 @@ def this_or_only_subdir(path):
 
 
 def run_pip_install(*args, python_bin=sys.executable):
-    constraints_file = Path("/opt/requirements.txt")
-    constraints = (
-        ("--constraint", str(constraints_file)) if constraints_file.exists() else ()
-    )
     return subprocess.Popen(
-        [python_bin, "-m", "pip", "install", *constraints, *args],
+        [python_bin, "-m", "pip", "install", *args],
         bufsize=1,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
