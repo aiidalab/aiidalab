@@ -285,9 +285,7 @@ class _AiidaLabApp:
             if path.exists():
                 try:
                     if path.joinpath("setup.py").is_file():
-                        _pip_install(
-                            "--use-feature=in-tree-build", str(path), stdout=stdout
-                        )
+                        _pip_install(str(path), stdout=stdout)
                     elif path.joinpath("requirements.txt").is_file():
                         _pip_install(
                             f"--requirement={path.joinpath('requirements.txt')}",
