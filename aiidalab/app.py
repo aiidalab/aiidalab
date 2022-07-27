@@ -41,7 +41,6 @@ from .utils import (
     load_app_registry_index,
     run_pip_install,
     run_post_install_script,
-    run_reentry_scan,
     run_verdi_daemon_restart,
     split_git_url,
     this_or_only_subdir,
@@ -268,11 +267,6 @@ class _AiidaLabApp:
 
             # Install package dependencies.
             process = run_pip_install(*args, python_bin=python_bin)
-            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
-                stdout.write(line)
-
-            # AiiDA plugins require reentry run to be found by AiiDA.
-            process = run_reentry_scan()
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                 stdout.write(line)
 
