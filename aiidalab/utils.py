@@ -201,7 +201,6 @@ def this_or_only_subdir(path):
 def run_pip_install(*args, python_bin=sys.executable):
     return subprocess.Popen(
         [python_bin, "-m", "pip", "install", *args],
-        bufsize=1,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
@@ -219,7 +218,6 @@ def run_reentry_scan():
 def run_verdi_daemon_restart():
     return subprocess.Popen(
         ["verdi", "daemon", "restart"],
-        bufsize=1,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
