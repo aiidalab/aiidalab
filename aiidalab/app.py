@@ -585,8 +585,16 @@ class AiidaLabApp(traitlets.HasTraits):
         super().__init__()
 
         self.name = self._app.name
-        self.logo = self._app.metadata["logo"]
-        self.categories = self._app.metadata["categories"]
+
+        try:
+            self.logo = self._app.metadata["logo"]
+        except KeyError:
+            raise ValueError(f"Did not find logo in {self.name} metadata")
+        try:
+            self.categories = self._app.metadata["categories"]
+        except KeyError:
+            raise ValueError(f"Did not find categories in {self.name} metadata")
+
         self.is_installed = self._app.is_installed
         self.path = str(self._app.path)
         self.refresh_async()
