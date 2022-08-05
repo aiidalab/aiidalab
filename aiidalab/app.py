@@ -270,6 +270,7 @@ class _AiidaLabApp:
             process = run_pip_install(*args, python_bin=python_bin)
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                 stdout.write(line)
+            process.wait()
             if process.returncode != 0:
                 raise RuntimeError("Failed to install dependencies.")
 
@@ -277,11 +278,13 @@ class _AiidaLabApp:
             process = run_reentry_scan()
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                 stdout.write(line)
+            process.wait()
 
             # Restarting the AiiDA daemon to import newly installed plugins.
             process = run_verdi_daemon_restart()
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                 stdout.write(line)
+            process.wait()
             if process.returncode != 0:
                 raise RuntimeError("Failed to restart verdi daemon.")
 
@@ -316,7 +319,9 @@ class _AiidaLabApp:
             # detachment of child processes. For example, an app might trigger
             # a background process that is supposed to finish after the
             # installation is technically completed.
-            if run_post_install_script(post_install_file).returncode != 0:
+            process = run_post_install_script(post_install_file)
+            process.wait()
+            if process.returncode != 0:
                 raise CalledProcessError
 
     def _install_from_path(self, path):
