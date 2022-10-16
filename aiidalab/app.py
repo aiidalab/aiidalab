@@ -315,7 +315,7 @@ class _AiidaLabApp:
             process = run_post_install_script(post_install_file)
             process.wait()
             if process.returncode != 0:
-                raise CalledProcessError
+                raise CalledProcessError(process.returncode, str(post_install_file))
 
     def _install_from_path(self, path):
         if path.is_dir():
