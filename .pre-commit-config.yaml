@@ -43,12 +43,12 @@ repos:
           - id: setup-cfg-fmt
 
     - repo: https://github.com/sirosen/check-jsonschema
-      rev: 0.18.4
+      rev: 0.19.1
       hooks:
           - id: check-github-workflows
 
     - repo: https://github.com/asottile/pyupgrade
-      rev: v3.2.0
+      rev: v3.2.2
       hooks:
           - id: pyupgrade
             args: [--py38-plus]
