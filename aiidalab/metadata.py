@@ -64,7 +64,12 @@ def _parse_setup_cfg(setup_cfg):
         "state", _map_development_state(metadata_pep426.get("classifiers", []))
     )
 
-    yield "categories", aiidalab.get("categories", [])
+    # Allow passing single category and convert to list
+    # and allow parse line separated string as list
+    categories = aiidalab.get("categories", [])
+    if isinstance(categories, str):
+        categories = [c for c in categories.split("\n") if c]
+    yield "categories", categories
 
 
 @dataclass
