@@ -481,7 +481,7 @@ class AiidaLabAppWatch:
         The ._observer thread is controlled by the ._monitor_thread.
         """
         assert os.path.isdir(self.app.path)
-        assert self._observer is None or not self._observer.isAlive()
+        assert self._observer is None or not self._observer.is_alive()
 
         event_handler = self.AppPathFileSystemEventHandler(self.app)
 
@@ -527,9 +527,9 @@ class AiidaLabAppWatch:
                         self.app.refresh()
 
                     if is_dir:
-                        if self._observer is None or not self._observer.isAlive():
+                        if self._observer is None or not self._observer.is_alive():
                             self._start_observer()
-                    elif self._observer and self._observer.isAlive():
+                    elif self._observer and self._observer.is_alive():
                         self._stop_observer()
 
                     sleep(1)
