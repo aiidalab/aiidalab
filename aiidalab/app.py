@@ -608,10 +608,10 @@ class AiidaLabApp(traitlets.HasTraits):
             If true (default), automatically watch the repository for changes.
     """
 
-    path = traitlets.Unicode(allow_none=True, readonly=True)
+    path = traitlets.Unicode(allow_none=True).tag(readonly=True)
     install_info = traitlets.Unicode()
 
-    available_versions = traitlets.List(traitlets.Unicode)
+    available_versions = traitlets.List(traitlets.Unicode())
     installed_version = traitlets.Union(
         [traitlets.Unicode(), traitlets.UseEnum(AppVersion)]
     )  # installed_version is updated from _AiiDALabApp only
@@ -619,14 +619,14 @@ class AiidaLabApp(traitlets.HasTraits):
     dependencies_to_install = traitlets.List()
     strict_dependencies_validation = traitlets.Bool()
     remote_update_status = traitlets.UseEnum(
-        AppRemoteUpdateStatus, readonly=True, allow_none=True
-    )
+        AppRemoteUpdateStatus, allow_none=True
+    ).tag(readonly=True)
     has_prereleases = traitlets.Bool()
     include_prereleases = traitlets.Bool()
 
-    busy = traitlets.Bool(readonly=True)
-    detached = traitlets.Bool(readonly=True, allow_none=True)
-    compatible = traitlets.Bool(readonly=True, allow_none=True)
+    busy = traitlets.Bool().tag(readonly=True)
+    detached = traitlets.Bool(allow_none=True).tag(readonly=True)
+    compatible = traitlets.Bool(allow_none=True).tag(readonly=True)
     compatibility_info = traitlets.Dict()
 
     # packages that need to compatible strictly
