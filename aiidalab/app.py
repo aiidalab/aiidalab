@@ -75,6 +75,8 @@ class _AiidaLabApp:
     path: Path
     releases: dict = field(default_factory=dict)
 
+    _INSTALLED_FLAG = "INSTALLED.FLAG"
+
     @classmethod
     def from_registry_entry(cls, path, registry_entry):
         return cls(
@@ -166,8 +168,10 @@ class _AiidaLabApp:
             return self._repo.dirty()
 
     def is_installed(self):
-        """The app is installed if the corresponding folder is present."""
-        return self.path.exists()
+        """The app is installed if the corresponding flag file is present."""
+        installed_flag = self.path / self._INSTALLED_FLAG
+
+        return installed_flag.exists()
 
     def remote_update_status(self, prereleases=False):
         """Determine the remote update satus.
@@ -437,6 +441,9 @@ class _AiidaLabApp:
                     f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
                     f", due to error: {error}"
                 )
+
+        else:
+            self.path.touch(self._INSTALLED_FLAG)
 
 
 class AppNotInstalledException(Exception):
