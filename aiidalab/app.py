@@ -17,6 +17,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
+from typing import List
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
@@ -760,7 +761,7 @@ class AiidaLabApp(traitlets.HasTraits):
         except KeyError:
             return None  # compatibility indetermined for given version
 
-    def _validate_strict_dependencies(self, dependencies: list[Dependency]):
+    def _validate_strict_dependencies(self, dependencies: List[Dependency]):
         """Check core dependencies that are not allowed to be override
 
         return True if the strict dependencies satisfied
