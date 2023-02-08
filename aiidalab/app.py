@@ -19,6 +19,7 @@ from threading import Thread
 from time import sleep
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
+from collections import namedtuple
 
 import requests
 import traitlets
@@ -50,6 +51,7 @@ from .utils import (
 
 logger = logging.getLogger(__name__)
 
+Dependency = namedtuple("Dependency", ["installed", "required"])
 
 # A version is usually of type str, but it can also be a value
 # of this Enum to indicate special app states in which the
@@ -258,6 +260,29 @@ class _AiidaLabApp:
 
     def is_compatible(self, version, python_bin=None):
         return not any(self.find_incompatibilities(version, python_bin))
+    
+    def find_dependencies_to_install(self, version_to_install, python_bin=None):
+        """Return a list of dependencies (namedtuple Dependency)."""
+        if python_bin is None:
+            python_bin = sys.executable
+            
+        if not version_to_install:
+            return []
+        
+        unmatched_requirements = [r[1] for r in self.find_incompatibilities(version_to_install, python_bin)]
+        packages = find_installed_packages(python_bin)
+        
+        dependencies_to_install = []
+        for requirement in unmatched_requirements:
+            installed = None
+
+            for package in packages:
+                if requirement.name == package.name:
+                    installed = package
+
+            dependencies_to_install.append(Dependency(installed, requirement))
+
+        return dependencies_to_install
 
     def _install_dependencies(self, python_bin, stdout=None):
         """Try to install the app dependencies with pip (if specified)."""
@@ -586,7 +611,10 @@ class AiidaLabApp(traitlets.HasTraits):
     available_versions = traitlets.List(traitlets.Unicode)
     installed_version = traitlets.Union(
         [traitlets.Unicode(), traitlets.UseEnum(AppVersion)]
-    )
+    )   # installed_version is updated from _AiiDALabApp only
+    version_to_install = traitlets.Unicode(allow_none=True)
+    dependencies_to_install = traitlets.List()
+    strict_dependencies_validation = traitlets.Bool()
     remote_update_status = traitlets.UseEnum(
         AppRemoteUpdateStatus, readonly=True, allow_none=True
     )
@@ -597,6 +625,9 @@ class AiidaLabApp(traitlets.HasTraits):
     detached = traitlets.Bool(readonly=True, allow_none=True)
     compatible = traitlets.Bool(readonly=True, allow_none=True)
     compatibility_info = traitlets.Dict()
+    
+    # packages that need to compatible strictly
+    _CORE_PACKAGES = ["aiida-core"]
 
     def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
         self._app = _AiidaLabApp.from_id(
@@ -651,6 +682,11 @@ class AiidaLabApp(traitlets.HasTraits):
     @traitlets.default("busy")
     def _default_busy(self):  # pylint: disable=no-self-use
         return False
+    
+    @traitlets.observe("version_to_install")
+    def _observe_version_to_install(self, change):
+        if change["old"] != change["new"]:
+            self.refresh()
 
     @contextmanager
     def _show_busy(self):
@@ -733,6 +769,18 @@ class AiidaLabApp(traitlets.HasTraits):
             return not any(incompatibilities)
         except KeyError:
             return None  # compatibility indetermined for given version
+        
+    def _validate_strict_dependencies(self, dependencies: list[Dependency]):
+        """Check core dependencies that are not allowed to be override
+        
+        return True if the strict dependencies satisfied
+        """
+        for dep in dependencies:
+            for package in self._CORE_PACKAGES:
+                if package == dep.required.name:
+                    return False
+
+        return True
 
     def _remote_update_status(self):
         """Determine whether there are updates available.
@@ -748,7 +796,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return False
 
     def _refresh_versions(self):
-        self.installed_version = self._app.installed_version()
+        self.installed_version = self._installed_version()
         self.include_prereleases = self.include_prereleases or (
             isinstance(self.installed_version, str)
             and parse(self.installed_version).is_prerelease
@@ -764,6 +812,10 @@ class AiidaLabApp(traitlets.HasTraits):
                 for version in all_available_versions
                 if self.include_prereleases or not parse(version).is_prerelease
             ]
+            
+    def _refresh_dependencies_to_install(self):
+        version_to_install = self.version_to_install
+        self.dependencies_to_install = self._app.find_dependencies_to_install(version_to_install)
 
     @throttled(calls_per_second=1)
     def refresh(self):
@@ -771,8 +823,13 @@ class AiidaLabApp(traitlets.HasTraits):
         with self._show_busy():
             with self.hold_trait_notifications():
                 self._refresh_versions()
+                self._refresh_dependencies_to_install()
                 self.set_trait(
                     "compatible", self._is_compatible(self.installed_version)
+                )
+                self.set_trait(
+                    "strict_dependencies_validation", 
+                    self._validate_strict_dependencies(self.dependencies_to_install),
                 )
                 self.set_trait(
                     "remote_update_status",
