@@ -49,6 +49,8 @@ from .utils import (
 
 logger = logging.getLogger(__name__)
 
+_INSTALLED_FLAG = ".INSTALLED.FLAG"
+
 
 # A version is usually of type str, but it can also be a value
 # of this Enum to indicate special app states in which the
@@ -74,8 +76,6 @@ class _AiidaLabApp:
     name: str
     path: Path
     releases: dict = field(default_factory=dict)
-
-    _INSTALLED_FLAG = "INSTALLED.FLAG"
 
     @classmethod
     def from_registry_entry(cls, path, registry_entry):
@@ -167,11 +167,13 @@ class _AiidaLabApp:
         if self._repo:
             return self._repo.dirty()
 
+    def _installed_flag(self):
+        """Return path to the file as installed flag"""
+        return self.path / _INSTALLED_FLAG
+
     def is_installed(self):
         """The app is installed if the corresponding flag file is present."""
-        installed_flag = self.path / self._INSTALLED_FLAG
-
-        return installed_flag.exists()
+        return self._installed_flag.exists()
 
     def remote_update_status(self, prereleases=False):
         """Determine the remote update satus.
@@ -443,7 +445,7 @@ class _AiidaLabApp:
                 )
 
         else:
-            self.path.touch(self._INSTALLED_FLAG)
+            self._installed_flag.touch()
 
 
 class AppNotInstalledException(Exception):
