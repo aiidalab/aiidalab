@@ -759,7 +759,9 @@ class AiidaLabApp(traitlets.HasTraits):
 
         return True if the strict dependencies satisfied
         """
-        intersection = set(self._CORE_PACKAGES) & {d.required.name for d in dependencies}
+        intersection = set(self._CORE_PACKAGES) & {
+            d.required.name for d in dependencies
+        }
         return bool(intersection)
 
     def _remote_update_status(self):
