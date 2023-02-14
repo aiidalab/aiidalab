@@ -818,9 +818,8 @@ class AiidaLabApp(traitlets.HasTraits):
             ]
 
     def _refresh_dependencies_to_install(self):
-        version_to_install = self.version_to_install
         self.dependencies_to_install = self._app.find_dependencies_to_install(
-            version_to_install
+            self.version_to_install
         )
 
     @throttled(calls_per_second=1)
