@@ -761,13 +761,13 @@ class AiidaLabApp(traitlets.HasTraits):
         except KeyError:
             return None  # compatibility indetermined for given version
 
-    def _validate_strict_dependencies(self, dependencies: List[Dependency]):
+    def _strict_dependencies_met(self, dependencies_to_install: List[Dependency]):
         """Check core dependencies that are not allowed to be overridden
 
         return True if the strict dependencies satisfied
         """
         intersection = set(self._CORE_PACKAGES) & {
-            d.required.name for d in dependencies
+            d.required.name for d in dependencies_to_install
         }
         return not bool(intersection)
 
@@ -819,7 +819,7 @@ class AiidaLabApp(traitlets.HasTraits):
                 )
                 self.set_trait(
                     "strict_dependencies_satisfied",
-                    self._validate_strict_dependencies(self.dependencies_to_install),
+                    self._strict_dependencies_met(self.dependencies_to_install),
                 )
                 self.set_trait(
                     "remote_update_status",
