@@ -274,11 +274,10 @@ class _AiidaLabApp:
             dep[1].name: dep[1]
             for dep in self.find_incompatibilities(version_to_install, python_bin)
         }
-        packages = {p.name: p for p in find_installed_packages(python_bin)}
-        intersection = packages.keys() & unmatched_dependencies.keys()
+        installed_packages = {p.name: p for p in find_installed_packages(python_bin)}
         return [
-            Dependency(packages[name], unmatched_dependencies[name])
-            for name in intersection
+            Dependency(installed_packages.get(name), package)
+            for name, package in unmatched_dependencies.items()
         ]
 
     def _install_dependencies(self, python_bin, stdout=None):
