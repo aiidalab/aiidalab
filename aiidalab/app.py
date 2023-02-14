@@ -263,7 +263,14 @@ class _AiidaLabApp:
         return not any(self.find_incompatibilities(version, python_bin))
 
     def find_dependencies_to_install(self, version_to_install, python_bin=None):
-        """Return a list of dependencies (namedtuple Dependency)."""
+        """Returns a list of dependencies that need to be installed.
+
+        If an unsopported version of dependency is already present it will
+        look something like: Dependency(installed=<Package...>, required=<Requirement(...)>).
+
+        If the dependency is not present at all, it will look something like:
+        Dependency(installed=None, required=<Requirement(...)>).
+        """
         if python_bin is None:
             python_bin = sys.executable
 
