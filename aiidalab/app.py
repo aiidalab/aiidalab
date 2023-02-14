@@ -611,7 +611,7 @@ class AiidaLabApp(traitlets.HasTraits):
     )  # installed_version is updated from _AiiDALabApp only
     version_to_install = traitlets.Unicode(allow_none=True)
     dependencies_to_install = traitlets.List()
-    strict_dependencies_validation = traitlets.Bool()
+    strict_dependencies_satisfied = traitlets.Bool()
     remote_update_status = traitlets.UseEnum(
         AppRemoteUpdateStatus, allow_none=True
     ).tag(readonly=True)
@@ -772,7 +772,9 @@ class AiidaLabApp(traitlets.HasTraits):
 
         return True if the strict dependencies satisfied
         """
-        intersection = set(self._CORE_PACKAGES) & {d.required.name for d in dependencies}
+        intersection = set(self._CORE_PACKAGES) & {
+            d.required.name for d in dependencies
+        }
         return bool(intersection)
 
     def _remote_update_status(self):
@@ -822,7 +824,7 @@ class AiidaLabApp(traitlets.HasTraits):
                     "compatible", self._is_compatible(self.installed_version)
                 )
                 self.set_trait(
-                    "strict_dependencies_validation",
+                    "strict_dependencies_satisfied",
                     self._validate_strict_dependencies(self.dependencies_to_install),
                 )
                 self.set_trait(
