@@ -8,7 +8,7 @@ from aiidalab.app import AiidaLabApp
 def test_init_refresh(generate_app):
     app = generate_app()
     assert len(app.available_versions) == 0
-    # After refresh the availale_versions traitslet is updated
+    # After refresh the availale_versions traitlets is updated
     app.refresh()
     assert len(app.available_versions) != 0
 
@@ -55,7 +55,7 @@ def generate_app():
         if app_data is None:
             app_data = EXAMPLE_APP_REGISTRY_ENTRY
 
-        app = AiidaLabApp(name, app_data, aiidalab_apps_path, watch=False)
+        app = AiidaLabApp(name, app_data, aiidalab_apps_path, watch=watch)
 
         return app
 
