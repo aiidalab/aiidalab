@@ -35,10 +35,10 @@ def test_dependencies(generate_app):
 
     # The version `v22.11.0` is incompatible while `v22.11.1` is compatible
     app.version_to_install = "v22.11.0"
-    assert app.strict_dependencies_validation is False
+    assert app.strict_dependencies_satisfied is False
 
     app.version_to_install = "v22.11.1"
-    assert app.strict_dependencies_validation is True
+    assert app.strict_dependencies_satisfied is True
 
 
 # The data for test purpose as fixture
