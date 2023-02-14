@@ -271,22 +271,16 @@ class _AiidaLabApp:
         if not version_to_install:
             return []
 
-        unmatched_requirements = [
-            r[1] for r in self.find_incompatibilities(version_to_install, python_bin)
+        unmatched_dependencies = {
+            dep[1].name: dep[1]
+            for dep in self.find_incompatibilities(version_to_install, python_bin)
+        }
+        packages = {p.name: p for p in find_installed_packages(python_bin)}
+        intersection = packages.keys() & unmatched_dependencies.keys()
+        return [
+            Dependency(packages[name], unmatched_dependencies[name])
+            for name in intersection
         ]
-        packages = find_installed_packages(python_bin)
-
-        dependencies_to_install = []
-        for requirement in unmatched_requirements:
-            installed = None
-
-            for package in packages:
-                if requirement.name == package.name:
-                    installed = package
-
-            dependencies_to_install.append(Dependency(installed, requirement))
-
-        return dependencies_to_install
 
     def _install_dependencies(self, python_bin, stdout=None):
         """Try to install the app dependencies with pip (if specified)."""
