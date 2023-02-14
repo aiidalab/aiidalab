@@ -768,7 +768,7 @@ class AiidaLabApp(traitlets.HasTraits):
             return None  # compatibility indetermined for given version
 
     def _validate_strict_dependencies(self, dependencies: List[Dependency]):
-        """Check core dependencies that are not allowed to be override
+        """Check core dependencies that are not allowed to be overridden
 
         return True if the strict dependencies satisfied
         """
