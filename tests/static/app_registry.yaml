@@ -1,0 +1,84 @@
+---
+metadata:
+    authors: Carl Simon Adorf, Aliaksandr Yakutovich, Marnik Bercx, Jusong Yu
+    categories:
+        - quantum
+    description: Perform Quantum ESPRESSO calculations
+    documentation_url: https://github.com/aiidalab/aiidalab-qe#readme
+    external_url: https://github.com/aiidalab/aiidalab-qe
+    logo: https://raw.githubusercontent.com/aiidalab/aiidalab-qe/master/miscellaneous/logos/QE.jpg
+    state: registered
+    title: Quantum ESPRESSO
+    version: 23.1.0
+name: quantum-espresso
+releases:
+    v22.11.0:
+        environment:
+            python_requirements:
+                - Jinja2~=2.11.3
+                - aiida-core~=1.0
+                - aiida-quantumespresso~=3.5
+                - aiidalab-qe-workchain@https://github.com/aiidalab/aiidalab-qe/releases/download/v22.11.0/aiidalab_qe_workchain-22.11.0-py3-none-any.whl
+                - aiidalab-widgets-base~=1.4.1
+                - filelock~=3.3.0
+                - importlib-resources~=5.2.2
+                - widget-bandsplot~=0.2.8
+        metadata:
+            authors: Carl Simon Adorf, Aliaksandr Yakutovich, Marnik Bercx, Jusong Yu
+            categories:
+                - quantum
+            description: Perform Quantum ESPRESSO calculations
+            documentation_url: https://github.com/aiidalab/aiidalab-qe#readme
+            external_url: https://github.com/aiidalab/aiidalab-qe
+            logo: https://raw.githubusercontent.com/aiidalab/aiidalab-qe/master/miscellaneous/logos/QE.jpg
+            state: registered
+            title: Quantum ESPRESSO
+            version: 22.11.0
+        url: git+https://github.com/aiidalab/aiidalab-qe.git@d608f3a02f109b34a1088b6eca47223125168d14
+    v22.11.1:
+        environment:
+            python_requirements:
+                - Jinja2~=3.0
+                - aiida-core~=2.1
+                - aiida-quantumespresso~=4.1
+                - aiidalab-qe-workchain@https://github.com/aiidalab/aiidalab-qe/releases/download/v22.12.0/aiidalab_qe_workchain-22.12.0-py3-none-any.whl
+                - aiidalab-widgets-base==2.0.0b0
+                - filelock~=3.8
+                - importlib-resources~=5.2.2
+                - numpy~=1.23
+                - widget-bandsplot~=0.5.0
+        metadata:
+            authors: Carl Simon Adorf, Aliaksandr Yakutovich, Marnik Bercx, Jusong Yu
+            categories:
+                - quantum
+            description: Perform Quantum ESPRESSO calculations
+            documentation_url: https://github.com/aiidalab/aiidalab-qe#readme
+            external_url: https://github.com/aiidalab/aiidalab-qe
+            logo: https://raw.githubusercontent.com/aiidalab/aiidalab-qe/master/miscellaneous/logos/QE.jpg
+            state: registered
+            title: Quantum ESPRESSO
+            version: 22.12.0
+        url: git+https://github.com/aiidalab/aiidalab-qe.git@58463d34ac143fa76be410ba3ff409968d938828
+    v23.01.0b1:
+        environment:
+            python_requirements:
+                - Jinja2~=3.0
+                - aiida-core>=2.1,<3
+                - aiida-quantumespresso~=4.1
+                - aiidalab-qe-workchain@https://github.com/aiidalab/aiidalab-qe/releases/download/v23.01.0b1/aiidalab_qe_workchain-23.1.0b1-py3-none-any.whl
+                - aiidalab-widgets-base==2.0.0b1
+                - filelock~=3.8
+                - importlib-resources~=5.2.2
+                - widget-bandsplot~=0.5.0
+        metadata:
+            authors: Carl Simon Adorf, Aliaksandr Yakutovich, Marnik Bercx, Jusong Yu
+            categories:
+                - quantum
+            description: Perform Quantum ESPRESSO calculations
+            documentation_url: https://github.com/aiidalab/aiidalab-qe#readme
+            external_url: https://github.com/aiidalab/aiidalab-qe
+            logo: https://raw.githubusercontent.com/aiidalab/aiidalab-qe/master/miscellaneous/logos/QE.jpg
+            state: registered
+            title: Quantum ESPRESSO
+            version: 23.1.0b1
+        url: git+https://github.com/aiidalab/aiidalab-qe.git@d89b58390c0a691bf16dfaa50036bc290fca017c
