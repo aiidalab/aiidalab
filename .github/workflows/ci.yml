@@ -34,7 +34,7 @@ jobs:
 
             - name: Install package
               run: |
-                  pip install -e .[tests]
+                  pip install -e .[dev]
                   pip freeze
 
             - name: Run tests
