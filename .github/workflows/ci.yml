@@ -34,9 +34,8 @@ jobs:
 
             - name: Install package
               run: |
-                  which python
-                  python -m pip install -e .[tests]
-                  python -m pip freeze
+                  pip install -e .[tests]
+                  pip freeze
 
             - name: Run tests
-              run: python -m pytest -v
+              run: pytest -v
