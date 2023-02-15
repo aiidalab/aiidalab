@@ -265,8 +265,8 @@ class _AiidaLabApp:
     def find_dependencies_to_install(self, version_to_install, python_bin=None):
         """Returns a list of dependencies that need to be installed.
 
-        If an unsopported version of dependency is already present it will
-        look something like: Dependency(installed=<Package...>, required=<Requirement(...)>).
+        If an unsupported version of a dependency is installed, it will look
+        something like: Dependency(installed=<Package...>, required=<Requirement(...)>).
 
         If the dependency is not present at all, it will look something like:
         Dependency(installed=None, required=<Requirement(...)>).
