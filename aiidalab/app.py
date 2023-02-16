@@ -18,7 +18,6 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
-from typing import List
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
@@ -54,6 +53,8 @@ logger = logging.getLogger(__name__)
 
 Dependency = namedtuple("Dependency", ["installed", "required"])
 
+_CORE_PACKAGES = ["aiida-core"]
+
 
 # A version is usually of type str, but it can also be a value
 # of this Enum to indicate special app states in which the
@@ -74,7 +75,6 @@ class AppRemoteUpdateStatus(Flag):
 
 @dataclass
 class _AiidaLabApp:
-
     metadata: dict
     name: str
     path: Path
@@ -164,7 +164,13 @@ class _AiidaLabApp:
 
     def available_versions(self):
         if self.is_registered:
-            yield from sorted(self.releases, key=parse, reverse=True)
+            # yield from sorted(self.releases, key=parse, reverse=True)
+            for version in sorted(self.releases, key=parse, reverse=True):
+                version_requirements = self.releases[version].get("environment")[
+                    "python_requirements"
+                ]
+                if self._strict_dependencies_met(version_requirements):
+                    yield version
 
     def dirty(self):
         if self._repo:
@@ -232,6 +238,20 @@ class _AiidaLabApp:
         # Sort by intrinsic order (e.g. 1.1.0 -> 1.0.1 -> 1.0.0 and so on)
         matching_releases.sort(key=parse, reverse=True)
         return matching_releases
+
+    @staticmethod
+    def _strict_dependencies_met(requirements):
+        packages_dict = {p.name: p for p in find_installed_packages(sys.executable)}
+        requirements = [Requirement(r) for r in requirements]
+        requirements_dict = {r.name: r for r in requirements}
+        for core in _CORE_PACKAGES:
+            if (
+                core in requirements_dict
+                and core in packages_dict
+                and not packages_dict[core].fulfills(requirements_dict[core])
+            ):
+                return False
+        return True
 
     @staticmethod
     def _find_incompatibilities_python(requirements, python_bin):
@@ -618,7 +638,6 @@ class AiidaLabApp(traitlets.HasTraits):
     )  # installed_version is updated from _AiiDALabApp only
     version_to_install = traitlets.Unicode(allow_none=True)
     dependencies_to_install = traitlets.List()
-    strict_dependencies_satisfied = traitlets.Bool()
     remote_update_status = traitlets.UseEnum(
         AppRemoteUpdateStatus, allow_none=True
     ).tag(readonly=True)
@@ -629,9 +648,6 @@ class AiidaLabApp(traitlets.HasTraits):
     detached = traitlets.Bool(allow_none=True).tag(readonly=True)
     compatible = traitlets.Bool(allow_none=True).tag(readonly=True)
     compatibility_info = traitlets.Dict()
-
-    # packages that need to compatible strictly
-    _CORE_PACKAGES = ["aiida-core"]
 
     def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
         self._app = _AiidaLabApp.from_id(
@@ -774,16 +790,6 @@ class AiidaLabApp(traitlets.HasTraits):
         except KeyError:
             return None  # compatibility indetermined for given version
 
-    def _strict_dependencies_met(self, dependencies_to_install: List[Dependency]):
-        """Check core dependencies that are not allowed to be overridden
-
-        return True if the strict dependencies satisfied
-        """
-        intersection = set(self._CORE_PACKAGES) & {
-            d.required.name for d in dependencies_to_install
-        }
-        return not bool(intersection)
-
     def _remote_update_status(self):
         """Determine whether there are updates available.
 
@@ -829,10 +835,6 @@ class AiidaLabApp(traitlets.HasTraits):
                 self._refresh_dependencies_to_install()
                 self.set_trait(
                     "compatible", self._is_compatible(self.installed_version)
-                )
-                self.set_trait(
-                    "strict_dependencies_satisfied",
-                    self._strict_dependencies_met(self.dependencies_to_install),
                 )
                 self.set_trait(
                     "remote_update_status",
