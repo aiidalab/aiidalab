@@ -163,8 +163,8 @@ class _AiidaLabApp:
         return AppVersion.NOT_INSTALLED
 
     def available_versions(self, python_bin=None):
+        """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered:
-            # yield from sorted(self.releases, key=parse, reverse=True)
             for version in sorted(self.releases, key=parse, reverse=True):
                 version_requirements = self.releases[version].get("environment")[
                     "python_requirements"
@@ -241,14 +241,15 @@ class _AiidaLabApp:
 
     @staticmethod
     def _strict_dependencies_met(requirements, python_bin):
-        packages_dict = {p.name: p for p in find_installed_packages(python_bin)}
+        """Check whether the given requirements are compatible with the core dependencies of a package."""
+        packages = find_installed_packages(python_bin)
         requirements = [Requirement(r) for r in requirements]
         requirements_dict = {r.name: r for r in requirements}
         for core in _CORE_PACKAGES:
             if (
                 core in requirements_dict
-                and core in packages_dict
-                and not packages_dict[core].fulfills(requirements_dict[core])
+                and core in packages
+                and not packages[core].fulfills(requirements_dict[core])
             ):
                 return False
         return True
@@ -257,8 +258,10 @@ class _AiidaLabApp:
     def _find_incompatibilities_python(requirements, python_bin):
         packages = find_installed_packages(python_bin)
         for requirement in map(Requirement, requirements):
-            f = [p for p in packages if p.fulfills(requirement)]
-            if not any(f):
+            pkg = packages.get(requirement.name)
+            if pkg is None:
+                yield requirement
+            elif not pkg.fulfills(requirement):
                 yield requirement
 
     def find_incompatibilities(self, version, python_bin=None):
@@ -302,7 +305,7 @@ class _AiidaLabApp:
             dep[1].name: dep[1]
             for dep in self.find_incompatibilities(version_to_install, python_bin)
         }
-        installed_packages = {p.name: p for p in find_installed_packages(python_bin)}
+        installed_packages = find_installed_packages(python_bin)
         return [
             Dependency(installed_packages.get(name), package)
             for name, package in unmatched_dependencies.items()
