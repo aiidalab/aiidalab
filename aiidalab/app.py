@@ -161,14 +161,14 @@ class _AiidaLabApp:
             return self.metadata.get("version", AppVersion.UNKNOWN)
         return AppVersion.NOT_INSTALLED
 
-    def available_versions(self):
+    def available_versions(self, python_bin=None):
         if self.is_registered:
             # yield from sorted(self.releases, key=parse, reverse=True)
             for version in sorted(self.releases, key=parse, reverse=True):
                 version_requirements = self.releases[version].get("environment")[
                     "python_requirements"
                 ]
-                if self._strict_dependencies_met(version_requirements):
+                if self._strict_dependencies_met(version_requirements, python_bin):
                     yield version
 
     def dirty(self):
@@ -239,8 +239,8 @@ class _AiidaLabApp:
         return matching_releases
 
     @staticmethod
-    def _strict_dependencies_met(requirements):
-        packages_dict = {p.name: p for p in find_installed_packages(sys.executable)}
+    def _strict_dependencies_met(requirements, python_bin):
+        packages_dict = {p.name: p for p in find_installed_packages(python_bin)}
         requirements = [Requirement(r) for r in requirements]
         requirements_dict = {r.name: r for r in requirements}
         for core in _CORE_PACKAGES:
