@@ -8,7 +8,6 @@ import shutil
 import sys
 import tarfile
 import tempfile
-from collections import namedtuple
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from enum import Enum, Flag, auto
@@ -49,8 +48,6 @@ from .utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-Dependency = namedtuple("Dependency", ["installed", "required"])
 
 _CORE_PACKAGES = ["aiida-core"]
 
@@ -289,10 +286,10 @@ class _AiidaLabApp:
         """Returns a list of dependencies that need to be installed.
 
         If an unsupported version of a dependency is installed, it will look
-        something like: Dependency(installed=<Package...>, required=<Requirement(...)>).
+        something like: {installed=<Package...>, required=<Requirement(...)>}.
 
         If the dependency is not present at all, it will look something like:
-        Dependency(installed=None, required=<Requirement(...)>).
+        {installed=None, required=<Requirement(...)>}.
         """
         if python_bin is None:
             python_bin = sys.executable
@@ -306,7 +303,7 @@ class _AiidaLabApp:
         }
         installed_packages = find_installed_packages(python_bin)
         return [
-            Dependency(installed_packages.get(name), package)
+            {"installed": installed_packages.get(name), "required": package}
             for name, package in unmatched_dependencies.items()
         ]
 
