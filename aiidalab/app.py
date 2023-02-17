@@ -702,6 +702,15 @@ class AiidaLabApp(traitlets.HasTraits):
     def _default_busy(self):  # pylint: disable=no-self-use
         return False
 
+    @traitlets.validate("version_to_install")
+    def _validate_version_to_install(self, proposal):
+        """Validate the version to install."""
+        if proposal["value"] not in self.available_versions:
+            raise traitlets.TraitError(
+                f"Version {proposal['value']} is not available for {self.name} app."
+            )
+        return proposal["value"]
+
     @traitlets.observe("version_to_install")
     def _observe_version_to_install(self, change):
         if change["old"] != change["new"]:

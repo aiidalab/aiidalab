@@ -1,5 +1,6 @@
 import aiida
 import pytest
+import traitlets
 from packaging import version
 
 from aiidalab.app import AiidaLabApp
@@ -34,8 +35,6 @@ def test_dependencies(generate_app):
     app.refresh()
 
     # The version `v22.11.0` is incompatible while `v22.11.1` is compatible
-    app.version_to_install = "v22.11.0"
-    assert app.strict_dependencies_satisfied is False
-
+    with pytest.raises(traitlets.TraitError):
+        app.version_to_install = "v22.11.0"
     app.version_to_install = "v22.11.1"
-    assert app.strict_dependencies_satisfied is True
