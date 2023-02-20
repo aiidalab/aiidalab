@@ -167,7 +167,7 @@ class _AiidaLabApp:
                 version_requirements = (
                     self.releases[version]
                     .get("environment", {})
-                    .get("python_requirements")
+                    .get("python_requirements", [])
                 )
                 if self._strict_dependencies_met(version_requirements, python_bin):
                     yield version
