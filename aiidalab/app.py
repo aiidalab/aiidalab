@@ -162,9 +162,7 @@ class _AiidaLabApp:
         """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered:
             for version in sorted(self.releases, key=parse, reverse=True):
-                version_requirements = self.releases[version].get("environment")[
-                    "python_requirements"
-                ]
+                version_requirements = self.releases[version].get("environment", {}).get("python_requirements")
                 if self._strict_dependencies_met(version_requirements, python_bin):
                     yield version
 
@@ -268,7 +266,7 @@ class _AiidaLabApp:
             assert version == self.installed_version()
             environment = asdict(Environment.scan(self.path))
         else:
-            environment = self.releases[version].get("environment")
+            environment = self.releases[version].get("environment", {})
 
         for key, spec in environment.items():
             if key == "python_requirements":
