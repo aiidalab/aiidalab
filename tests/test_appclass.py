@@ -21,6 +21,7 @@ def test_prereleases(generate_app):
     app.refresh()
     assert app.has_prereleases
     assert app.include_prereleases is False
+    assert "v23.01.0b1" not in app.available_versions
 
     # tick prereleases tick
     app.include_prereleases = True
