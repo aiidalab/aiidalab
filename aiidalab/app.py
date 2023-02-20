@@ -162,7 +162,11 @@ class _AiidaLabApp:
         """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered:
             for version in sorted(self.releases, key=parse, reverse=True):
-                version_requirements = self.releases[version].get("environment", {}).get("python_requirements")
+                version_requirements = (
+                    self.releases[version]
+                    .get("environment", {})
+                    .get("python_requirements")
+                )
                 if self._strict_dependencies_met(version_requirements, python_bin):
                     yield version
 
