@@ -11,6 +11,7 @@ from functools import wraps
 from pathlib import Path
 from subprocess import run
 from threading import Lock
+from typing import Dict, Optional
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
@@ -179,6 +180,23 @@ def find_installed_packages(python_bin=None):
         package["name"]: Package(name=package["name"], version=package["version"])
         for package in json.loads(output)
     }
+
+
+def get_package_by_requirement_name(
+    packages: Dict[str, Package], name: str
+) -> Optional[Package]:
+    """Return the package with the given requirment name from the dict of packages.
+    The usual get method of dict does not work here, because the requirement name and the package name
+    may be different by the case of whether being canonicalized or not.
+
+    For example, the requirement name is 'jupyter-client' and the package name is 'jupyter_client'.
+    The implementation of this method is inspired by https://github.com/pypa/pip/pull/8054
+    """
+    for package in packages.values():
+        # print(package.name, package.version)
+        if canonicalize_name(package.name) == canonicalize_name(name):
+            return package
+    return None
 
 
 def split_git_url(git_url):
