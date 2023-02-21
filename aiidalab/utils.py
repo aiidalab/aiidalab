@@ -153,7 +153,7 @@ class Package:
 
     def __repr__(self):
         return f"{type(self).__name__}({self.name}, {self.version})"
-    
+
     def __str__(self) -> str:
         return f"{self.name}=={self.version}"
 
