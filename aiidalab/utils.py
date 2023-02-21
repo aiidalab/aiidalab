@@ -151,8 +151,11 @@ class Package:
         self.name = name
         self.version = version
 
-    def __str__(self):
+    def __repr__(self):
         return f"{type(self).__name__}({self.name}, {self.version})"
+    
+    def __str__(self) -> str:
+        return f"{self.name}=={self.version}"
 
     def fulfills(self, requirement):
         """Returns True if this entry fullfills the requirement."""
