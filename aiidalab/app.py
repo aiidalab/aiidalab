@@ -39,6 +39,7 @@ from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     PEP508CompliantUrl,
     find_installed_packages,
+    get_package_by_requirement_name,
     load_app_registry_entry,
     load_app_registry_index,
     run_pip_install,
@@ -51,7 +52,7 @@ from .utils import (
 
 logger = logging.getLogger(__name__)
 
-_CORE_PACKAGES = ["aiida-core"]
+_CORE_PACKAGES = ["aiida-core", "jupyter-client"]
 
 
 # A version is usually of type str, but it can also be a value
@@ -258,7 +259,7 @@ class _AiidaLabApp:
     def _find_incompatibilities_python(requirements, python_bin):
         packages = find_installed_packages(python_bin)
         for requirement in map(Requirement, requirements):
-            pkg = packages.get(requirement.name)
+            pkg = get_package_by_requirement_name(packages, requirement.name)
             if pkg is None:
                 yield requirement
             elif not pkg.fulfills(requirement):
@@ -307,8 +308,11 @@ class _AiidaLabApp:
         }
         installed_packages = find_installed_packages(python_bin)
         return [
-            {"installed": installed_packages.get(name), "required": package}
-            for name, package in unmatched_dependencies.items()
+            {
+                "installed": get_package_by_requirement_name(installed_packages, name),
+                "required": requirement,
+            }
+            for name, requirement in unmatched_dependencies.items()
         ]
 
     def _install_dependencies(self, python_bin, stdout=None):
