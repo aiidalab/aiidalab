@@ -32,15 +32,9 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
-from .config import AIIDALAB_APPS
-from .environment import Environment
-from .git_util import GitManagedAppRepo as Repo
-from .git_util import git_clone
-from .metadata import Metadata
-from .utils import (
+from aiidalab.utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     PEP508CompliantUrl,
-    find_installed_packages,
     get_package_by_requirement_name,
     load_app_registry_entry,
     load_app_registry_index,
@@ -51,6 +45,12 @@ from .utils import (
     this_or_only_subdir,
     throttled,
 )
+
+from .config import AIIDALAB_APPS
+from .environment import Environment
+from .git_util import GitManagedAppRepo as Repo
+from .git_util import git_clone
+from .metadata import Metadata
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +245,8 @@ class _AiidaLabApp:
     @staticmethod
     def _strict_dependencies_met(requirements: list[str], python_bin):
         """Check whether the given requirements are compatible with the core dependencies of a package."""
+        from aiidalab.utils import find_installed_packages
+
         packages = find_installed_packages(python_bin)
         requirements = [Requirement(r) for r in requirements]
         requirements_dict = {r.name: r for r in requirements}
@@ -260,6 +262,8 @@ class _AiidaLabApp:
 
     @staticmethod
     def _find_incompatibilities_python(requirements, python_bin):
+        from aiidalab.utils import find_installed_packages
+
         packages = find_installed_packages(python_bin)
         for requirement in map(Requirement, requirements):
             pkg = get_package_by_requirement_name(packages, requirement.name)
@@ -299,6 +303,8 @@ class _AiidaLabApp:
         If the dependency is not present at all, it will look something like:
         {installed=None, required=<Requirement(...)>}.
         """
+        from aiidalab.utils import find_installed_packages
+
         if python_bin is None:
             python_bin = sys.executable
 
