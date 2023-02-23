@@ -1,16 +1,16 @@
 """Test the dataclass _AiidaLabApp.
 We mock the app requirements and the medatada by a simple yaml file."""
 import sys
+from pathlib import Path
 
 import pytest
 
-from aiidalab import utils
 from aiidalab.app import _AiidaLabApp
 from aiidalab.utils import Package
 
 _MONKEYPATCHED_INSTALLED_PACKAGES = {
     "aiida-core": Package("aiida-core", "2.2.1"),
-    "jupyter_client": Package("jupyter_client", "7.3.5"),
+    "jupyter-client": Package("jupyter-client", "7.3.5"),
 }
 
 
@@ -24,7 +24,8 @@ def test_strict_dependencies_met_default(monkeypatch, python_bin):
     """Test method _strict_dependencies_met of _AiidaLabApp.
     Checking the requirements of the app against the core packages."""
     monkeypatch.setattr(
-        utils, "find_installed_packages", lambda _: _MONKEYPATCHED_INSTALLED_PACKAGES
+        "aiidalab.utils.find_installed_packages",
+        lambda _: _MONKEYPATCHED_INSTALLED_PACKAGES,
     )
 
     # the requirements are met
@@ -46,7 +47,8 @@ def test_strict_dependencies_met_package_name_canoticalized(monkeypatch, python_
     """Test method _strict_dependencies_met of _AiidaLabApp for core packeges with
     name that is not canonicalized."""
     monkeypatch.setattr(
-        utils, "find_installed_packages", lambda _: _MONKEYPATCHED_INSTALLED_PACKAGES
+        "aiidalab.utils.find_installed_packages",
+        lambda _: _MONKEYPATCHED_INSTALLED_PACKAGES,
     )
 
     # the requirements are not met
@@ -55,3 +57,47 @@ def test_strict_dependencies_met_package_name_canoticalized(monkeypatch, python_
     ]
 
     assert not _AiidaLabApp._strict_dependencies_met(requirements, python_bin)
+
+
+def test_find_dependencies_to_install(monkeypatch, python_bin):
+    """Test find_dependencies_to_install method of _AiidaLabApp.
+    By mocking the _AiidallabApp class with its attributes set."""
+    monkeypatch.setattr(
+        "aiidalab.utils.find_installed_packages",
+        lambda _: _MONKEYPATCHED_INSTALLED_PACKAGES,
+    )
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", True)
+
+    aiidalab_app_data = _AiidaLabApp(
+        metadata={},
+        name="test",
+        path=Path("test"),
+        releases={
+            "stable": {
+                "environment": {
+                    "python_requirements": [
+                        "aiida-core~=2.0",
+                        "jupyter-client<6",
+                    ],
+                },
+                "metadata": {},
+                "url": "",
+            },
+            "v0.1.0": {
+                "environment": {
+                    "python_requirements": [
+                        "aiida-core~=1.0",
+                        "jupyter-client<6",
+                    ],
+                },
+                "metadata": {},
+                "url": "",
+            },
+        },
+    )
+
+    dependencies = aiidalab_app_data.find_dependencies_to_install("stable", python_bin)
+    dependencies_name = [dep.get("installed").name for dep in dependencies]
+
+    assert "aiida-core" not in dependencies_name
+    assert "jupyter-client" in dependencies_name
