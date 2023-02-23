@@ -1,5 +1,7 @@
 """Module to manage AiiDAlab apps."""
 
+from __future__ import annotations
+
 import errno
 import io
 import logging
@@ -241,16 +243,17 @@ class _AiidaLabApp:
         return matching_releases
 
     @staticmethod
-    def _strict_dependencies_met(requirements, python_bin):
+    def _strict_dependencies_met(requirements: list[str], python_bin):
         """Check whether the given requirements are compatible with the core dependencies of a package."""
         packages = find_installed_packages(python_bin)
         requirements = [Requirement(r) for r in requirements]
         requirements_dict = {r.name: r for r in requirements}
         for core in _CORE_PACKAGES:
+            core_package = get_package_by_requirement_name(packages, core)
             if (
                 core in requirements_dict
-                and core in packages
-                and not packages[core].fulfills(requirements_dict[core])
+                and core_package is not None
+                and not core_package.fulfills(requirements_dict[core])
             ):
                 return False
         return True
