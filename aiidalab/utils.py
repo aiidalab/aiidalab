@@ -159,14 +159,14 @@ class Package:
         return f"{self.name}=={self.version}"
 
     @property
-    def cananicalized_name(self):
+    def canonicalized_name(self):
         """Return the cananicalized name of the package."""
         return canonicalize_name(self.name)
 
     def fulfills(self, requirement):
         """Returns True if this entry fullfills the requirement."""
         return (
-            self.cananicalized_name == canonicalize_name(requirement.name)
+            self.canonicalized_name == canonicalize_name(requirement.name)
             and self.version in requirement.specifier
         )
 
@@ -182,7 +182,9 @@ def find_installed_packages(python_bin=None):
         capture_output=True,
     ).stdout
     return {
-        package["name"]: Package(name=package["name"], version=package["version"])
+        canonicalize_name(package["name"]): Package(
+            name=canonicalize_name(package["name"]), version=package["version"]
+        )
         for package in json.loads(output)
     }
 
@@ -190,7 +192,7 @@ def find_installed_packages(python_bin=None):
 def get_package_by_requirement_name(
     packages: Dict[str, Package], name: str
 ) -> Optional[Package]:
-    """Return the package with the given requirment name from the dict of packages.
+    """Return the package with the given requirement name from the dict of packages.
     The usual get method of dict does not work here, because the requirement name and the package name
     may be different by the case of whether being canonicalized or not.
 
@@ -198,7 +200,7 @@ def get_package_by_requirement_name(
     The implementation of this method is inspired by https://github.com/pypa/pip/pull/8054
     """
     for package in packages.values():
-        if package.cananicalized_name == canonicalize_name(name):
+        if package.canonicalized_name == canonicalize_name(name):
             return package
     return None
 
