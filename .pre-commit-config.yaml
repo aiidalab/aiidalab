@@ -40,11 +40,6 @@ repos:
           - id: isort
             args: [--profile, black, --filter-files]
 
-    - repo: https://github.com/asottile/setup-cfg-fmt
-      rev: v2.2.0
-      hooks:
-          - id: setup-cfg-fmt
-
     - repo: https://github.com/sirosen/check-jsonschema
       rev: 0.19.2
       hooks:
@@ -60,13 +55,8 @@ repos:
       rev: v0.991
       hooks:
           - id: mypy
-            args: [--config-file=setup.cfg, --show-error-codes, --install-types, --non-interactive]
-            pass_filenames: true
+            args: [--config-file=setup.cfg]
             exclude: >-
                 (?x)^(
                   docs/.*|
-                  aiidalab/__main__.py|
-                  aiidalab/fetch.py|
-                  aiidalab/config.py|
-                  aiidalab/registry/.*|
                 )$

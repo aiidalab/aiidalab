@@ -16,6 +16,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 import requests
 from cachetools import TTLCache, cached
+from packaging import Requirement
 from packaging.utils import canonicalize_name
 
 from .config import AIIDALAB_REGISTRY
@@ -165,7 +166,7 @@ class Package:
         """Return the cananicalized name of the package."""
         return canonicalize_name(self._name)
 
-    def fulfills(self, requirement):
+    def fulfills(self, requirement: Requirement):
         """Returns True if this entry fullfills the requirement."""
         return self.canonical_name == canonicalize_name(requirement.name) and (
             self.version in requirement.specifier or self.version is None
