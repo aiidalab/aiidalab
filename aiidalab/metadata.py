@@ -1,7 +1,8 @@
 """App metadata specification"""
+from __future__ import annotations
+
 from configparser import ConfigParser
 from dataclasses import dataclass, field
-from typing import List
 
 __all__ = [
     "Metadata",
@@ -78,13 +79,13 @@ class Metadata:
 
     title: str
     description: str
-    authors: str = None
-    state: str = None
-    documentation_url: str = None
-    external_url: str = None
-    logo: str = None
-    categories: List[str] = field(default_factory=list)
-    version: str = None
+    authors: None | str = None
+    state: None | str = None
+    documentation_url: None | str = None
+    external_url: None | str = None
+    logo: None | str = None
+    categories: list[str] = field(default_factory=list)
+    version: None | str = None
 
     _search_dirs = (".aiidalab", "./")
 
