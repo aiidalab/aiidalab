@@ -18,10 +18,13 @@ _MONKEYPATCHED_INSTALLED_PACKAGES = [
 @pytest.fixture
 def installed_packages(monkeypatch):
     """change the return of pip_list.
-    This is to mimic the pip list command output, which returns a string represent
+    This is to mimic the pip list command output, which returns a json string represent
     the list of installed packages."""
+    from aiidalab.utils import FIND_INSTALLED_PACKAGES_CACHE
+
+    FIND_INSTALLED_PACKAGES_CACHE.clear()  # clear the cache
     monkeypatch.setattr(
-        "aiidalab.utils.pip_list",
+        "aiidalab.utils._pip_list",
         lambda _: json.dumps(_MONKEYPATCHED_INSTALLED_PACKAGES),
     )
 
@@ -53,21 +56,9 @@ def test_strict_dependencies_met_default(installed_packages, python_bin):
 def test_strict_dependencies_met_package_name_canonicalized(
     installed_packages,
     python_bin,
-    monkeypatch,
 ):
     """Test method _strict_dependencies_met of _AiidaLabApp for core packeges with
     name that is not canonicalized."""
-    import json
-
-    INSTALLED = [
-        {"name": "aiida-core", "version": "2.2.1"},
-        {"name": "jupyter_client", "version": "7.3.5"},
-    ]
-    monkeypatch.setattr(
-        "aiidalab.utils.pip_list",
-        lambda _: json.dumps(INSTALLED),
-    )
-
     # the requirements are not met
     requirements = [
         Requirement("jupyter-client<6"),
