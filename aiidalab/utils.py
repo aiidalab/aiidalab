@@ -175,7 +175,7 @@ class Package:
 @cached(cache=FIND_INSTALLED_PACKAGES_CACHE)
 def find_installed_packages(python_bin=None):
     """Return all currently installed packages."""
-    output = pip_list(python_bin)
+    output = _pip_list(python_bin)
     return {
         canonicalize_name(package["name"]): Package(
             name=canonicalize_name(package["name"]), version=package["version"]
@@ -184,7 +184,7 @@ def find_installed_packages(python_bin=None):
     }
 
 
-def pip_list(python_bin=None):
+def _pip_list(python_bin=None):
     """Return all currently installed packages."""
     if python_bin is None:
         python_bin = sys.executable
