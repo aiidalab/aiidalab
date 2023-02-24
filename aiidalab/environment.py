@@ -22,7 +22,8 @@ matching the order shown here:
 """
 from configparser import ConfigParser
 from dataclasses import dataclass, field
-from typing import List
+from pathlib import Path
+from typing import Any, Generator
 
 __all__ = [
     "Environment",
@@ -38,21 +39,21 @@ class Environment:
     detect whether a given environment is meeting the specification.
     """
 
-    python_requirements: List[str] = field(default_factory=list)
+    python_requirements: list[str] = field(default_factory=list)
 
     _FILES = ("requirements.txt",)
 
     @staticmethod
-    def _scan(path):
-        def _parse_reqs(requirements):
+    def _scan(path: Path) -> Generator[Any, None, None]:
+        def _parse_reqs(requirements: str) -> Generator[str, None, None]:
             for line in (line.strip() for line in requirements.splitlines()):
                 if line and not line.startswith("#"):
                     yield line
 
-        def _parse_setup_cfg(setup_cfg):
+        def _parse_setup_cfg(setup_cfg):  # type: ignore
             cfg = ConfigParser()
             cfg.read_string(setup_cfg)
-            return cfg["options"].get("install_requires", [])
+            return cfg["options"].get("install_requires", None)
 
         # Parse the setup.cfg file (if present).
         try:
@@ -69,6 +70,6 @@ class Environment:
                 pass
 
     @classmethod
-    def scan(cls, root):
+    def scan(cls, root: Path) -> "Environment":
         """Scan the root path and determine the environment specification."""
         return cls(**dict(cls._scan(root)))
