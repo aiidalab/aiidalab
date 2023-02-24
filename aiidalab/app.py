@@ -717,14 +717,15 @@ class AiidaLabApp(traitlets.HasTraits):
     @traitlets.validate("version_to_install")
     def _validate_version_to_install(self, proposal):
         """Validate the version to install."""
-        if proposal["value"] is None:
-            return
+        with self._show_busy():
+            if proposal["value"] is None:
+                return
 
-        if proposal["value"] not in self.available_versions:
-            raise traitlets.TraitError(
-                f"Version {proposal['value']} is not available for {self.name} app."
-            )
-        return proposal["value"]
+            if proposal["value"] not in self.available_versions:
+                raise traitlets.TraitError(
+                    f"Version {proposal['value']} is not available for {self.name} app."
+                )
+            return proposal["value"]
 
     @traitlets.observe("version_to_install")
     def _observe_version_to_install(self, change):
