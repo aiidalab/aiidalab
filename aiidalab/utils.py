@@ -179,6 +179,17 @@ class Package:
 @cached(cache=FIND_INSTALLED_PACKAGES_CACHE)
 def find_installed_packages(python_bin=None):
     """Return all currently installed packages."""
+    output = pip_list(python_bin)
+    return {
+        canonicalize_name(package["name"]): Package(
+            name=canonicalize_name(package["name"]), version=package["version"]
+        )
+        for package in json.loads(output)
+    }
+
+
+def pip_list(python_bin=None):
+    """Return all currently installed packages."""
     if python_bin is None:
         python_bin = sys.executable
     output = run(
@@ -186,12 +197,8 @@ def find_installed_packages(python_bin=None):
         encoding="utf-8",
         capture_output=True,
     ).stdout
-    return {
-        canonicalize_name(package["name"]): Package(
-            name=canonicalize_name(package["name"]), version=package["version"]
-        )
-        for package in json.loads(output)
-    }
+
+    return output
 
 
 def get_package_by_name(packages: list[Package], name: str) -> Package | None:

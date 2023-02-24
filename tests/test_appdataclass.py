@@ -1,5 +1,6 @@
 """Test the dataclass _AiidaLabApp.
 We mock the app requirements and the medatada by a simple yaml file."""
+import json
 import sys
 from pathlib import Path
 
@@ -7,12 +8,22 @@ import pytest
 from packaging.requirements import Requirement
 
 from aiidalab.app import _AiidaLabApp
-from aiidalab.utils import Package
 
-_MONKEYPATCHED_INSTALLED_PACKAGES = {
-    "aiida-core": Package("aiida-core", "2.2.1"),
-    "jupyter-client": Package("jupyter-client", "7.3.5"),
-}
+_MONKEYPATCHED_INSTALLED_PACKAGES = [
+    {"name": "aiida-core", "version": "2.2.1"},
+    {"name": "jupyter_client", "version": "7.3.5"},
+]
+
+
+@pytest.fixture
+def installed_packages(monkeypatch):
+    """change the return of pip_list.
+    This is to mimic the pip list command output, which returns a string represent
+    the list of installed packages."""
+    monkeypatch.setattr(
+        "aiidalab.utils.pip_list",
+        lambda _: json.dumps(_MONKEYPATCHED_INSTALLED_PACKAGES),
+    )
 
 
 @pytest.fixture
@@ -21,14 +32,9 @@ def python_bin():
     return sys.executable
 
 
-def test_strict_dependencies_met_default(monkeypatch, python_bin):
+def test_strict_dependencies_met_default(installed_packages, python_bin):
     """Test method _strict_dependencies_met of _AiidaLabApp.
     Checking the requirements of the app against the core packages."""
-    monkeypatch.setattr(
-        "aiidalab.utils.find_installed_packages",
-        lambda _: _MONKEYPATCHED_INSTALLED_PACKAGES,
-    )
-
     # the requirements are met
     requirements = [
         Requirement("aiida-core~=2.0"),
@@ -44,12 +50,22 @@ def test_strict_dependencies_met_default(monkeypatch, python_bin):
     assert not _AiidaLabApp._strict_dependencies_met(requirements, python_bin)
 
 
-def test_strict_dependencies_met_package_name_canoticalized(monkeypatch, python_bin):
+def test_strict_dependencies_met_package_name_canonicalized(
+    installed_packages,
+    python_bin,
+    monkeypatch,
+):
     """Test method _strict_dependencies_met of _AiidaLabApp for core packeges with
     name that is not canonicalized."""
+    import json
+
+    INSTALLED = [
+        {"name": "aiida-core", "version": "2.2.1"},
+        {"name": "jupyter_client", "version": "7.3.5"},
+    ]
     monkeypatch.setattr(
-        "aiidalab.utils.find_installed_packages",
-        lambda _: _MONKEYPATCHED_INSTALLED_PACKAGES,
+        "aiidalab.utils.pip_list",
+        lambda _: json.dumps(INSTALLED),
     )
 
     # the requirements are not met
@@ -60,13 +76,9 @@ def test_strict_dependencies_met_package_name_canoticalized(monkeypatch, python_
     assert not _AiidaLabApp._strict_dependencies_met(requirements, python_bin)
 
 
-def test_find_dependencies_to_install(monkeypatch, python_bin):
+def test_find_dependencies_to_install(monkeypatch, installed_packages, python_bin):
     """Test find_dependencies_to_install method of _AiidaLabApp.
     By mocking the _AiidallabApp class with its attributes set."""
-    monkeypatch.setattr(
-        "aiidalab.utils.find_installed_packages",
-        lambda _: _MONKEYPATCHED_INSTALLED_PACKAGES,
-    )
     monkeypatch.setattr(_AiidaLabApp, "is_registered", True)
 
     aiidalab_app_data = _AiidaLabApp(
