@@ -32,8 +32,9 @@ from watchdog.observers.polling import PollingObserver
 
 from aiidalab.utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
+    Package,
     PEP508CompliantUrl,
-    get_package_by_requirement_name,
+    get_package_by_name,
     load_app_registry_entry,
     load_app_registry_index,
     run_pip_install,
@@ -52,7 +53,7 @@ from .metadata import Metadata
 
 logger = logging.getLogger(__name__)
 
-_CORE_PACKAGES = ["aiida-core", "jupyter-client"]
+_CORE_PACKAGES = [Package("aiida-core"), Package("jupyter-client")]
 
 
 # A version is usually of type str, but it can also be a value
@@ -165,11 +166,14 @@ class _AiidaLabApp:
         """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered:
             for version in sorted(self.releases, key=parse, reverse=True):
-                version_requirements = (
-                    self.releases[version]
-                    .get("environment", {})
-                    .get("python_requirements", [])
-                )
+                version_requirements = [
+                    Requirement(r)
+                    for r in (
+                        self.releases[version]
+                        .get("environment", {})
+                        .get("python_requirements", [])
+                    )
+                ]
                 if self._strict_dependencies_met(version_requirements, python_bin):
                     yield version
 
@@ -241,19 +245,24 @@ class _AiidaLabApp:
         return matching_releases
 
     @staticmethod
-    def _strict_dependencies_met(requirements: list[str], python_bin):
+    def _strict_dependencies_met(requirements: list[Requirement], python_bin) -> bool:
         """Check whether the given requirements are compatible with the core dependencies of a package."""
+        from packaging.utils import canonicalize_name
+
         from aiidalab.utils import find_installed_packages
 
         packages = find_installed_packages(python_bin)
-        requirements = [Requirement(r) for r in requirements]
-        requirements_dict = {r.name: r for r in requirements}
+
+        # Too avoid subtle bugs, we canonicalize the names of the requirements.
+        requirements_dict = {canonicalize_name(r.name): r for r in requirements}
         for core in _CORE_PACKAGES:
-            core_package = get_package_by_requirement_name(packages, core)
+            installed_core_package = get_package_by_name(packages, core.canonical_name)
             if (
-                core in requirements_dict
-                and core_package is not None
-                and not core_package.fulfills(requirements_dict[core])
+                core.canonical_name in requirements_dict
+                and installed_core_package is not None
+                and not installed_core_package.fulfills(
+                    requirements_dict[core.canonical_name]
+                )
             ):
                 return False
         return True
@@ -264,7 +273,7 @@ class _AiidaLabApp:
 
         packages = find_installed_packages(python_bin)
         for requirement in map(Requirement, requirements):
-            pkg = get_package_by_requirement_name(packages, requirement.name)
+            pkg = get_package_by_name(packages, requirement.name)
             if pkg is None:
                 yield requirement
             elif not pkg.fulfills(requirement):
@@ -316,7 +325,7 @@ class _AiidaLabApp:
         installed_packages = find_installed_packages(python_bin)
         return [
             {
-                "installed": get_package_by_requirement_name(installed_packages, name),
+                "installed": get_package_by_name(installed_packages, name),
                 "required": requirement,
             }
             for name, requirement in unmatched_dependencies.items()
