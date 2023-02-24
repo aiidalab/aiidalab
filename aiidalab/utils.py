@@ -1,4 +1,5 @@
 """Helpful utilities for the AiiDAlab tools."""
+from __future__ import annotations
 
 import json
 import logging
@@ -11,7 +12,6 @@ from functools import wraps
 from pathlib import Path
 from subprocess import run
 from threading import Lock
-from typing import Dict, Optional
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
@@ -148,7 +148,9 @@ class throttled:  # pylint: disable=invalid-name
 class Package:
     """Helper class to check whether a given package fulfills a requirement."""
 
-    def __init__(self, name, version):
+    def __init__(self, name: str, version: str = None):
+        """If version is None, means not confinement for the version therefore
+        the package always fulfill."""
         self._name = name  # underscore to avoid name clash with property canonical_name
         self.version = version
 
@@ -165,6 +167,9 @@ class Package:
 
     def fulfills(self, requirement):
         """Returns True if this entry fullfills the requirement."""
+        if self.version is None:
+            return True
+
         return (
             self.canonical_name == canonicalize_name(requirement.name)
             and self.version in requirement.specifier
@@ -189,12 +194,10 @@ def find_installed_packages(python_bin=None):
     }
 
 
-def get_package_by_requirement_name(
-    packages: Dict[str, Package], name: str
-) -> Optional[Package]:
-    """Return the package with the given requirement name from the dict of packages.
-    The usual get method of dict does not work here, because the requirement name and the package name
-    may be different by the case of whether being canonicalized or not.
+def get_package_by_name(packages: list[Package], name: str) -> Package | None:
+    """Return the package with the given name from the list of packages.
+    The name can be the canonicalized name or the requirement name which may not canonicalized.
+    We try to convert the name to the canonicalized in both side and compare them.
 
     For example, the requirement name is 'jupyter-client' and the package name is 'jupyter_client'.
     The implementation of this method is inspired by https://github.com/pypa/pip/pull/8054

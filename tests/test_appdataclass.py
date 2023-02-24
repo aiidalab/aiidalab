@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from packaging.requirements import Requirement
 
 from aiidalab.app import _AiidaLabApp
 from aiidalab.utils import Package
@@ -30,14 +31,14 @@ def test_strict_dependencies_met_default(monkeypatch, python_bin):
 
     # the requirements are met
     requirements = [
-        "aiida-core~=2.0",
+        Requirement("aiida-core~=2.0"),
     ]
 
     assert _AiidaLabApp._strict_dependencies_met(requirements, python_bin)
 
     # the requirements are not met
     requirements = [
-        "aiida-core~=1.0",
+        Requirement("aiida-core~=1.0"),
     ]
 
     assert not _AiidaLabApp._strict_dependencies_met(requirements, python_bin)
@@ -53,7 +54,7 @@ def test_strict_dependencies_met_package_name_canoticalized(monkeypatch, python_
 
     # the requirements are not met
     requirements = [
-        "jupyter-client<6",
+        Requirement("jupyter-client<6"),
     ]
 
     assert not _AiidaLabApp._strict_dependencies_met(requirements, python_bin)
