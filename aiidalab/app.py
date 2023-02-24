@@ -41,6 +41,7 @@ from aiidalab.utils import (
     load_app_registry_index,
     run_pip_install,
     run_post_install_script,
+    run_reentry_scan,
     run_verdi_daemon_restart,
     split_git_url,
     this_or_only_subdir,
@@ -340,6 +341,11 @@ class _AiidaLabApp:
             process.wait()
             if process.returncode != 0:
                 raise RuntimeError("Failed to install dependencies.")
+
+            # AiiDA plugins require reentry run to be found by AiiDA.
+            process = run_reentry_scan()
+            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                stdout.write(line)
 
             # Restarting the AiiDA daemon to import newly installed plugins.
             process = run_verdi_daemon_restart()

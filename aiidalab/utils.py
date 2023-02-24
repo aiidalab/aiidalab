@@ -239,6 +239,15 @@ def run_pip_install(*args, python_bin=sys.executable):
     )
 
 
+def run_reentry_scan():
+    return subprocess.Popen(
+        ["reentry", "scan"],
+        bufsize=1,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+
 def run_verdi_daemon_restart():
     return subprocess.Popen(
         ["verdi", "daemon", "restart"],
