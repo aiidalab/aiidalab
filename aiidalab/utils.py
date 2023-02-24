@@ -24,7 +24,7 @@ from .fetch import fetch_from_url
 from .metadata import Metadata
 
 logger = logging.getLogger(__name__)
-FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)
+FIND_INSTALLED_PACKAGES_CACHE: TTLCache = TTLCache(maxsize=32, ttl=60)
 
 # Warning: try-except is a fix for Quantum Mobile release v19.03.0 where
 # requests_cache is not installed.
@@ -148,7 +148,7 @@ class throttled:  # pylint: disable=invalid-name
 class Package:
     """Helper class to check whether a given package fulfills a requirement."""
 
-    def __init__(self, name: str, version: str = None):
+    def __init__(self, name: str, version: None | str = None):
         """If version is None, means not confinement for the version therefore
         the package always fulfill."""
         self._name = name  # underscore to avoid name clash with property canonical_name
@@ -205,7 +205,7 @@ def get_package_by_name(packages: list[Package], name: str) -> Package | None:
     For example, the requirement name is 'jupyter-client' and the package name is 'jupyter_client'.
     The implementation of this method is inspired by https://github.com/pypa/pip/pull/8054
     """
-    for package in packages.values():
+    for package in packages:
         if package.canonical_name == canonicalize_name(name):
             return package
     return None
