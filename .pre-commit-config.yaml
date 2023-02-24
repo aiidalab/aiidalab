@@ -59,4 +59,5 @@ repos:
             exclude: >-
                 (?x)^(
                   docs/.*|
+                  tests/.*|
                 )$
