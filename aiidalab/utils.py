@@ -17,7 +17,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 import requests
 from cachetools import TTLCache, cached
-from packaging import Requirement
+from packaging.requirements import Requirement
 from packaging.utils import NormalizedName, canonicalize_name
 
 from .config import AIIDALAB_REGISTRY
@@ -201,7 +201,7 @@ def _pip_list(python_bin: str | None = None) -> str:
     return output
 
 
-def get_package_by_name(packages: list[Package], name: str) -> Package | None:
+def get_package_by_name(packages: dict[str, Package], name: str) -> Package | None:
     """Return the package with the given name from the list of packages.
     The name can be the canonicalized name or the requirement name which may not canonicalized.
     We try to convert the name to the canonicalized in both side and compare them.
@@ -209,7 +209,7 @@ def get_package_by_name(packages: list[Package], name: str) -> Package | None:
     For example, the requirement name is 'jupyter-client' and the package name is 'jupyter_client'.
     The implementation of this method is inspired by https://github.com/pypa/pip/pull/8054
     """
-    for package in packages:
+    for package in packages.values():
         if package.canonical_name == canonicalize_name(name):
             return package
     return None
