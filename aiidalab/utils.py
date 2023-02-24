@@ -149,24 +149,24 @@ class Package:
     """Helper class to check whether a given package fulfills a requirement."""
 
     def __init__(self, name, version):
-        self.name = name
+        self._name = name  # underscore to avoid name clash with property canonical_name
         self.version = version
 
     def __repr__(self):
-        return f"{type(self).__name__}({self.name}, {self.version})"
+        return f"{type(self).__name__}({self.canonical_name}, {self.version})"
 
     def __str__(self) -> str:
-        return f"{self.name}=={self.version}"
+        return f"{self.canonical_name}=={self.version}"
 
     @property
-    def canonicalized_name(self):
+    def canonical_name(self):
         """Return the cananicalized name of the package."""
-        return canonicalize_name(self.name)
+        return canonicalize_name(self._name)
 
     def fulfills(self, requirement):
         """Returns True if this entry fullfills the requirement."""
         return (
-            self.canonicalized_name == canonicalize_name(requirement.name)
+            self.canonical_name == canonicalize_name(requirement.name)
             and self.version in requirement.specifier
         )
 
@@ -200,7 +200,7 @@ def get_package_by_requirement_name(
     The implementation of this method is inspired by https://github.com/pypa/pip/pull/8054
     """
     for package in packages.values():
-        if package.canonicalized_name == canonicalize_name(name):
+        if package.canonical_name == canonicalize_name(name):
             return package
     return None
 
