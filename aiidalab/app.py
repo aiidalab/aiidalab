@@ -858,7 +858,7 @@ class AiidaLabApp(traitlets.HasTraits):
             self.version_to_install
         )
 
-    @throttled(calls_per_second=1)
+    @throttled(interval=1)
     def refresh(self):
         """Refresh app state."""
         with self._show_busy():
