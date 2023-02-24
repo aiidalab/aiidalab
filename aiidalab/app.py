@@ -254,7 +254,6 @@ class _AiidaLabApp:
         from aiidalab.utils import find_installed_packages
 
         packages = find_installed_packages(python_bin)
-
         # Too avoid subtle bugs, we canonicalize the names of the requirements.
         requirements_dict = {canonicalize_name(r.name): r for r in requirements}
         for core in _CORE_PACKAGES:
