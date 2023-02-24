@@ -77,7 +77,7 @@ def test_find_dependencies_to_install(monkeypatch, python_bin):
                 "environment": {
                     "python_requirements": [
                         "aiida-core~=2.0",
-                        "jupyter-client<6",
+                        "jupyter_client<6",  # this is not canonicalized and will be converted to jupyter-client
                     ],
                 },
                 "metadata": {},
@@ -87,7 +87,7 @@ def test_find_dependencies_to_install(monkeypatch, python_bin):
                 "environment": {
                     "python_requirements": [
                         "aiida-core~=1.0",
-                        "jupyter-client<6",
+                        "jupyter_client<6",  # this is not canonicalized
                     ],
                 },
                 "metadata": {},
@@ -97,7 +97,7 @@ def test_find_dependencies_to_install(monkeypatch, python_bin):
     )
 
     dependencies = aiidalab_app_data.find_dependencies_to_install("stable", python_bin)
-    dependencies_name = [dep.get("installed").name for dep in dependencies]
+    dependencies_name = [dep.get("installed").canonical_name for dep in dependencies]
 
     assert "aiida-core" not in dependencies_name
     assert "jupyter-client" in dependencies_name
