@@ -34,6 +34,7 @@ from aiidalab.utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     Package,
     PEP508CompliantUrl,
+    find_installed_packages,
     get_package_by_name,
     load_app_registry_entry,
     load_app_registry_index,
@@ -249,8 +250,6 @@ class _AiidaLabApp:
         """Check whether the given requirements are compatible with the core dependencies of a package."""
         from packaging.utils import canonicalize_name
 
-        from aiidalab.utils import find_installed_packages
-
         packages = find_installed_packages(python_bin)
         # Too avoid subtle bugs, we canonicalize the names of the requirements.
         requirements_dict = {canonicalize_name(r.name): r for r in requirements}
@@ -268,8 +267,6 @@ class _AiidaLabApp:
 
     @staticmethod
     def _find_incompatibilities_python(requirements, python_bin):
-        from aiidalab.utils import find_installed_packages
-
         packages = find_installed_packages(python_bin)
         for requirement in map(Requirement, requirements):
             pkg = get_package_by_name(packages, requirement.name)
@@ -309,8 +306,6 @@ class _AiidaLabApp:
         If the dependency is not present at all, it will look something like:
         {installed=None, required=<Requirement(...)>}.
         """
-        from aiidalab.utils import find_installed_packages
-
         if python_bin is None:
             python_bin = sys.executable
 
