@@ -605,6 +605,8 @@ class AiidaLabApp(traitlets.HasTraits):
 
         self.name = self._app.name
 
+        self._busy_count = 0
+
         try:
             self.logo = self._app.metadata["logo"]
         except KeyError:
@@ -652,10 +654,13 @@ class AiidaLabApp(traitlets.HasTraits):
     def _show_busy(self):
         """Apply this decorator to indicate that the app is busy during execution."""
         self.set_trait("busy", True)
+        self._busy_count += 1
         try:
             yield
         finally:
-            self.set_trait("busy", False)
+            self._busy_count -= 1
+            if self._busy_count == 0:
+                self.set_trait("busy", False)
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
