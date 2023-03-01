@@ -752,7 +752,13 @@ class AiidaLabApp(traitlets.HasTraits):
                 if self.include_prereleases or not parse(version).is_prerelease
             ]
 
-    @throttled(calls_per_second=1)
+    @throttled(interval=15)
+    def _intermittent_refresh(self):
+        """The intermittent refresh is called in a separated thread independently.
+        It is used to scan and update the installed app information.
+        For interactive use such as in the widget, use `refresh` method below."""
+        self.refresh()
+
     def refresh(self):
         """Refresh app state."""
         with self._show_busy():
@@ -776,7 +782,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def refresh_async(self):
         """Asynchronized (non-blocking) refresh of the app state."""
-        refresh_thread = Thread(target=self.refresh)
+        refresh_thread = Thread(target=self._intermittent_refresh)
         refresh_thread.start()
 
     @property

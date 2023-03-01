@@ -105,7 +105,7 @@ def parse_app_repo(url, metadata_fallback=None):
 
 
 class throttled:  # pylint: disable=invalid-name
-    """Decorator to throttle calls to a function to a specified rate.
+    """Decorator to throttle calls to a function in a specified interval.
 
     The throttle is specific to the first argument of the wrapped
     function. That means for class methods it is specific to each
@@ -115,8 +115,8 @@ class throttled:  # pylint: disable=invalid-name
 
     """
 
-    def __init__(self, calls_per_second=1):
-        self.calls_per_second = calls_per_second
+    def __init__(self, interval=5):
+        self.interval = interval
         self.last_start = defaultdict(lambda: -1)
         self.locks = defaultdict(Lock)
 
@@ -127,7 +127,7 @@ class throttled:  # pylint: disable=invalid-name
         def wrapped(instance, *args, **kwargs):
             if self.last_start[hash(instance)] >= 0:
                 elapsed = time.perf_counter() - self.last_start[hash(instance)]
-                to_wait = 1.0 / self.calls_per_second - elapsed
+                to_wait = self.interval - elapsed
                 if to_wait > 0:
                     locked = self.locks[hash(instance)].acquire(blocking=False)
                     if locked:
