@@ -1,4 +1,5 @@
 """Helpful utilities for the AiiDAlab tools."""
+from __future__ import annotations
 
 import json
 import logging
@@ -147,23 +148,43 @@ class throttled:  # pylint: disable=invalid-name
 class Package:
     """Helper class to check whether a given package fulfills a requirement."""
 
-    def __init__(self, name, version):
-        self.name = name
+    def __init__(self, name: str, version: str = None):
+        """If version is None, means not confinement for the version therefore
+        the package always fulfill."""
+        self._name = name  # underscore to avoid name clash with property canonical_name
         self.version = version
 
-    def __str__(self):
-        return f"{type(self).__name__}({self.name}, {self.version})"
+    def __repr__(self):
+        return f"{type(self).__name__}({self.canonical_name}, {self.version})"
+
+    def __str__(self) -> str:
+        return f"{self.canonical_name}=={self.version}"
+
+    @property
+    def canonical_name(self):
+        """Return the cananicalized name of the package."""
+        return canonicalize_name(self._name)
 
     def fulfills(self, requirement):
         """Returns True if this entry fullfills the requirement."""
-        return (
-            canonicalize_name(self.name) == canonicalize_name(requirement.name)
-            and self.version in requirement.specifier
+        return self.canonical_name == canonicalize_name(requirement.name) and (
+            self.version in requirement.specifier or self.version is None
         )
 
 
 @cached(cache=FIND_INSTALLED_PACKAGES_CACHE)
 def find_installed_packages(python_bin=None):
+    """Return all currently installed packages."""
+    output = _pip_list(python_bin)
+    return {
+        canonicalize_name(package["name"]): Package(
+            name=canonicalize_name(package["name"]), version=package["version"]
+        )
+        for package in output
+    }
+
+
+def _pip_list(python_bin=None):
     """Return all currently installed packages."""
     if python_bin is None:
         python_bin = sys.executable
@@ -172,10 +193,22 @@ def find_installed_packages(python_bin=None):
         encoding="utf-8",
         capture_output=True,
     ).stdout
-    return [
-        Package(name=package["name"], version=package["version"])
-        for package in json.loads(output)
-    ]
+
+    return json.loads(output)
+
+
+def get_package_by_name(packages: list[Package], name: str) -> Package | None:
+    """Return the package with the given name from the list of packages.
+    The name can be the canonicalized name or the requirement name which may not canonicalized.
+    We try to convert the name to the canonicalized in both side and compare them.
+
+    For example, the requirement name is 'jupyter-client' and the package name is 'jupyter_client'.
+    The implementation of this method is inspired by https://github.com/pypa/pip/pull/8054
+    """
+    for package in packages.values():
+        if package.canonical_name == canonicalize_name(name):
+            return package
+    return None
 
 
 def split_git_url(git_url):
