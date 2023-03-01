@@ -11,7 +11,6 @@ import sys
 import tarfile
 import tempfile
 import threading
-from collections import namedtuple
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from enum import Enum, Flag, auto
