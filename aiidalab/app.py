@@ -655,12 +655,11 @@ class AiidaLabApp(traitlets.HasTraits):
     @contextmanager
     def _show_busy(self):
         """Apply this decorator to indicate that the app is busy during execution."""
-        self.set_trait("busy", True)
-
         # we need to use a lock here, because the busy trait is not thread-safe
         # we may use _show_busy in different threads, e.g. when installing and auto-status refresh
         with self._busy_count_lock:
             self._busy_count += 1
+            self.set_trait("busy", True)
 
         try:
             yield
@@ -668,8 +667,8 @@ class AiidaLabApp(traitlets.HasTraits):
             with self._busy_count_lock:
                 self._busy_count -= 1
 
-            if self._busy_count == 0:
-                self.set_trait("busy", False)
+                if self._busy_count == 0:
+                    self.set_trait("busy", False)
 
     def in_category(self, category):
         # One should test what happens if the category won't be defined.
