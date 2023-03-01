@@ -1,5 +1,7 @@
 """Module to manage AiiDAlab apps."""
 
+from __future__ import annotations
+
 import errno
 import io
 import logging
@@ -29,15 +31,12 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
-from .config import AIIDALAB_APPS
-from .environment import Environment
-from .git_util import GitManagedAppRepo as Repo
-from .git_util import git_clone
-from .metadata import Metadata
-from .utils import (
+from aiidalab.utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
+    Package,
     PEP508CompliantUrl,
     find_installed_packages,
+    get_package_by_name,
     load_app_registry_entry,
     load_app_registry_index,
     run_pip_install,
@@ -48,7 +47,15 @@ from .utils import (
     throttled,
 )
 
+from .config import AIIDALAB_APPS
+from .environment import Environment
+from .git_util import GitManagedAppRepo as Repo
+from .git_util import git_clone
+from .metadata import Metadata
+
 logger = logging.getLogger(__name__)
+
+_CORE_PACKAGES = [Package("aiida-core"), Package("jupyter-client")]
 
 
 # A version is usually of type str, but it can also be a value
@@ -70,7 +77,6 @@ class AppRemoteUpdateStatus(Flag):
 
 @dataclass
 class _AiidaLabApp:
-
     metadata: dict
     name: str
     path: Path
@@ -158,9 +164,20 @@ class _AiidaLabApp:
             return self.metadata.get("version", AppVersion.UNKNOWN)
         return AppVersion.NOT_INSTALLED
 
-    def available_versions(self):
+    def available_versions(self, python_bin=None):
+        """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered:
-            yield from sorted(self.releases, key=parse, reverse=True)
+            for version in sorted(self.releases, key=parse, reverse=True):
+                version_requirements = [
+                    Requirement(r)
+                    for r in (
+                        self.releases[version]
+                        .get("environment", {})
+                        .get("python_requirements", [])
+                    )
+                ]
+                if self._strict_dependencies_met(version_requirements, python_bin):
+                    yield version
 
     def dirty(self):
         if self._repo:
@@ -230,11 +247,33 @@ class _AiidaLabApp:
         return matching_releases
 
     @staticmethod
+    def _strict_dependencies_met(requirements: list[Requirement], python_bin) -> bool:
+        """Check whether the given requirements are compatible with the core dependencies of a package."""
+        from packaging.utils import canonicalize_name
+
+        packages = find_installed_packages(python_bin)
+        # Too avoid subtle bugs, we canonicalize the names of the requirements.
+        requirements_dict = {canonicalize_name(r.name): r for r in requirements}
+        for core in _CORE_PACKAGES:
+            installed_core_package = get_package_by_name(packages, core.canonical_name)
+            if (
+                core.canonical_name in requirements_dict
+                and installed_core_package is not None
+                and not installed_core_package.fulfills(
+                    requirements_dict[core.canonical_name]
+                )
+            ):
+                return False
+        return True
+
+    @staticmethod
     def _find_incompatibilities_python(requirements, python_bin):
         packages = find_installed_packages(python_bin)
         for requirement in map(Requirement, requirements):
-            f = [p for p in packages if p.fulfills(requirement)]
-            if not any(f):
+            pkg = get_package_by_name(packages, requirement.name)
+            if pkg is None:
+                yield requirement
+            elif not pkg.fulfills(requirement):
                 yield requirement
 
     def find_incompatibilities(self, version, python_bin=None):
@@ -245,7 +284,7 @@ class _AiidaLabApp:
             assert version == self.installed_version()
             environment = asdict(Environment.scan(self.path))
         else:
-            environment = self.releases[version].get("environment")
+            environment = self.releases[version].get("environment", {})
 
         for key, spec in environment.items():
             if key == "python_requirements":
@@ -258,6 +297,34 @@ class _AiidaLabApp:
 
     def is_compatible(self, version, python_bin=None):
         return not any(self.find_incompatibilities(version, python_bin))
+
+    def find_dependencies_to_install(self, version_to_install, python_bin=None):
+        """Returns a list of dependencies that need to be installed.
+
+        If an unsupported version of a dependency is installed, it will look
+        something like: {installed=<Package...>, required=<Requirement(...)>}.
+
+        If the dependency is not present at all, it will look something like:
+        {installed=None, required=<Requirement(...)>}.
+        """
+        if python_bin is None:
+            python_bin = sys.executable
+
+        if not version_to_install:
+            return []
+
+        unmatched_dependencies = {
+            dep[1].name: dep[1]
+            for dep in self.find_incompatibilities(version_to_install, python_bin)
+        }
+        installed_packages = find_installed_packages(python_bin)
+        return [
+            {
+                "installed": get_package_by_name(installed_packages, name),
+                "required": requirement,
+            }
+            for name, requirement in unmatched_dependencies.items()
+        ]
 
     def _install_dependencies(self, python_bin, stdout=None):
         """Try to install the app dependencies with pip (if specified)."""
@@ -580,22 +647,24 @@ class AiidaLabApp(traitlets.HasTraits):
             If true (default), automatically watch the repository for changes.
     """
 
-    path = traitlets.Unicode(allow_none=True, readonly=True)
+    path = traitlets.Unicode(allow_none=True).tag(readonly=True)
     install_info = traitlets.Unicode()
 
-    available_versions = traitlets.List(traitlets.Unicode)
+    available_versions = traitlets.List(traitlets.Unicode())
     installed_version = traitlets.Union(
         [traitlets.Unicode(), traitlets.UseEnum(AppVersion)]
-    )
+    )  # installed_version is updated from _AiiDALabApp only
+    version_to_install = traitlets.Unicode(allow_none=True)
+    dependencies_to_install = traitlets.List()
     remote_update_status = traitlets.UseEnum(
-        AppRemoteUpdateStatus, readonly=True, allow_none=True
-    )
+        AppRemoteUpdateStatus, allow_none=True
+    ).tag(readonly=True)
     has_prereleases = traitlets.Bool()
     include_prereleases = traitlets.Bool()
 
-    busy = traitlets.Bool(readonly=True)
-    detached = traitlets.Bool(readonly=True, allow_none=True)
-    compatible = traitlets.Bool(readonly=True, allow_none=True)
+    busy = traitlets.Bool().tag(readonly=True)
+    detached = traitlets.Bool(allow_none=True).tag(readonly=True)
+    compatible = traitlets.Bool(allow_none=True).tag(readonly=True)
     compatibility_info = traitlets.Dict()
 
     def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
@@ -651,6 +720,24 @@ class AiidaLabApp(traitlets.HasTraits):
     @traitlets.default("busy")
     def _default_busy(self):  # pylint: disable=no-self-use
         return False
+
+    @traitlets.validate("version_to_install")
+    def _validate_version_to_install(self, proposal):
+        """Validate the version to install."""
+        with self._show_busy():
+            if proposal["value"] is None:
+                return
+
+            if proposal["value"] not in self.available_versions:
+                raise traitlets.TraitError(
+                    f"Version {proposal['value']} is not available for {self.name} app."
+                )
+            return proposal["value"]
+
+    @traitlets.observe("version_to_install")
+    def _observe_version_to_install(self, change):
+        if change["old"] != change["new"]:
+            self.refresh()
 
     @contextmanager
     def _show_busy(self):
@@ -748,7 +835,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return False
 
     def _refresh_versions(self):
-        self.installed_version = self._app.installed_version()
+        self.installed_version = self._installed_version()
         self.include_prereleases = self.include_prereleases or (
             isinstance(self.installed_version, str)
             and parse(self.installed_version).is_prerelease
@@ -765,12 +852,18 @@ class AiidaLabApp(traitlets.HasTraits):
                 if self.include_prereleases or not parse(version).is_prerelease
             ]
 
+    def _refresh_dependencies_to_install(self):
+        self.dependencies_to_install = self._app.find_dependencies_to_install(
+            self.version_to_install
+        )
+
     @throttled(calls_per_second=1)
     def refresh(self):
         """Refresh app state."""
         with self._show_busy():
             with self.hold_trait_notifications():
                 self._refresh_versions()
+                self._refresh_dependencies_to_install()
                 self.set_trait(
                     "compatible", self._is_compatible(self.installed_version)
                 )
