@@ -180,7 +180,7 @@ def find_installed_packages(python_bin=None):
         canonicalize_name(package["name"]): Package(
             name=canonicalize_name(package["name"]), version=package["version"]
         )
-        for package in json.loads(output)
+        for package in output
     }
 
 
@@ -194,7 +194,7 @@ def _pip_list(python_bin=None):
         capture_output=True,
     ).stdout
 
-    return output
+    return json.loads(output)
 
 
 def get_package_by_name(packages: list[Package], name: str) -> Package | None:
