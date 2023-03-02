@@ -337,9 +337,9 @@ class _AiidaLabApp:
             # In practice this should never happen
             if installed_aiida is None:
                 return False
-            # TODO: It seems that this requirement does not work for
-            # pre-releases (e.g. version 1.0b0 will not fullfill it)
-            aiida1 = Requirement("aiida-core<2")
+            aiida1 = Requirement("aiida-core<2.0.0b1")
+            # This is needed to handle pre-release versions such as 1.0.0b0
+            aiida1.specifier.prereleases = True
             if installed_aiida.fullfills(aiida1):
                 return True
             return False
