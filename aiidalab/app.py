@@ -330,6 +330,20 @@ class _AiidaLabApp:
     def _install_dependencies(self, python_bin, stdout=None):
         """Try to install the app dependencies with pip (if specified)."""
 
+        def _should_run_reentry():
+            # We do not need to run reentry scan for aiida-core>=2"""
+            packages = find_installed_packages(python_bin=None)
+            installed_aiida = get_package_by_name(packages, "aiida-core")
+            # In practice this should never happen
+            if installed_aiida is None:
+                return False
+            # TODO: It seems that this requirement does not work for
+            # pre-releases (e.g. version 1.0b0 will not fullfill it)
+            aiida1 = Requirement("aiida-core<2")
+            if installed_aiida.fullfills(aiida1):
+                return True
+            return False
+
         def _pip_install(*args, stdout):
             # The implementation of this function is taken and adapted from:
             # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
@@ -343,9 +357,11 @@ class _AiidaLabApp:
                 raise RuntimeError("Failed to install dependencies.")
 
             # AiiDA plugins require reentry run to be found by AiiDA.
-            process = run_reentry_scan()
-            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
-                stdout.write(line)
+            if _should_run_reentry():
+                stdout.write("Running 'reentry scan'")
+                process = run_reentry_scan()
+                for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                    stdout.write(line)
 
             # Restarting the AiiDA daemon to import newly installed plugins.
             process = run_verdi_daemon_restart()
