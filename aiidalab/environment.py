@@ -20,6 +20,8 @@ matching the order shown here:
         setup.cfg file.
 
 """
+from __future__ import annotations
+
 from configparser import ConfigParser
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -70,6 +72,6 @@ class Environment:
                 pass
 
     @classmethod
-    def scan(cls, root: Path) -> "Environment":
+    def scan(cls, root: Path) -> Environment:
         """Scan the root path and determine the environment specification."""
         return cls(**dict(cls._scan(root)))
