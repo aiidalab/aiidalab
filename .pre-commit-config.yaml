@@ -56,6 +56,11 @@ repos:
       hooks:
           - id: mypy
             args: [--config-file=setup.cfg]
+            additional_dependencies:
+                - types-cachetools
+                - types-requests
+                - types-cachetools
+                - types-toml
             exclude: >-
                 (?x)^(
                   docs/.*|
