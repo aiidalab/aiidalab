@@ -184,7 +184,7 @@ def find_installed_packages(python_bin: str | None = None) -> dict[str, Package]
         canonicalize_name(package["name"]): Package(
             name=canonicalize_name(package["name"]), version=package["version"]
         )
-        for package in json.loads(output)
+        for package in output
     }
 
 
