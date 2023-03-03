@@ -27,7 +27,7 @@ import traitlets
 from dulwich.errors import NotGitRepository
 from packaging.requirements import Requirement
 from packaging.version import parse
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import EVENT_TYPE_OPENED, FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
@@ -530,8 +530,9 @@ class AiidaLabAppWatch:
             self.app = app
 
         def on_any_event(self, event):
-            """Refresh app for any event."""
-            self.app.refresh_async()
+            """Refresh app for any event except opened."""
+            if event.event_type != EVENT_TYPE_OPENED:
+                self.app.refresh_async()
 
     def __init__(self, app):
         self.app = app
