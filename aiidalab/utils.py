@@ -152,7 +152,7 @@ class throttled:  # pylint: disable=invalid-name
 class Package:
     """Helper class to check whether a given package fulfills a requirement."""
 
-    def __init__(self, name: str, version: None | str = None):
+    def __init__(self, name: str, version: str | None = None):
         """If version is None, means not confinement for the version therefore
         the package always fulfill."""
         self._name = name  # underscore to avoid name clash with property canonical_name
@@ -188,7 +188,7 @@ def find_installed_packages(python_bin: str | None = None) -> dict[str, Package]
     }
 
 
-def _pip_list(python_bin: str | None = None) -> str:
+def _pip_list(python_bin: str | None = None) -> Any:
     """Return all currently installed packages."""
     if python_bin is None:
         python_bin = sys.executable
@@ -198,7 +198,7 @@ def _pip_list(python_bin: str | None = None) -> str:
         capture_output=True,
     ).stdout
 
-    return output
+    return json.loads(output)
 
 
 def get_package_by_name(packages: dict[str, Package], name: str) -> Package | None:

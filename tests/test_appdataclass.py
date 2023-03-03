@@ -1,6 +1,5 @@
 """Test the dataclass _AiidaLabApp.
 We mock the app requirements and the medatada by a simple yaml file."""
-import json
 import sys
 from pathlib import Path
 
@@ -25,7 +24,7 @@ def installed_packages(monkeypatch):
     FIND_INSTALLED_PACKAGES_CACHE.clear()  # clear the cache
     monkeypatch.setattr(
         "aiidalab.utils._pip_list",
-        lambda _: json.dumps(_MONKEYPATCHED_INSTALLED_PACKAGES),
+        lambda _: _MONKEYPATCHED_INSTALLED_PACKAGES,
     )
 
 
