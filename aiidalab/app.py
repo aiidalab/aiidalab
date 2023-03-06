@@ -356,6 +356,7 @@ class _AiidaLabApp:
             # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
 
             # Install package dependencies.
+            stdout.write(f"Running 'pip install --user {' '.join(args)}'\n")
             process = run_pip_install(*args, python_bin=python_bin)
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                 stdout.write(line)
@@ -365,14 +366,14 @@ class _AiidaLabApp:
 
             # AiiDA plugins require reentry run to be found by AiiDA.
             if _should_run_reentry():
-                stdout.write("Running 'reentry scan'")
+                stdout.write("\nRunning 'reentry scan'\n")
                 process = run_reentry_scan()
                 for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                     stdout.write(line)
                 process.wait()
                 if process.returncode != 0:
                     # Let's not fail the install because of this, just emit a warning.
-                    logger.warning("WARNING: 'reentry scan' failed")
+                    logger.warning("'reentry scan' failed")
 
             # Restarting the AiiDA daemon to import newly installed plugins.
             process = run_verdi_daemon_restart()
