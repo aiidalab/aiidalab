@@ -246,7 +246,6 @@ def run_pip_install(*args, python_bin=sys.executable):  # type: ignore
 def run_reentry_scan():  # type: ignore
     return subprocess.Popen(
         ["reentry", "scan"],
-        bufsize=1,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
