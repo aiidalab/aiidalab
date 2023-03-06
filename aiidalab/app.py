@@ -19,6 +19,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
+from typing import Any, Generator
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
@@ -27,7 +28,7 @@ import traitlets
 from dulwich.errors import NotGitRepository
 from packaging.requirements import Requirement
 from packaging.version import parse
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import EVENT_TYPE_OPENED, FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
@@ -78,10 +79,10 @@ class AppRemoteUpdateStatus(Flag):
 
 @dataclass
 class _AiidaLabApp:
-    metadata: dict
+    metadata: dict[str, Any]
     name: str
     path: Path
-    releases: dict = field(default_factory=dict)
+    releases: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_registry_entry(cls, path, registry_entry):
@@ -95,7 +96,7 @@ class _AiidaLabApp:
         )
 
     @classmethod
-    def _registry_entry_from_path(cls, path):
+    def _registry_entry_from_path(cls, path: Path) -> dict[str, Any]:
         try:
             return {
                 "name": path.stem,
@@ -141,7 +142,7 @@ class _AiidaLabApp:
         except NotGitRepository:
             return None
 
-    def installed_version(self):
+    def installed_version(self) -> AppVersion | str:
         if self._repo and self.is_registered:
             if self.dirty():
                 return AppVersion.UNKNOWN
@@ -165,7 +166,9 @@ class _AiidaLabApp:
             return self.metadata.get("version", AppVersion.UNKNOWN)
         return AppVersion.NOT_INSTALLED
 
-    def available_versions(self, python_bin=None):
+    def available_versions(
+        self, python_bin: str | None = None
+    ) -> Generator[str, None, None]:
         """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered:
             for version in sorted(self.releases, key=parse, reverse=True):
@@ -184,7 +187,7 @@ class _AiidaLabApp:
         if self._repo:
             return self._repo.dirty()
 
-    def is_installed(self):
+    def is_installed(self) -> bool:
         """The app is installed if the corresponding folder is present."""
         return self.path.exists()
 
@@ -268,7 +271,9 @@ class _AiidaLabApp:
         return True
 
     @staticmethod
-    def _find_incompatibilities_python(requirements, python_bin):
+    def _find_incompatibilities_python(
+        requirements: list[str], python_bin: str
+    ) -> Generator[Requirement, None, None]:
         packages = find_installed_packages(python_bin)
         for requirement in map(Requirement, requirements):
             pkg = get_package_by_name(packages, requirement.name)
@@ -299,7 +304,9 @@ class _AiidaLabApp:
     def is_compatible(self, version, python_bin=None):
         return not any(self.find_incompatibilities(version, python_bin))
 
-    def find_dependencies_to_install(self, version_to_install, python_bin=None):
+    def find_dependencies_to_install(
+        self, version_to_install: str, python_bin: str | None = None
+    ) -> list[dict[str, Package | Requirement]]:
         """Returns a list of dependencies that need to be installed.
 
         If an unsupported version of a dependency is installed, it will look
@@ -524,13 +531,12 @@ class _AiidaLabApp:
                     # Attempt rollback to previous version.
                     logger.info("Performing rollback to previously installed version.")
                     self._restore_from(trash_path)
-            except RuntimeError as error:
-                logger.warning(f"Rollback failed due to error: {error}!")
+            except RuntimeError as inner_error:
+                logger.warning(f"Rollback failed due to error: {inner_error}!")
             finally:
                 raise RuntimeError(
                     f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
-                    f", due to error: {error}"
-                )
+                ) from error
 
 
 class AppNotInstalledException(Exception):
@@ -549,15 +555,16 @@ class AiidaLabAppWatch:
             The AiidaLab app to monitor.
     """
 
-    class AppPathFileSystemEventHandler(FileSystemEventHandler):
+    class AppPathFileSystemEventHandler(FileSystemEventHandler):  # type: ignore
         """Internal event handeler for app path file system events."""
 
         def __init__(self, app):
             self.app = app
 
         def on_any_event(self, event):
-            """Refresh app for any event."""
-            self.app.refresh_async()
+            """Refresh app for any event except opened."""
+            if event.event_type != EVENT_TYPE_OPENED:
+                self.app.refresh_async()
 
     def __init__(self, app):
         self.app = app
@@ -614,7 +621,7 @@ class AiidaLabAppWatch:
 
             def check_path_exists_changed():
                 is_dir = os.path.isdir(self.app.path)
-                while not self._monitor_thread.stop_flag:
+                while not self._monitor_thread.stop_flag:  # type: ignore
                     switched = is_dir != os.path.isdir(self.app.path)
                     if switched:
                         is_dir = not is_dir
@@ -633,7 +640,7 @@ class AiidaLabAppWatch:
                     self._observer.stop()
 
             self._monitor_thread = Thread(target=check_path_exists_changed)
-            self._monitor_thread.stop_flag = False
+            self._monitor_thread.stop_flag = False  # type: ignore
             self._monitor_thread.start()
 
         self._started = True
@@ -658,7 +665,7 @@ class AiidaLabAppWatch:
             self._monitor_thread.join(timeout=timeout)
 
 
-class AiidaLabApp(traitlets.HasTraits):
+class AiidaLabApp(traitlets.HasTraits):  # type: ignore
     """Manage installation status of an AiiDAlab app.
 
     Arguments:
@@ -721,7 +728,7 @@ class AiidaLabApp(traitlets.HasTraits):
             self._watch = AiidaLabAppWatch(self)
             self._watch.start()
         else:
-            self._watch = None
+            self._watch = None  # type: ignore
 
     def __str__(self):
         return f"<AiidaLabApp name='{self._app.name}'>"
@@ -805,7 +812,7 @@ class AiidaLabApp(traitlets.HasTraits):
             self.refresh()
             return self._installed_version()
 
-    def update_app(self, _=None, stdout=None):
+    def update_app(self, _=None, stdout=None) -> AppVersion | str:
         """Perform app update."""
         with self._show_busy():
             # Installing with version=None automatically selects latest
@@ -815,22 +822,22 @@ class AiidaLabApp(traitlets.HasTraits):
             self.refresh()
             return version
 
-    def uninstall_app(self, _=None):
+    def uninstall_app(self, _=None):  # type: ignore
         """Perfrom app uninstall."""
         # Perform uninstall process.
         with self._show_busy():
             self._app.uninstall()
             self.refresh()
 
-    def _installed_version(self):
+    def _installed_version(self) -> AppVersion | str:
         """Determine the currently installed version."""
-        return self._app.installed_version()
+        return self._app.installed_version()  # type: ignore
 
-    @traitlets.default("compatible")
-    def _default_compatible(self):  # pylint: disable=no-self-use
+    @traitlets.default("compatible")  # type: ignore
+    def _default_compatible(self) -> None:  # pylint: disable=no-self-use
         return None
 
-    def _is_compatible(self, app_version):
+    def _is_compatible(self, app_version: str) -> bool:
         """Determine whether the specified version is compatible."""
         try:
             incompatibilities = dict(
@@ -845,9 +852,9 @@ class AiidaLabApp(traitlets.HasTraits):
 
             return not any(incompatibilities)
         except KeyError:
-            return None  # compatibility indetermined for given version
+            return False  # compatibility indetermined for given version
 
-    def _remote_update_status(self):
+    def _remote_update_status(self) -> bool:
         """Determine whether there are updates available.
 
         For this the app must be installed in a known version and there must be
@@ -857,10 +864,10 @@ class AiidaLabApp(traitlets.HasTraits):
         if installed_version not in (AppVersion.UNKNOWN, AppVersion.NOT_INSTALLED):
             available_versions = list(self.available_versions)
             if len(available_versions):
-                return self._installed_version() != available_versions[0]
+                return self._installed_version() != available_versions[0]  # type: ignore
         return False
 
-    def _refresh_versions(self):
+    def _refresh_versions(self) -> None:
         self.installed_version = self._installed_version()
         self.include_prereleases = self.include_prereleases or (
             isinstance(self.installed_version, str)
@@ -878,13 +885,13 @@ class AiidaLabApp(traitlets.HasTraits):
                 if self.include_prereleases or not parse(version).is_prerelease
             ]
 
-    def _refresh_dependencies_to_install(self):
+    def _refresh_dependencies_to_install(self) -> None:
         self.dependencies_to_install = self._app.find_dependencies_to_install(
             self.version_to_install
         )
 
-    @throttled(calls_per_second=1)
-    def refresh(self):
+    @throttled(calls_per_second=1)  # type: ignore
+    def refresh(self) -> None:
         """Refresh app state."""
         with self._show_busy():
             with self.hold_trait_notifications():
@@ -906,17 +913,17 @@ class AiidaLabApp(traitlets.HasTraits):
                     else None,
                 )
 
-    def refresh_async(self):
+    def refresh_async(self) -> None:
         """Asynchronized (non-blocking) refresh of the app state."""
         refresh_thread = Thread(target=self.refresh)
         refresh_thread.start()
 
     @property
-    def metadata(self):
+    def metadata(self):  # type: ignore
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
         return self._app.metadata
 
-    def _get_from_metadata(self, what):
+    def _get_from_metadata(self, what: str) -> str:
         """Get information from metadata."""
         try:
             return f"{self._app.metadata[what]}"
@@ -924,28 +931,28 @@ class AiidaLabApp(traitlets.HasTraits):
             return f'Field "{what}" is not present in app metadata.'
 
     @property
-    def authors(self):
+    def authors(self) -> str:
         return self._get_from_metadata("authors")
 
     @property
-    def description(self):
+    def description(self) -> str:
         return self._get_from_metadata("description")
 
     @property
-    def title(self):
+    def title(self) -> str:
         return self._get_from_metadata("title")
 
     @property
-    def url(self):
+    def url(self) -> str:
         """Provide explicit link to Git repository."""
         return self._get_from_metadata("external_url")
 
     @property
-    def more(self):
+    def more(self) -> str:
         return f"""<a href=./single_app.ipynb?app={self.name}>Manage App</a>"""
 
     @property
-    def _repo(self):
+    def _repo(self) -> Repo:
         """Returns Git repository."""
         if not self.is_installed():
             raise AppNotInstalledException("The app is not installed")
