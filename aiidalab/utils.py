@@ -12,11 +12,13 @@ from functools import wraps
 from pathlib import Path
 from subprocess import run
 from threading import Lock
+from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
 from cachetools import TTLCache, cached
-from packaging.utils import canonicalize_name
+from packaging.requirements import Requirement
+from packaging.utils import NormalizedName, canonicalize_name
 
 from .config import AIIDALAB_REGISTRY
 from .environment import Environment
@@ -24,7 +26,7 @@ from .fetch import fetch_from_url
 from .metadata import Metadata
 
 logger = logging.getLogger(__name__)
-FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)
+FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)  # type: ignore
 
 # Warning: try-except is a fix for Quantum Mobile release v19.03.0 where
 # requests_cache is not installed.
@@ -53,7 +55,7 @@ else:
     )
 
 
-def load_app_registry_index():
+def load_app_registry_index():  # type: ignore
     """Load apps' information from the AiiDAlab registry."""
     try:
         return requests.get(f"{AIIDALAB_REGISTRY}/apps_index.json").json()
@@ -61,7 +63,7 @@ def load_app_registry_index():
         raise RuntimeError(f"Unable to load registry index: '{error}'")
 
 
-def load_app_registry_entry(app_id):
+def load_app_registry_entry(app_id: str):  # type: ignore
     """Load registry enty for app with app_id."""
     try:
         return requests.get(f"{AIIDALAB_REGISTRY}/apps/{app_id}.json").json()
@@ -76,7 +78,9 @@ class PEP508CompliantUrl(str):
     pass
 
 
-def parse_app_repo(url, metadata_fallback=None):
+def parse_app_repo(
+    url: str, metadata_fallback: dict[str, Any] | None = None
+) -> dict[str, Any] | None:
     """Parse an app repo for metadata and other information.
 
     Use this function to parse a local or remote app repository for the app
@@ -97,7 +101,7 @@ def parse_app_repo(url, metadata_fallback=None):
             metadata = asdict(Metadata.parse(repo))
         except TypeError as error:
             logger.debug(f"Failed to parse metadata for '{url}': {error}")
-            metadata = metadata_fallback
+            metadata = metadata_fallback  # type: ignore
 
         return {
             "metadata": metadata,
@@ -116,16 +120,16 @@ class throttled:  # pylint: disable=invalid-name
 
     """
 
-    def __init__(self, calls_per_second=1):
+    def __init__(self, calls_per_second: int = 1):
         self.calls_per_second = calls_per_second
-        self.last_start = defaultdict(lambda: -1)
-        self.locks = defaultdict(Lock)
+        self.last_start = defaultdict(lambda: -1)  # type: ignore
+        self.locks = defaultdict(Lock)  # type: ignore
 
-    def __call__(self, func):
+    def __call__(self, func):  # type: ignore
         """Return decorator function."""
 
         @wraps(func)
-        def wrapped(instance, *args, **kwargs):
+        def wrapped(instance, *args, **kwargs):  # type: ignore
             if self.last_start[hash(instance)] >= 0:
                 elapsed = time.perf_counter() - self.last_start[hash(instance)]
                 to_wait = 1.0 / self.calls_per_second - elapsed
@@ -148,24 +152,24 @@ class throttled:  # pylint: disable=invalid-name
 class Package:
     """Helper class to check whether a given package fulfills a requirement."""
 
-    def __init__(self, name: str, version: str = None):
+    def __init__(self, name: str, version: str | None = None):
         """If version is None, means not confinement for the version therefore
         the package always fulfill."""
         self._name = name  # underscore to avoid name clash with property canonical_name
         self.version = version
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__name__}({self.canonical_name}, {self.version})"
 
     def __str__(self) -> str:
         return f"{self.canonical_name}=={self.version}"
 
     @property
-    def canonical_name(self):
+    def canonical_name(self) -> NormalizedName:
         """Return the cananicalized name of the package."""
         return canonicalize_name(self._name)
 
-    def fulfills(self, requirement):
+    def fulfills(self, requirement: Requirement) -> bool:
         """Returns True if this entry fullfills the requirement."""
         return self.canonical_name == canonicalize_name(requirement.name) and (
             self.version in requirement.specifier or self.version is None
@@ -173,7 +177,7 @@ class Package:
 
 
 @cached(cache=FIND_INSTALLED_PACKAGES_CACHE)
-def find_installed_packages(python_bin=None):
+def find_installed_packages(python_bin: str | None = None) -> dict[str, Package]:
     """Return all currently installed packages."""
     output = _pip_list(python_bin)
     return {
@@ -184,7 +188,7 @@ def find_installed_packages(python_bin=None):
     }
 
 
-def _pip_list(python_bin=None):
+def _pip_list(python_bin: str | None = None) -> Any:
     """Return all currently installed packages."""
     if python_bin is None:
         python_bin = sys.executable
@@ -197,7 +201,7 @@ def _pip_list(python_bin=None):
     return json.loads(output)
 
 
-def get_package_by_name(packages: list[Package], name: str) -> Package | None:
+def get_package_by_name(packages: dict[str, Package], name: str) -> Package | None:
     """Return the package with the given name from the list of packages.
     The name can be the canonicalized name or the requirement name which may not canonicalized.
     We try to convert the name to the canonicalized in both side and compare them.
@@ -211,7 +215,7 @@ def get_package_by_name(packages: list[Package], name: str) -> Package | None:
     return None
 
 
-def split_git_url(git_url):
+def split_git_url(git_url):  # type: ignore
     """Split the base url and the ref pointer of a git url.
 
     For example: git+https://example.com/app.git@v1 is split into and returned
@@ -226,12 +230,12 @@ def split_git_url(git_url):
     return urlunsplit(parsed_url._replace(path=path)), ref
 
 
-def this_or_only_subdir(path):
+def this_or_only_subdir(path: Path) -> Path:
     members = list(path.iterdir())
     return members[0] if len(members) == 1 and members[0].is_dir() else path
 
 
-def run_pip_install(*args, python_bin=sys.executable):
+def run_pip_install(*args, python_bin=sys.executable):  # type: ignore
     return subprocess.Popen(
         [python_bin, "-m", "pip", "install", "--user", *args],
         stdout=subprocess.PIPE,
@@ -239,7 +243,7 @@ def run_pip_install(*args, python_bin=sys.executable):
     )
 
 
-def run_verdi_daemon_restart():
+def run_verdi_daemon_restart():  # type: ignore
     return subprocess.Popen(
         ["verdi", "daemon", "restart"],
         stdout=subprocess.PIPE,
@@ -247,7 +251,7 @@ def run_verdi_daemon_restart():
     )
 
 
-def run_post_install_script(post_install_script_path):
+def run_post_install_script(post_install_script_path):  # type: ignore
     return subprocess.Popen(
         f"./{post_install_script_path.resolve().stem}",
         cwd=post_install_script_path.resolve().parent,
