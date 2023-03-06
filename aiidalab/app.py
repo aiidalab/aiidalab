@@ -505,13 +505,12 @@ class _AiidaLabApp:
                     # Attempt rollback to previous version.
                     logger.info("Performing rollback to previously installed version.")
                     self._restore_from(trash_path)
-            except RuntimeError as rerror:
-                logger.warning(f"Rollback failed due to error: {rerror}!")
+            except RuntimeError as inner_error:
+                logger.warning(f"Rollback failed due to error: {inner_error}!")
             finally:
                 raise RuntimeError(
                     f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
-                    f", due to error: {error}"
-                )
+                ) from error
 
 
 class AppNotInstalledException(Exception):
