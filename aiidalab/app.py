@@ -327,7 +327,7 @@ class _AiidaLabApp:
             for name, requirement in unmatched_dependencies.items()
         ]
 
-    def _install_dependencies(self, python_bin, stdout=None):
+    def _install_dependencies(self, python_bin, stdout):
         """Try to install the app dependencies with pip (if specified)."""
 
         def _should_run_reentry():
@@ -340,7 +340,7 @@ class _AiidaLabApp:
             aiida1 = Requirement("aiida-core<2.0.0b1")
             # This is needed to handle pre-release versions such as 1.0.0b0
             aiida1.specifier.prereleases = True
-            if installed_aiida.fullfills(aiida1):
+            if installed_aiida.fulfills(aiida1):
                 return True
             return False
 
@@ -362,6 +362,10 @@ class _AiidaLabApp:
                 process = run_reentry_scan()
                 for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                     stdout.write(line)
+                process.wait()
+                if process.returncode != 0:
+                    # Let's not fail the install because of this, just emit a warning.
+                    logger.warning("WARNING: 'reentry scan' failed")
 
             # Restarting the AiiDA daemon to import newly installed plugins.
             process = run_verdi_daemon_restart()
@@ -504,7 +508,7 @@ class _AiidaLabApp:
 
             # Install dependencies
             if install_dependencies:
-                self._install_dependencies(python_bin, stdout=stdout)
+                self._install_dependencies(python_bin, stdout)
 
             # Run post-installation triggers.
             if post_install_triggers:
