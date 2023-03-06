@@ -344,10 +344,10 @@ class _AiidaLabApp:
             # In practice this should never happen
             if installed_aiida is None:
                 return False
-            aiida1 = Requirement("aiida-core<2.0.0b1")
+            aiida_v1 = Requirement("aiida-core<2.0.0b1")
             # This is needed to handle pre-release versions such as 1.0.0b0
-            aiida1.specifier.prereleases = True
-            if installed_aiida.fulfills(aiida1):
+            aiida_v1.specifier.prereleases = True
+            if installed_aiida.fulfills(aiida_v1):
                 return True
             return False
 
