@@ -1,4 +1,5 @@
 [![Documentation Status](https://readthedocs.org/projects/aiidalab/badge/)](https://aiidalab.readthedocs.io/)
+[![codecov](https://codecov.io/gh/aiidalab/aiidalab/branch/main/graph/badge.svg)](https://codecov.io/gh/aiidalab/aiidalab)
 # AiiDAlab package
 
 The `aiidalab` package sets up the python environment found on the
