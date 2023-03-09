@@ -828,19 +828,6 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         except KeyError:
             return False  # compatibility indetermined for given version
 
-    def _remote_update_status(self) -> bool:
-        """Determine whether there are updates available.
-
-        For this the app must be installed in a known version and there must be
-        available (and compatible) versions.
-        """
-        installed_version = self._installed_version()
-        if installed_version not in (AppVersion.UNKNOWN, AppVersion.NOT_INSTALLED):
-            available_versions = list(self.available_versions)
-            if len(available_versions):
-                return self._installed_version() != available_versions[0]  # type: ignore
-        return False
-
     def _refresh_versions(self) -> None:
         self.installed_version = self._installed_version()
         self.include_prereleases = self.include_prereleases or (
