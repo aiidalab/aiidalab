@@ -71,7 +71,7 @@ def test_app_watch(tmp_path):
     # The observer is start in a thread so need to wait until it is alive
     while app_watch._observer is None or not app_watch._observer.is_alive():
         sleep(0.1)
-    
+
     # Trigger action by file events
     # touch a file will trigger action 4 times: create and close file and two modifies of folder
     testfile = tmp_path / "test0"
@@ -79,11 +79,11 @@ def test_app_watch(tmp_path):
 
     app_watch.stop()
     app_watch.join()
-    
+
     assert app.x == 4
-    
+
     # After the thread is stop and join the obsever is inactivate and will not trigger refresh_async
     testfile = tmp_path / "test1"
     testfile.touch()
-    
+
     assert app.x == 4
