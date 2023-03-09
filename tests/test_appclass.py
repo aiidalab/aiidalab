@@ -1,9 +1,13 @@
+from dataclasses import dataclass
+from pathlib import Path
+from time import sleep
+
 import aiida
 import pytest
 import traitlets
 from packaging import version
 
-from aiidalab.app import AiidaLabApp
+from aiidalab.app import AiidaLabApp, AiidaLabAppWatch
 
 
 def test_init_refresh(generate_app):
@@ -39,13 +43,6 @@ def test_dependencies(generate_app):
     with pytest.raises(traitlets.TraitError):
         app.version_to_install = "v22.11.0"
     app.version_to_install = "v22.11.1"
-
-
-from dataclasses import dataclass
-from pathlib import Path
-from time import sleep
-
-from aiidalab.app import AiidaLabAppWatch
 
 
 def test_app_watch(tmp_path):
