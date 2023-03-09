@@ -166,7 +166,9 @@ class _AiidaLabApp:
         return AppVersion.NOT_INSTALLED
 
     def available_versions(
-        self, python_bin: str | None = None
+        self,
+        python_bin: str | None = None,
+        prereleases: bool = False,
     ) -> Generator[str, None, None]:
         """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered:
@@ -179,7 +181,9 @@ class _AiidaLabApp:
                         .get("python_requirements", [])
                     )
                 ]
-                if self._strict_dependencies_met(version_requirements, python_bin):
+                if (
+                    prereleases or not parse(version).is_prerelease
+                ) and self._strict_dependencies_met(version_requirements, python_bin):
                     yield version
 
     def dirty(self):
@@ -214,11 +218,7 @@ class _AiidaLabApp:
                 return AppRemoteUpdateStatus.DETACHED
 
             # Check whether the locally installed version is the latest release.
-            available_versions = [
-                version
-                for version in sorted(self.releases, key=parse, reverse=True)
-                if prereleases or not parse(version).is_prerelease
-            ]
+            available_versions = self.available_versions(prereleases=prereleases)
             if len(available_versions) and installed_version != available_versions[0]:
                 return AppRemoteUpdateStatus.UPDATE_AVAILABLE
 
@@ -848,16 +848,14 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             and parse(self.installed_version).is_prerelease
         )
 
-        all_available_versions = list(self._app.available_versions())
+        all_available_versions = list(self._app.available_versions(prereleases=True))
         self.has_prereleases = any(
             parse(version).is_prerelease for version in all_available_versions
         )
-        if self._app.is_registered:
-            self.available_versions = [
-                version
-                for version in all_available_versions
-                if self.include_prereleases or not parse(version).is_prerelease
-            ]
+
+        self.available_versions = list(
+            self._app.available_versions(prereleases=self.include_prereleases)
+        )
 
     def _refresh_dependencies_to_install(self) -> None:
         self.dependencies_to_install = self._app.find_dependencies_to_install(
