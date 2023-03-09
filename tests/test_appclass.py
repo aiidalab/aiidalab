@@ -39,3 +39,51 @@ def test_dependencies(generate_app):
     with pytest.raises(traitlets.TraitError):
         app.version_to_install = "v22.11.0"
     app.version_to_install = "v22.11.1"
+
+
+from dataclasses import dataclass
+from pathlib import Path
+from time import sleep
+
+from aiidalab.app import AiidaLabAppWatch
+
+
+def test_app_watch(tmp_path):
+    """Test the aiidalab app watch responsive to the app path changes."""
+
+    @dataclass
+    class DummyApp:
+        path: Path
+        x: int = 0
+        y: int = 0
+
+        def refresh_async(self):
+            self.x += 1
+
+        def refresh(self):
+            print("refresh")
+            self.y += 1
+
+    app = DummyApp(path=Path(tmp_path))
+    app_watch = AiidaLabAppWatch(app)
+    app_watch.start()
+
+    # The observer is start in a thread so need to wait until it is alive
+    while app_watch._observer is None or not app_watch._observer.is_alive():
+        sleep(0.1)
+    
+    # Trigger action by file events
+    # touch a file will trigger action 4 times: create and close file and two modifies of folder
+    testfile = tmp_path / "test0"
+    testfile.touch()
+
+    app_watch.stop()
+    app_watch.join()
+    
+    assert app.x == 4
+    
+    # After the thread is stop and join the obsever is inactivate and will not trigger refresh_async
+    testfile = tmp_path / "test1"
+    testfile.touch()
+    
+    assert app.x == 4
