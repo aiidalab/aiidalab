@@ -540,7 +540,6 @@ class AiidaLabAppWatch:
         def on_any_event(self, event):
             """Refresh app for any event except opened."""
             if event.event_type != EVENT_TYPE_OPENED:
-                print(event)
                 self.app.refresh_async()
 
     def __init__(self, app):
@@ -599,11 +598,8 @@ class AiidaLabAppWatch:
 
             def check_path_exists_changed():
                 is_dir = os.path.isdir(self.app.path)
-                print("or this??", is_dir)
-                print("checking...")
                 while not self._monitor_thread_stop.is_set():
                     switched = is_dir != os.path.isdir(self.app.path)
-                    print("??", switched)
                     if switched:
                         # this is for when the app folder first time create or deleted
                         is_dir = not is_dir
