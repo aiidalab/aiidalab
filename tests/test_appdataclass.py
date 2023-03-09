@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from packaging.requirements import Requirement
 
-from aiidalab.app import _AiidaLabApp
+from aiidalab.app import _AiidaLabApp, AppRemoteUpdateStatus
 
 _MONKEYPATCHED_INSTALLED_PACKAGES = [
     {"name": "aiida-core", "version": "2.2.1"},
@@ -104,3 +104,37 @@ def test_find_dependencies_to_install(monkeypatch, installed_packages, python_bi
 
     assert "aiida-core" not in dependencies_name
     assert "jupyter-client" in dependencies_name
+
+def test_update_status_issue_360(monkeypatch, installed_packages, python_bin):
+    """Test issue #360 where when the highest version is core dependencies unmet and hidden."""
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", True)
+    monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
+    monkeypatch.setattr(_AiidaLabApp, "installed_version", lambda _: "v0.1.0")
+
+    aiidalab_app_data = _AiidaLabApp(
+        metadata={},
+        name="test",
+        path=Path("test"),
+        releases={
+            "v0.2.0": {
+                "environment": {
+                    "python_requirements": [
+                        "aiida-core~=3.0",  # where the core is not compatible so the version is hidden
+                    ],
+                },
+                "metadata": {},
+                "url": "",
+            },
+            "v0.1.0": { # installed version where the aiida-core compatible
+                "environment": {
+                    "python_requirements": [
+                        "aiida-core~=2.0", 
+                    ],
+                },
+                "metadata": {},
+                "url": "",
+            },
+        },
+    )
+    
+    assert aiidalab_app_data.remote_update_status() is AppRemoteUpdateStatus.UP_TO_DATE
