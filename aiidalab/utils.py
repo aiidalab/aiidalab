@@ -170,7 +170,7 @@ class Package:
         return canonicalize_name(self._name)
 
     def fulfills(self, requirement: Requirement) -> bool:
-        """Returns True if this entry fullfills the requirement."""
+        """Returns True if this entry fulfills the requirement."""
         return self.canonical_name == canonicalize_name(requirement.name) and (
             self.version in requirement.specifier or self.version is None
         )
@@ -238,6 +238,14 @@ def this_or_only_subdir(path: Path) -> Path:
 def run_pip_install(*args, python_bin=sys.executable):  # type: ignore
     return subprocess.Popen(
         [python_bin, "-m", "pip", "install", "--user", *args],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+
+def run_reentry_scan():  # type: ignore
+    return subprocess.Popen(
+        ["reentry", "scan"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
