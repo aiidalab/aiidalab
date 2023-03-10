@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import sleep
 
-import aiida
 import pytest
 import traitlets
 
@@ -49,14 +48,12 @@ def test_app_watch(tmp_path):
     class DummyApp:
         path: Path
         x: int = 0
-        y: int = 0
 
         def refresh_async(self):
             self.x += 1
 
         def refresh(self):
-            print("refresh")
-            self.y += 1
+            pass
 
     app = DummyApp(path=Path(tmp_path))
     app_watch = AiidaLabAppWatch(app)
@@ -76,7 +73,8 @@ def test_app_watch(tmp_path):
 
     assert app.x == 4
 
-    # After the thread is stop and join the obsever is inactivate and will not trigger refresh_async
+    # The stop of watch monitor thread will trigger stop of observer's thread. 
+    # After the observer is stopped, file system events should no longer trigger `refresh_async`
     testfile = tmp_path / "test1"
     testfile.touch()
 
