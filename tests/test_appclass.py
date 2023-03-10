@@ -52,9 +52,6 @@ def test_app_watch(tmp_path):
         def refresh_async(self):
             self.x += 1
 
-        def refresh(self):
-            pass
-
     app = DummyApp(path=Path(tmp_path))
     app_watch = AiidaLabAppWatch(app)
     app_watch.start()
@@ -73,7 +70,7 @@ def test_app_watch(tmp_path):
 
     assert app.x == 4
 
-    # The stop of watch monitor thread will trigger stop of observer's thread. 
+    # The stop of watch monitor thread will trigger stop of observer's thread.
     # After the observer is stopped, file system events should no longer trigger `refresh_async`
     testfile = tmp_path / "test1"
     testfile.touch()
