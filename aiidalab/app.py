@@ -42,6 +42,7 @@ from aiidalab.utils import (
     load_app_registry_index,
     run_pip_install,
     run_post_install_script,
+    run_reentry_scan,
     run_verdi_daemon_restart,
     split_git_url,
     this_or_only_subdir,
@@ -333,20 +334,46 @@ class _AiidaLabApp:
             for name, requirement in unmatched_dependencies.items()
         ]
 
-    def _install_dependencies(self, python_bin, stdout=None):
+    def _install_dependencies(self, python_bin, stdout):
         """Try to install the app dependencies with pip (if specified)."""
+
+        def _should_run_reentry():
+            # We do not need to run reentry scan for aiida-core>=2"""
+            packages = find_installed_packages(python_bin=None)
+            installed_aiida = get_package_by_name(packages, "aiida-core")
+            # In practice this should never happen
+            if installed_aiida is None:
+                return False
+            aiida_v1 = Requirement("aiida-core<2.0.0b1")
+            # This is needed to handle pre-release versions such as 1.0.0b0
+            aiida_v1.specifier.prereleases = True
+            if installed_aiida.fulfills(aiida_v1):
+                return True
+            return False
 
         def _pip_install(*args, stdout):
             # The implementation of this function is taken and adapted from:
             # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
 
             # Install package dependencies.
+            stdout.write(f"Running 'pip install --user {' '.join(args)}'\n")
             process = run_pip_install(*args, python_bin=python_bin)
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                 stdout.write(line)
             process.wait()
             if process.returncode != 0:
                 raise RuntimeError("Failed to install dependencies.")
+
+            # AiiDA plugins require reentry run to be found by AiiDA.
+            if _should_run_reentry():
+                stdout.write("\nRunning 'reentry scan'\n")
+                process = run_reentry_scan()
+                for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                    stdout.write(line)
+                process.wait()
+                if process.returncode != 0:
+                    # Let's not fail the install because of this, just emit a warning.
+                    logger.warning("'reentry scan' failed")
 
             # Restarting the AiiDA daemon to import newly installed plugins.
             process = run_verdi_daemon_restart()
@@ -489,7 +516,7 @@ class _AiidaLabApp:
 
             # Install dependencies
             if install_dependencies:
-                self._install_dependencies(python_bin, stdout=stdout)
+                self._install_dependencies(python_bin, stdout)
 
             # Run post-installation triggers.
             if post_install_triggers:

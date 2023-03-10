@@ -8,25 +8,6 @@ from packaging.requirements import Requirement
 
 from aiidalab.app import AppRemoteUpdateStatus, _AiidaLabApp
 
-_MONKEYPATCHED_INSTALLED_PACKAGES = [
-    {"name": "aiida-core", "version": "2.2.1"},
-    {"name": "jupyter_client", "version": "7.3.5"},
-]
-
-
-@pytest.fixture
-def installed_packages(monkeypatch):
-    """change the return of pip_list.
-    This is to mimic the pip list command output, which returns a json string represent
-    the list of installed packages."""
-    from aiidalab.utils import FIND_INSTALLED_PACKAGES_CACHE
-
-    FIND_INSTALLED_PACKAGES_CACHE.clear()  # clear the cache
-    monkeypatch.setattr(
-        "aiidalab.utils._pip_list",
-        lambda _: _MONKEYPATCHED_INSTALLED_PACKAGES,
-    )
-
 
 @pytest.fixture
 def python_bin():
