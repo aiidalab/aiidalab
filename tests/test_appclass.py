@@ -68,6 +68,8 @@ def test_app_watch(tmp_path):
     app_watch.stop()
     app_watch.join()
 
+    assert app_watch.is_alive() is False
+    assert app_watch._observer.is_alive() is False
     assert app.x == 4
 
     # The stop of watch monitor thread will trigger stop of observer's thread.

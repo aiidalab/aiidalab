@@ -660,14 +660,15 @@ class AiidaLabAppWatch:
         return self._monitor_thread and self._monitor_thread.is_alive()
 
     def join(self, timeout=None):
-        """Join the watch after stopping.
+        """Join the watch and observer after stopping.
 
         This function will timeout if a timeout argument is provided. Use the
         is_alive() function to determien whether the watch was stopped within
         the given timout.
         """
-        if self._monitor_thread is not None:
+        if self._monitor_thread is not None and self._observer is not None:
             self._monitor_thread.join(timeout=timeout)
+            self._observer.join(timeout=timeout)
 
 
 class AiidaLabApp(traitlets.HasTraits):  # type: ignore
