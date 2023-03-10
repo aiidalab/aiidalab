@@ -5,7 +5,6 @@ from time import sleep
 import aiida
 import pytest
 import traitlets
-from packaging import version
 
 from aiidalab.app import AiidaLabApp, AiidaLabAppWatch
 
@@ -32,9 +31,7 @@ def test_prereleases(generate_app):
     assert "v23.01.0b1" in app.available_versions
 
 
-@pytest.mark.skipif(
-    version.parse(aiida.__version__).major != 2, reason="only pass for aiida 2.x"
-)
+@pytest.mark.usefixtures("installed_packages")
 def test_dependencies(generate_app):
     app: AiidaLabApp = generate_app()
     app.refresh()
