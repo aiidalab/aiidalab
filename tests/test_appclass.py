@@ -7,7 +7,7 @@ from aiidalab.app import AiidaLabApp
 def test_init_refresh(generate_app):
     app = generate_app()
     assert len(app.available_versions) == 0
-    # After refresh the availale_versions traitlets is updated
+    # After refresh the available_versions traitlet is updated
     app.refresh()
     assert len(app.available_versions) != 0
 
