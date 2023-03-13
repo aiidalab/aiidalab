@@ -1,3 +1,4 @@
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep
@@ -65,8 +66,14 @@ def test_app_watch(tmp_path):
     testfile = tmp_path / "test0"
     testfile.touch()
 
+    # check the threating is working
+    assert threading.active_count() > 1
+
     app_watch.stop()
-    app_watch.join()
+    app_watch.join(timeout=5.0)
+
+    # check the threating is stopped and joined
+    assert threading.active_count() == 1
 
     assert app_watch.is_alive() is False
     assert app_watch._observer.is_alive() is False

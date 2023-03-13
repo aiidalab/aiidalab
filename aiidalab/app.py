@@ -666,8 +666,9 @@ class AiidaLabAppWatch:
         is_alive() function to determien whether the watch was stopped within
         the given timout.
         """
-        if self._monitor_thread is not None and self._observer is not None:
+        if self._monitor_thread is not None:
             self._monitor_thread.join(timeout=timeout)
+        if self._observer is not None:
             self._observer.join(timeout=timeout)
 
 
