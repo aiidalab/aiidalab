@@ -162,8 +162,9 @@ class _AiidaLabApp:
                         f"Encountered error while determining version: {error}"
                     )
                     return AppVersion.UNKNOWN
-        elif self.path.exists():
+        elif self.is_installed():
             return self.metadata.get("version", AppVersion.UNKNOWN)
+
         return AppVersion.NOT_INSTALLED
 
     def available_versions(
@@ -727,7 +728,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         except KeyError:
             raise ValueError(f"Did not find categories in {self.name} metadata")
 
-        self.is_installed = self._app.is_installed
+        self.is_installed = self._app.is_installed()
         self.path = str(self._app.path)
         self.refresh_async()
 

@@ -288,7 +288,7 @@ def _find_version_to_install(
                     f"Unable to check compatibility for {app_requirement} prior to installation."
                 )
 
-        if force or not app.is_installed():
+        if force or not app.is_installed:
             return app, PEP508CompliantUrl(app_requirement.url)
         else:
             return app, None
