@@ -1,4 +1,4 @@
-"""Module to manange AiiDAlab configuration."""
+"""Module to manage AiiDAlab configuration."""
 from os import getenv
 from pathlib import Path
 
