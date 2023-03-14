@@ -165,6 +165,11 @@ class Package:
         return f"{self.canonical_name}=={self.version}"
 
     @property
+    def name(self) -> str:
+        """Return the name (not necessary canonicalized) of the package."""
+        return self._name
+
+    @property
     def canonical_name(self) -> NormalizedName:
         """Return the cananicalized name of the package."""
         return canonicalize_name(self._name)
