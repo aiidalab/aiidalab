@@ -6,7 +6,7 @@ from time import sleep
 import pytest
 import traitlets
 
-from aiidalab.app import AiidaLabApp, AiidaLabAppWatch
+from aiidalab.app import AiidaLabApp, AiidaLabAppWatch, _AiidaLabApp
 
 
 def test_init_refresh(generate_app):
@@ -40,6 +40,23 @@ def test_dependencies(generate_app):
     with pytest.raises(traitlets.TraitError):
         app.version_to_install = "v22.11.0"
     app.version_to_install = "v22.11.1"
+
+
+@pytest.mark.usefixtures("installed_packages")
+def test_app_is_not_registered(generate_app, monkeypatch):
+    """test the app is not registered and the available versions are empty."""
+    app: AiidaLabApp = generate_app()
+
+    # monkeypatch and make the app not registered
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", False)
+    app.refresh()
+
+    assert app._app.is_registered is False
+
+    # if the app is not registered, the version is read from the metadata of app installed
+    # the available versions will be empty since the app is not registered
+    assert app.installed_version == "23.1.0"
+    assert len(app.available_versions) == 0
 
 
 def test_app_watch(tmp_path):
