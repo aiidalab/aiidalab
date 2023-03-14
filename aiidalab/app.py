@@ -558,6 +558,8 @@ class AiidaLabAppWatch:
     AiiDAlab app. This is achieved by monitoring the app repository
     for existance and changes.
 
+    If there is a change in the app repository, the app is refreshed.
+
     Arguments:
         app (AiidaLabApp):
             The AiidaLab app to monitor.
@@ -580,6 +582,7 @@ class AiidaLabAppWatch:
         self._started = False
         self._monitor_thread = None
         self._observer = None
+        self._monitor_thread_stop = threading.Event()
 
     def __repr__(self):
         return f"<{type(self).__name__}(app={self.app!r})>"
@@ -629,9 +632,10 @@ class AiidaLabAppWatch:
 
             def check_path_exists_changed():
                 is_dir = os.path.isdir(self.app.path)
-                while not self._monitor_thread.stop_flag:  # type: ignore
+                while not self._monitor_thread_stop.is_set():
                     switched = is_dir != os.path.isdir(self.app.path)
                     if switched:
+                        # this is for when the app folder first time create or deleted
                         is_dir = not is_dir
                         self.app.refresh()
 
@@ -648,7 +652,7 @@ class AiidaLabAppWatch:
                     self._observer.stop()
 
             self._monitor_thread = Thread(target=check_path_exists_changed)
-            self._monitor_thread.stop_flag = False  # type: ignore
+            self._monitor_thread_stop.clear()
             self._monitor_thread.start()
 
         self._started = True
@@ -656,14 +660,14 @@ class AiidaLabAppWatch:
     def stop(self):
         """Stop watching the app repository for file system events."""
         if self._monitor_thread is not None:
-            self._monitor_thread.stop_flag = True
+            self._monitor_thread_stop.set()
 
     def is_alive(self):
         """Return True if this watch is still alive."""
         return self._monitor_thread and self._monitor_thread.is_alive()
 
     def join(self, timeout=None):
-        """Join the watch after stopping.
+        """Join the watch and observer after stopping.
 
         This function will timeout if a timeout argument is provided. Use the
         is_alive() function to determien whether the watch was stopped within
@@ -671,6 +675,8 @@ class AiidaLabAppWatch:
         """
         if self._monitor_thread is not None:
             self._monitor_thread.join(timeout=timeout)
+        if self._observer is not None:
+            self._observer.join(timeout=timeout)
 
 
 class AiidaLabApp(traitlets.HasTraits):  # type: ignore
