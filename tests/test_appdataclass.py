@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from packaging.requirements import Requirement
 
-from aiidalab.app import AppRemoteUpdateStatus, _AiidaLabApp
+from aiidalab.app import AppRemoteUpdateStatus, AppVersion, _AiidaLabApp
 
 
 @pytest.fixture
@@ -87,7 +87,33 @@ def test_find_dependencies_to_install(monkeypatch, installed_packages, python_bi
     assert "jupyter-client" in dependencies_name
 
 
-def test_update_status_issue_360(monkeypatch, installed_packages, python_bin):
+def test_update_status_of_unregistred_app(
+    monkeypatch, installed_packages, python_bin, tmp_path
+):
+    """Test default behaviour of an unregistred app."""
+    # The app is installed in the path but the app name is not found from the registry.
+    # This leads to the app being unregistred and the version will be read from the metadata.
+    # If the version is not found in the metadata, the app is considered as `AppVersion.UNKNOWN`
+    # The path need to be exist otherwise the app considered to be not installed.
+    monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", False)
+
+    aiidalab_app_data = _AiidaLabApp(
+        metadata={},
+        name="test",
+        path=tmp_path,
+        releases={},
+    )
+
+    assert (
+        aiidalab_app_data.remote_update_status() is AppRemoteUpdateStatus.NOT_REGISTERED
+    )
+    assert aiidalab_app_data.installed_version() is AppVersion.UNKNOWN
+
+
+def test_update_status_latest_version_incompatible(
+    monkeypatch, installed_packages, python_bin
+):
     """Test issue #360 where when the highest version is core dependencies unmet and hidden."""
     monkeypatch.setattr(_AiidaLabApp, "is_registered", True)
     monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
