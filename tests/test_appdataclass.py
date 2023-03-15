@@ -94,7 +94,8 @@ def test_update_status_of_unregistred_app(
     # The app is installed in the path but the app name is not found from the registry.
     # This leads to the app being unregistred and the version will be read from the metadata.
     # If the version is not found in the metadata, the app is considered as `AppVersion.UNKNOWN`
-    # The path need to be exist otherwise the app considered to be not installed.
+    # The path need to be exist otherwise the app considered to be not installed, in the test
+    # we monkeypatch in as installed.
     monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
     monkeypatch.setattr(_AiidaLabApp, "is_registered", False)
 
