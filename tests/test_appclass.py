@@ -47,13 +47,11 @@ def test_app_is_not_registered(generate_app, monkeypatch, tmp_path):
     """test the app is not registered and the available versions are empty."""
     # monkeypatch and make the app not registered
     monkeypatch.setattr(_AiidaLabApp, "is_registered", False)
-    monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
 
     app: AiidaLabApp = generate_app()
     app.refresh()
 
-    assert app._app.is_registered is False
-    assert app.is_installed is True
+    assert app.is_installed() is True
 
     # if the app is not registered, the version is read from the metadata of app installed
     # the available versions will be empty since the app is not registered
