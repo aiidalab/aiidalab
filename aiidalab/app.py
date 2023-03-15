@@ -755,7 +755,9 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
     def _default_detached(self):
         """Provide default value for detached traitlet."""
         if self.is_installed():
-            return self._app.dirty() or self._installed_version() is AppVersion.UNKNOWN
+            return (
+                self._app.dirty() or self._get_installed_version() is AppVersion.UNKNOWN
+            )
         return None
 
     @traitlets.default("busy")
@@ -818,7 +820,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             )
             FIND_INSTALLED_PACKAGES_CACHE.clear()
             self.refresh()
-            return self._installed_version()
+            return self._get_installed_version()
 
     def update_app(self, _=None, stdout=None) -> AppVersion | str:
         """Perform app update."""
@@ -837,9 +839,9 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             self._app.uninstall()
             self.refresh()
 
-    def _installed_version(self) -> AppVersion | str:
+    def _get_installed_version(self) -> AppVersion | str:
         """Determine the currently installed version."""
-        return self._app.installed_version()  # type: ignore
+        return self._app.installed_version()
 
     @traitlets.default("compatible")  # type: ignore
     def _default_compatible(self) -> None:  # pylint: disable=no-self-use
@@ -863,7 +865,9 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             return False  # compatibility indetermined for given version
 
     def _refresh_versions(self) -> None:
-        self.installed_version = self._installed_version()
+        self.installed_version = (
+            self._get_installed_version()
+        )  # only update at this refresh method
         self.include_prereleases = self.include_prereleases or (
             isinstance(self.installed_version, str)
             and parse(self.installed_version).is_prerelease
