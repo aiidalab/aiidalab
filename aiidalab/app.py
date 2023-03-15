@@ -832,7 +832,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             self.refresh()
             return version
 
-    def uninstall_app(self, _=None):  # type: ignore
+    def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
         # Perform uninstall process.
         with self._show_busy():
@@ -916,7 +916,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         refresh_thread.start()
 
     @property
-    def metadata(self):  # type: ignore
+    def metadata(self):
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
         return self._app.metadata
 
