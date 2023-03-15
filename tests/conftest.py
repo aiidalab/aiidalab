@@ -3,16 +3,16 @@ from pathlib import Path
 import pytest
 import yaml
 
-from aiidalab.app import AiidaLabApp
+from aiidalab.app import AiidaLabApp, _AiidaLabApp
 
 
 @pytest.fixture
-def generate_app():
+def generate_app(monkeypatch):
     """Fixture to construct a new AiiDALabApp instance for testing."""
 
     def _generate_app(
         name="quantum-espresso",
-        aiidalab_apps_path="/home/jovyan/apps",
+        aiidalab_apps_path="/tmp/apps",
         app_data=None,
         watch=False,
     ):
@@ -21,6 +21,11 @@ def generate_app():
                 Path(__file__).parent.absolute() / "static/app_registry.yaml"
             ) as f:
                 app_data = yaml.safe_load(f)
+
+        # In the app_registry.yaml we defined the metadata which means
+        # it is a installed app. Following monkeypatch make it more close
+        # to the real scenario for test.
+        monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
         app = AiidaLabApp(name, app_data, aiidalab_apps_path, watch=watch)
 
         return app
