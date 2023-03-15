@@ -162,12 +162,15 @@ class _AiidaLabApp:
                         f"Encountered error while determining version: {error}"
                     )
                     return AppVersion.UNKNOWN
-        elif self.path.exists():
+        elif self.is_installed():
             return self.metadata.get("version", AppVersion.UNKNOWN)
+
         return AppVersion.NOT_INSTALLED
 
     def available_versions(
-        self, python_bin: str | None = None
+        self,
+        python_bin: str | None = None,
+        prereleases: bool = False,
     ) -> Generator[str, None, None]:
         """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered:
@@ -180,7 +183,9 @@ class _AiidaLabApp:
                         .get("python_requirements", [])
                     )
                 ]
-                if self._strict_dependencies_met(version_requirements, python_bin):
+                if (
+                    prereleases or not parse(version).is_prerelease
+                ) and self._strict_dependencies_met(version_requirements, python_bin):
                     yield version
 
     def dirty(self):
@@ -215,11 +220,7 @@ class _AiidaLabApp:
                 return AppRemoteUpdateStatus.DETACHED
 
             # Check whether the locally installed version is the latest release.
-            available_versions = [
-                version
-                for version in sorted(self.releases, key=parse, reverse=True)
-                if prereleases or not parse(version).is_prerelease
-            ]
+            available_versions = list(self.available_versions(prereleases=prereleases))
             if len(available_versions) and installed_version != available_versions[0]:
                 return AppRemoteUpdateStatus.UPDATE_AVAILABLE
 
@@ -761,7 +762,9 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
     def _default_detached(self):
         """Provide default value for detached traitlet."""
         if self.is_installed():
-            return self._app.dirty() or self._installed_version() is AppVersion.UNKNOWN
+            return (
+                self._app.dirty() or self._get_installed_version() is AppVersion.UNKNOWN
+            )
         return None
 
     @traitlets.default("busy")
@@ -824,7 +827,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             )
             FIND_INSTALLED_PACKAGES_CACHE.clear()
             self.refresh()
-            return self._installed_version()
+            return self._get_installed_version()
 
     def update_app(self, _=None, stdout=None) -> AppVersion | str:
         """Perform app update."""
@@ -836,16 +839,16 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             self.refresh()
             return version
 
-    def uninstall_app(self, _=None):  # type: ignore
+    def uninstall_app(self, _=None):
         """Perfrom app uninstall."""
         # Perform uninstall process.
         with self._show_busy():
             self._app.uninstall()
             self.refresh()
 
-    def _installed_version(self) -> AppVersion | str:
+    def _get_installed_version(self) -> AppVersion | str:
         """Determine the currently installed version."""
-        return self._app.installed_version()  # type: ignore
+        return self._app.installed_version()
 
     @traitlets.default("compatible")  # type: ignore
     def _default_compatible(self) -> None:  # pylint: disable=no-self-use
@@ -868,36 +871,23 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         except KeyError:
             return False  # compatibility indetermined for given version
 
-    def _remote_update_status(self) -> bool:
-        """Determine whether there are updates available.
-
-        For this the app must be installed in a known version and there must be
-        available (and compatible) versions.
-        """
-        installed_version = self._installed_version()
-        if installed_version not in (AppVersion.UNKNOWN, AppVersion.NOT_INSTALLED):
-            available_versions = list(self.available_versions)
-            if len(available_versions):
-                return self._installed_version() != available_versions[0]  # type: ignore
-        return False
-
     def _refresh_versions(self) -> None:
-        self.installed_version = self._installed_version()
+        self.installed_version = (
+            self._get_installed_version()
+        )  # only update at this refresh method
         self.include_prereleases = self.include_prereleases or (
             isinstance(self.installed_version, str)
             and parse(self.installed_version).is_prerelease
         )
 
-        all_available_versions = list(self._app.available_versions())
+        all_available_versions = list(self._app.available_versions(prereleases=True))
         self.has_prereleases = any(
             parse(version).is_prerelease for version in all_available_versions
         )
-        if self._app.is_registered:
-            self.available_versions = [
-                version
-                for version in all_available_versions
-                if self.include_prereleases or not parse(version).is_prerelease
-            ]
+
+        self.available_versions = list(
+            self._app.available_versions(prereleases=self.include_prereleases)
+        )
 
     def _refresh_dependencies_to_install(self) -> None:
         self.dependencies_to_install = self._app.find_dependencies_to_install(
@@ -933,7 +923,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         refresh_thread.start()
 
     @property
-    def metadata(self):  # type: ignore
+    def metadata(self):
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
         return self._app.metadata
 
