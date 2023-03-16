@@ -46,7 +46,7 @@ def test_dependencies(generate_app):
 def test_app_is_not_registered(generate_app, monkeypatch, tmp_path):
     """test the app is not registered and the available versions are empty."""
     # monkeypatch and make the app not registered
-    monkeypatch.setattr(_AiidaLabApp, "is_registered", False)
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", lambda _: False)
 
     app: AiidaLabApp = generate_app()
     app.refresh()

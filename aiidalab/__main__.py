@@ -198,7 +198,7 @@ def _find_registered_app_from_id(name):
     """Find app for a given requirement."""
     try:
         app = AiidaLabApp.from_id(name)
-        if app.is_registered:
+        if app.is_registered():
             return app
         else:
             raise click.ClickException(

@@ -50,7 +50,7 @@ def test_strict_dependencies_met_package_name_canonicalized(
 def test_find_dependencies_to_install(monkeypatch, installed_packages, python_bin):
     """Test find_dependencies_to_install method of _AiidaLabApp.
     By mocking the _AiidallabApp class with its attributes set."""
-    monkeypatch.setattr(_AiidaLabApp, "is_registered", True)
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", lambda _: True)
 
     aiidalab_app_data = _AiidaLabApp(
         metadata={},
@@ -97,7 +97,7 @@ def test_update_status_of_unregistred_app(
     # The path need to be exist otherwise the app considered to be not installed, in the test
     # we monkeypatch in as installed.
     monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
-    monkeypatch.setattr(_AiidaLabApp, "is_registered", False)
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", lambda _: False)
 
     aiidalab_app_data = _AiidaLabApp(
         metadata={},
@@ -116,7 +116,7 @@ def test_update_status_latest_version_incompatible(
     monkeypatch, installed_packages, python_bin
 ):
     """Test issue #360 where when the highest version is core dependencies unmet and hidden."""
-    monkeypatch.setattr(_AiidaLabApp, "is_registered", True)
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", lambda _: True)
     monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
     monkeypatch.setattr(_AiidaLabApp, "installed_version", lambda _: "v0.1.0")
 
@@ -156,7 +156,7 @@ def test_compatibility_check_with_local_repo_if_detached(
     from aiidalab.environment import Environment
 
     monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
-    monkeypatch.setattr(_AiidaLabApp, "is_registered", True)
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", lambda _: True)
 
     aiidalab_app_data = _AiidaLabApp(
         metadata={},
