@@ -357,7 +357,7 @@ class _AiidaLabApp:
             # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
 
             # Install package dependencies.
-            stdout.write(f"Running 'pip install --user {' '.join(args)}'\n")
+            logger.info(f"Running 'pip install --user {' '.join(args)}'\n")
             process = run_pip_install(*args, python_bin=python_bin)
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                 stdout.write(line)
@@ -367,7 +367,7 @@ class _AiidaLabApp:
 
             # AiiDA plugins require reentry run to be found by AiiDA.
             if _should_run_reentry():
-                stdout.write("\nRunning 'reentry scan'\n")
+                logger.info("\nRunning 'reentry scan'\n")
                 process = run_reentry_scan()
                 for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                     stdout.write(line)
@@ -418,6 +418,9 @@ class _AiidaLabApp:
             process = run_post_install_script(post_install_file)
             process.wait()
             if process.returncode != 0:
+                logger.error(
+                    f'Post-install script "{post_install_file}" returned an error!'
+                )
                 raise CalledProcessError(process.returncode, str(post_install_file))
 
     def _install_from_path(self, path):
@@ -523,18 +526,22 @@ class _AiidaLabApp:
             if post_install_triggers:
                 self._post_install_triggers()
 
-        except RuntimeError as error:
+        # NOTE: We want to catch everything, including keyboard interrupt,
+        # so we can rollback incomplete installation.
+        except BaseException as error:
             try:
                 if trash_path is None:
                     # App, was not previously installed, just remove it.
-                    logger.info("Removing partially installed app.")
+                    logger.warning("Removing partially installed app.")
                     self._move_to_trash()
                 else:
                     # Attempt rollback to previous version.
-                    logger.info("Performing rollback to previously installed version.")
+                    logger.warning(
+                        "Performing rollback to previously installed version."
+                    )
                     self._restore_from(trash_path)
             except RuntimeError as inner_error:
-                logger.warning(f"Rollback failed due to error: {inner_error}!")
+                logger.error(f"Rollback failed due to error: {inner_error}!")
             finally:
                 raise RuntimeError(
                     f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
