@@ -147,3 +147,43 @@ def test_update_status_latest_version_incompatible(
     )
 
     assert aiidalab_app_data.remote_update_status() is AppRemoteUpdateStatus.UP_TO_DATE
+
+
+def test_compatibility_check_with_local_repo_if_detached(
+    monkeypatch, tmp_path, installed_packages
+):
+    """Test compatibility check with local repo if detached."""
+    from aiidalab.environment import Environment
+
+    monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", True)
+
+    aiidalab_app_data = _AiidaLabApp(
+        metadata={},
+        name="test",
+        path=tmp_path,
+        releases={},
+    )
+
+    assert aiidalab_app_data.installed_version() is AppVersion.UNKNOWN
+    assert aiidalab_app_data.is_detached()
+
+    # test to show the code path that the local repo requirements check is hinted.
+    # because the Environment.scan method is used for check the compatibility of local repo.
+
+    # monkeypatch the scan method to return a fake environment
+    # the fake environment has the aiida-core version that is compatible with the app
+    monkeypatch.setattr(
+        Environment,
+        "scan",
+        lambda _: Environment(python_requirements=["aiida-core~=2.0"]),
+    )
+    assert len(list(aiidalab_app_data.find_incompatibilities("v0.1.0"))) == 0
+
+    # the fake environment has the aiida-core version that is not compatible with the app
+    monkeypatch.setattr(
+        Environment,
+        "scan",
+        lambda _: Environment(python_requirements=["aiida-core~=3.0"]),
+    )
+    assert len(list(aiidalab_app_data.find_incompatibilities("v0.1.0"))) == 1
