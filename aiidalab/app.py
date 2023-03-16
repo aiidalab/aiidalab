@@ -855,7 +855,11 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         return None
 
     def _is_compatible(self, app_version: str) -> bool:
-        """Determine whether the specified version is compatible."""
+        """Determine whether the specified version is compatible.
+
+        Note: if the app_version is UNKNOWN, then the compatibility is indetermined and False is returned.
+        This usually happens when the app is detached.
+        """
         try:
             incompatibilities = dict(
                 self._app.find_incompatibilities(version=app_version)
