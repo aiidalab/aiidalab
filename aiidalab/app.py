@@ -283,12 +283,21 @@ class _AiidaLabApp:
             elif not pkg.fulfills(requirement):
                 yield requirement
 
+    def is_detached(self):
+        """Check whether the app is detached from the registry."""
+        return self.remote_update_status() == AppRemoteUpdateStatus.DETACHED
+
     def find_incompatibilities(self, version, python_bin=None):
+        """Compatibility is checked by comparing between the requirement list of package
+        with the packages installed in the python environment.
+        If the app is registried which means the requirments list can get for certain version only,
+        it will checked w.r.t that. If the app is not registried or it is detached which usually caused from
+        the app is modified locally the requirements list will directly read from the local repository.
+        """
         if python_bin is None:
             python_bin = sys.executable
 
-        if not self.is_registered:
-            assert version == self.installed_version()
+        if not self.is_registered or self.is_detached():
             environment = asdict(Environment.scan(self.path))
         else:
             environment = self.releases[version].get("environment", {})
