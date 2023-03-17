@@ -287,11 +287,12 @@ class _AiidaLabApp:
         return self.remote_update_status() == AppRemoteUpdateStatus.DETACHED
 
     def find_incompatibilities(self, version, python_bin=None):
-        """Compatibility is checked by comparing between the requirement list of package
+        """Compatibility is checked by comparing the app requirements
         with the packages installed in the python environment.
-        If the app is registried which means the requirments list can get for certain version only,
-        it will checked w.r.t that. If the app is not registried or it is detached which usually caused from
-        the app is modified locally the requirements list will directly read from the local repository.
+
+        If the app is registered the list of requirements is fetched from the registry for the specific version.
+        If the app is not registered or if it is detached (i.e. locally modified),
+        the requirements list is read from the local repository (e.g. by parsing setup.cfg).
         """
         if python_bin is None:
             python_bin = sys.executable
@@ -863,11 +864,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         return None
 
     def _is_compatible(self, app_version: str) -> bool:
-        """Determine whether the specified version is compatible.
-
-        Note: if the app_version is UNKNOWN, then the compatibility is indetermined and False is returned.
-        This usually happens when the app is detached.
-        """
+        """Determine whether the specified version is compatible."""
         try:
             incompatibilities = dict(
                 self._app.find_incompatibilities(version=app_version)
