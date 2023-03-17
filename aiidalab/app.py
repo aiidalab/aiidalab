@@ -125,7 +125,6 @@ class _AiidaLabApp:
 
         return cls.from_registry_entry(path=app_path, registry_entry=registry_entry)
 
-    @property
     def is_registered(self):
         try:
             app_registry_index = load_app_registry_index()
@@ -143,7 +142,7 @@ class _AiidaLabApp:
             return None
 
     def installed_version(self) -> AppVersion | str:
-        if self._repo and self.is_registered:
+        if self._repo and self.is_registered():
             if self.dirty():
                 return AppVersion.UNKNOWN
             else:
@@ -173,7 +172,7 @@ class _AiidaLabApp:
         prereleases: bool = False,
     ) -> Generator[str, None, None]:
         """Return a list of available versions excluding the ones with core dependency conflicts."""
-        if self.is_registered:
+        if self.is_registered():
             for version in sorted(self.releases, key=parse, reverse=True):
                 version_requirements = [
                     Requirement(r)
@@ -208,10 +207,10 @@ class _AiidaLabApp:
         if self.is_installed():
 
             # Check whether app is registered.
-            if self.is_registered is None:
+            if self.is_registered() is None:
                 return AppRemoteUpdateStatus.CANNOT_REACH_REGISTRY
 
-            if self.is_registered is False:
+            if self.is_registered() is False:
                 return AppRemoteUpdateStatus.NOT_REGISTERED
 
             # Check whether the locally installed version is a registered release.
@@ -283,12 +282,22 @@ class _AiidaLabApp:
             elif not pkg.fulfills(requirement):
                 yield requirement
 
+    def is_detached(self):
+        """Check whether the app is detached from the registry."""
+        return self.remote_update_status() == AppRemoteUpdateStatus.DETACHED
+
     def find_incompatibilities(self, version, python_bin=None):
+        """Compatibility is checked by comparing the app requirements
+        with the packages installed in the python environment.
+
+        If the app is registered the list of requirements is fetched from the registry for the specific version.
+        If the app is not registered or if it is detached (i.e. locally modified),
+        the requirements list is read from the local repository (e.g. by parsing setup.cfg).
+        """
         if python_bin is None:
             python_bin = sys.executable
 
-        if not self.is_registered:
-            assert version == self.installed_version()
+        if not self.is_registered() or self.is_detached():
             environment = asdict(Environment.scan(self.path))
         else:
             environment = self.releases[version].get("environment", {})
@@ -913,7 +922,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
                 self.set_trait(
                     "detached",
                     (self.installed_version is AppVersion.UNKNOWN)
-                    if (self._has_git_repo() and self._app.is_registered)
+                    if (self._has_git_repo() and self._app.is_registered())
                     else None,
                 )
 
