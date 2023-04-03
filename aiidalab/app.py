@@ -205,7 +205,6 @@ class _AiidaLabApp:
             AppRemoteUpdateStatus
         """
         if self.is_installed():
-
             # Check whether app is registered.
             if self.is_registered() is None:
                 return AppRemoteUpdateStatus.CANNOT_REACH_REGISTRY
@@ -440,7 +439,6 @@ class _AiidaLabApp:
                 with tarfile.open(path) as tar_file:
 
                     def is_within_directory(directory, target):
-
                         abs_directory = os.path.abspath(directory)
                         abs_target = os.path.abspath(target)
 
@@ -451,7 +449,6 @@ class _AiidaLabApp:
                     def safe_extract(
                         tar, path=".", members=None, *, numeric_owner=False
                     ):
-
                         for member in tar.getmembers():
                             member_path = os.path.join(path, member.name)
                             if not is_within_directory(path, member_path):

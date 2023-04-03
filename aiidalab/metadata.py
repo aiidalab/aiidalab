@@ -91,7 +91,6 @@ class Metadata:
 
     @staticmethod
     def _parse(path):
-
         try:
             return {
                 key: value
