@@ -395,7 +395,10 @@ class _AiidaLabApp:
         for path in (self.path.joinpath(".aiidalab"), self.path):
             if path.exists():
                 try:
-                    if path.joinpath("setup.py").is_file():
+                    if (
+                        path.joinpath("setup.py").is_file()
+                        or path.joinpath("pyproject.toml").is_file()
+                    ):
                         _pip_install(str(path), stdout=stdout)
                     elif path.joinpath("requirements.txt").is_file():
                         _pip_install(
