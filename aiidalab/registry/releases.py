@@ -29,6 +29,7 @@ def _split_release_line(url):
         return urlunsplit(parsed_url._replace(path=path)), release_line
     return url, None
 
+
 def _get_tags(repo, rev, rev_selection):
     # While the git rev-list command supports listing revisions for a
     # single ref, in this context we only support rev selections for a
@@ -59,6 +60,7 @@ def _get_tags(repo, rev, rev_selection):
         if commit in selected_commits:
             yield tag, commit
 
+
 def _get_release_commits(repo, release_line):
     """Get the commits for a release line."""
     match = re.match(RELEASE_LINE_PATTERN, release_line)
@@ -67,20 +69,20 @@ def _get_release_commits(repo, release_line):
         raise ValueError(f"Invalid release line specification: {release_line}")
 
     rev = match.groupdict()["rev"] or repo.get_current_branch()
-    
+
     if match.groupdict()["rev"] == "_":
         # loop over all remote branches and yield the tags for the commits
-        
+
         tags = set()
         for branch in repo.refs.as_dict(b"refs/remotes/origin/").keys():
-            rev = branch.decode()                
+            rev = branch.decode()
             rev_selection = match.groupdict()["rev_selection"]
 
             for tag, commit in _get_tags(repo, rev, rev_selection):
                 if tag not in tags:
                     tags.add(tag)
                     yield tag, commit
-                
+
         return
 
     elif match.groupdict()["rev_selection"] is None:
