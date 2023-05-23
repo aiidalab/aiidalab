@@ -7,7 +7,7 @@ from aiidalab.registry.releases import _get_release_commits, _split_release_line
 
 def test_get_all_tagged_releases():
     """Test that all tagged releases are returned."""
-    url = "git+https://github.com/aiidalab/aiidalab-qe.git@_:v23.04.0^.."
+    url = "git+https://github.com/aiidalab/aiidalab-qe.git@*:v23.04.0^.."
     base_url, release_line = _split_release_line(url)
     parsed_url = urlsplit(base_url)
 

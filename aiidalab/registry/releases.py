@@ -70,7 +70,7 @@ def _get_release_commits(repo, release_line):
 
     rev = match.groupdict()["rev"] or repo.get_current_branch()
 
-    if match.groupdict()["rev"] == "_":
+    if match.groupdict()["rev"] == "*":
         # loop over all remote branches and yield the tags for the commits
 
         tags = set()
