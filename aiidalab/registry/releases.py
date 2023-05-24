@@ -19,7 +19,7 @@ class Release:
     url: str
 
 
-RELEASE_LINE_PATTERN = r"^(?P<rev>[^:]*?)(:(?P<rev_selection>.*))?$"
+RELEASE_LINE_PATTERN = r"^(?P<rev>[^:]*?)(:(?P<rev_list>.*))?$"
 
 
 def _split_release_line(url):
@@ -30,38 +30,44 @@ def _split_release_line(url):
     return url, None
 
 
-def _get_tags(repo, rev, rev_selection):
+def _get_tags(repo: GitRepo, branch: str, rev_list: str):
+    """Get all tags for given revision selection of a branch.
+
+    :param repo: Git repository object.
+    :param branch: Branch name.
+    :param rev_list: Revision selection, the format is described in https://git-scm.com/docs/git-rev-list
+    """
     # While the git rev-list command supports listing revisions for a
     # single ref, in this context we only support rev selections for a
     # range, not for individual refs.
-    if ".." not in rev_selection:
+    if ".." not in rev_list:
         raise ValueError(
-            "The rev_selection '{rev_selection}' must specify a range, "
+            "The rev_list '{rev_list}' must specify a range, "
             "that means must contain the range operator '..'."
         )
 
     # Incomplete revision selections such as `@main:v1..` must be expanded to
     # `@main:v1..main`. Therefore, we first determine the branch ref for the
     # given rev:
-    for ref in [f"refs/heads/{rev}", f"refs/remotes/origin/{rev}"]:
+    for ref in [f"refs/heads/{branch}", f"refs/remotes/origin/{branch}"]:
         if ref.encode() in repo.refs:
             break
     else:
-        raise RuntimeError(f"Revision '{rev}' not a valid branch name.")
+        raise RuntimeError(f"Revision '{branch}' not a valid branch name.")
 
-    # Transform a potentially incomplete rev_selection into one that
+    # Transform a potentially incomplete rev_list into one that
     # contains the branch ref. For example `v1..` is expanded to
     # `v1..{ref}`, where `{ref}` is replaced with the actual reference.
-    start, _, stop = rev_selection.rpartition("..")
+    start, _, stop = rev_list.rpartition("..")
     selected_commits = repo.rev_list(f"{start or ref}..{stop or ref}")
 
-    for tag in repo.get_merged_tags(rev):
+    for tag in repo.get_merged_tags(branch):
         commit = repo.get_commit_for_tag(tag)
         if commit in selected_commits:
             yield tag, commit
 
 
-def _get_release_commits(repo, release_line):
+def _get_release_commits(repo: GitRepo, release_line: str):
     """Get the commits for a release line."""
     match = re.match(RELEASE_LINE_PATTERN, release_line)
 
@@ -76,17 +82,17 @@ def _get_release_commits(repo, release_line):
         tags = set()
         for branch in repo.refs.as_dict(b"refs/remotes/origin/").keys():
             rev = branch.decode()
-            rev_selection = match.groupdict()["rev_selection"]
+            rev_list = match.groupdict()["rev_list"]
 
-            for tag, commit in _get_tags(repo, rev, rev_selection):
+            for tag, commit in _get_tags(repo, rev, rev_list):
                 if tag not in tags:
                     tags.add(tag)
                     yield tag, commit
 
         return
 
-    elif match.groupdict()["rev_selection"] is None:
-        # No rev_selection means to select this and only this specific
+    elif match.groupdict()["rev_list"] is None:
+        # No rev_list means to select this and only this specific
         # revision.  For example: '@main' means, simply checkout 'main' (could
         # be a branch or a tag, however branches have priority).
         for ref in [
@@ -100,14 +106,14 @@ def _get_release_commits(repo, release_line):
         # rev likely committish (commit)
         yield rev, rev
 
-    elif match.groupdict()["rev_selection"]:
+    elif match.groupdict()["rev_list"]:
         # A rev selection is provided, we fetch the full rev list for the given
         # selection.  For example: '@main:v1..v2' means all commits from v1
         # (exclusive) to v2 (inclusive).
 
-        rev_selection = match.groupdict()["rev_selection"]
+        rev_list = match.groupdict()["rev_list"]
 
-        for tag, commit in _get_tags(repo, rev, rev_selection):
+        for tag, commit in _get_tags(repo, rev, rev_list):
             yield tag, commit
 
     else:
