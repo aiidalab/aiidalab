@@ -72,7 +72,7 @@ def _get_release_commits(repo: GitRepo, release_line: str):
     """Get the commits for a release line.
 
     :param repo: Git repository object.
-    :param release_line: support tandard git revision selection syntax to further
+    :param release_line: support standard git revision selection syntax to further
         reduce the selected commits on a release line. For example, @main:v1.0.0.. means “select all tagged commits on the main branch after commit tagged with v1.0.0”.
     """
     match = re.match(RELEASE_LINE_PATTERN, release_line)
