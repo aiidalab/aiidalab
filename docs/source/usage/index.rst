@@ -27,6 +27,12 @@ To run AiiDAlab on your own workstation or laptop you can either
 To use **AiiDAlab launch** you will have to
 
 #. `Install Docker on your workstation or laptop. <https://docs.docker.com/get-docker/>`_
+
+.. note::
+
+   If you are using Linux, you need to have `root` privileges to 
+   do [post-installation steps for Docker Engine](https://docs.docker.com/engine/install/linux-postinstall/).
+
 #. Install AiiDAlab launch with `pipx <https://pypa.github.io/pipx/installation/>`_ (**recommended**):
 
    .. code-block:: console
