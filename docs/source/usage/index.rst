@@ -30,8 +30,7 @@ To use **AiiDAlab launch** you will have to
 
 .. note::
 
-   If you are using Linux, you need to have `root` privileges to 
-   do [post-installation steps for Docker Engine](https://docs.docker.com/engine/install/linux-postinstall/).
+   If you are using Linux, you need to have `root` privileges to do `post-installation steps for the Docker Engine <https://docs.docker.com/engine/install/linux-postinstall/>`_.
 
 #. Install AiiDAlab launch with `pipx <https://pypa.github.io/pipx/installation/>`_ (**recommended**):
 
