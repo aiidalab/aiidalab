@@ -22,7 +22,7 @@ AiiDAlab launch
 To run AiiDAlab on your own workstation or laptop you can either
 
  - *(recommended)* Use the :ref:`aiidalab-launch <usage:aiidalab-launch>` tool which is a thin docker wrapper, or
- - run the image directly with: ```docker run -p 8888:8888 aiidalab/aiidalab-docker-stack```.
+ - run the image directly with: ``docker run -p 8888:8888 aiidalab/full-stack``.
 
 To use **AiiDAlab launch** you will have to
 
