@@ -98,13 +98,16 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
 
    .. tabbed:: Release all tagged commits
 
-       The simplest approach to release new app versions, is to register the app *once* and then push new releases by creating tagged commits on a specific branch, e.g., the *main* branch.
+       The simplest approach to release new app versions, is to register the app *once* and then push new releases by creating tagged commits on a specific branch, e.g., the *main* branch, or *`*`* to get tags from all branches.
 
        .. code-block:: yaml
 
-           my-app:
+           my-app1:
              releases:
                - "git+https://github.com/aiidalab/aiidalab-my-app@main:"
+           my-app2:
+             releases:
+               - "git+https://github.com/aiidalab/aiidalab-my-app@*:v1.0.0.."
 
        where you replace the URL shown here with the one applicable for your app.
 

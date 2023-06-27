@@ -30,7 +30,51 @@ def _split_release_line(url):
     return url, None
 
 
-def _get_release_commits(repo, release_line):
+def _get_tags(repo: GitRepo, branch: str, rev_selection: str):
+    """Get all tags for given revision selection of a branch.
+
+    :param repo: Git repository object.
+    :param branch: Branch name.
+    :param rev_selection: Revision selection, the format is described
+        in https://git-scm.com/docs/git-rev-list
+    """
+    # While the git rev-list command supports listing revisions for a
+    # single ref, in this context we only support rev selections for a
+    # range, not for individual refs.
+    if ".." not in rev_selection:
+        raise ValueError(
+            "The rev_selection '{rev_selection}' must specify a range, "
+            "that means must contain the range operator '..'."
+        )
+
+    # Incomplete revision selections such as `@main:v1..` must be expanded to
+    # `@main:v1..main`. Therefore, we first determine the branch ref for the
+    # given rev:
+    for ref in [f"refs/heads/{branch}", f"refs/remotes/origin/{branch}"]:
+        if ref.encode() in repo.refs:
+            break
+    else:
+        raise RuntimeError(f"Revision '{branch}' not a valid branch name.")
+
+    # Transform a potentially incomplete rev_selection into one that
+    # contains the branch ref. For example `v1..` is expanded to
+    # `v1..{ref}`, where `{ref}` is replaced with the actual reference.
+    start, _, stop = rev_selection.rpartition("..")
+    selected_commits = repo.rev_list(f"{start or ref}..{stop or ref}")
+
+    for tag in repo.get_merged_tags(branch):
+        commit = repo.get_commit_for_tag(tag)
+        if commit in selected_commits:
+            yield tag, commit
+
+
+def _get_release_commits(repo: GitRepo, release_line: str):
+    """Get the commits for a release line.
+
+    :param repo: Git repository object.
+    :param release_line: support standard git revision selection syntax to further
+        reduce the selected commits on a release line. For example, @main:v1.0.0.. means “select all tagged commits on the main branch after commit tagged with v1.0.0”.
+    """
     match = re.match(RELEASE_LINE_PATTERN, release_line)
 
     if not match:
@@ -38,7 +82,22 @@ def _get_release_commits(repo, release_line):
 
     rev = match.groupdict()["rev"] or repo.get_current_branch()
 
-    if match.groupdict()["rev_selection"] is None:
+    if match.groupdict()["rev"] == "*":
+        # loop over all remote branches and yield the tags for the commits
+
+        tags = set()
+        for branch in repo.refs.as_dict(b"refs/remotes/origin/").keys():
+            rev = branch.decode()
+            rev_selection = match.groupdict()["rev_selection"]
+
+            for tag, commit in _get_tags(repo, rev, rev_selection):
+                if tag not in tags:
+                    tags.add(tag)
+                    yield tag, commit
+
+        return
+
+    elif match.groupdict()["rev_selection"] is None:
         # No rev_selection means to select this and only this specific
         # revision.  For example: '@main' means, simply checkout 'main' (could
         # be a branch or a tag, however branches have priority).
@@ -60,34 +119,8 @@ def _get_release_commits(repo, release_line):
 
         rev_selection = match.groupdict()["rev_selection"]
 
-        # While the git rev-list command supports listing revisions for a
-        # single ref, in this context we only support rev selections for a
-        # range, not for individual refs.
-        if ".." not in match.groupdict()["rev_selection"]:
-            raise ValueError(
-                "The rev_selection '{rev_selection}' must specify a range, "
-                "that means must contain the range operator '..'."
-            )
-
-        # Incomplete revision selections such as `@main:v1..` must be expanded to
-        # `@main:v1..main`. Therefore, we first determine the branch ref for the
-        # given rev:
-        for ref in [f"refs/heads/{rev}", f"refs/remotes/origin/{rev}"]:
-            if ref.encode() in repo.refs:
-                break
-        else:
-            raise RuntimeError(f"Revision '{rev}' not a valid branch name.")
-
-        # Transform a potentially incomplete rev_selection into one that
-        # contains the branch ref. For example `v1..` is expanded to
-        # `v1..{ref}`, where `{ref}` is replaced with the actual reference.
-        start, _, stop = rev_selection.rpartition("..")
-        selected_commits = repo.rev_list(f"{start or ref}..{stop or ref}")
-
-        for tag in repo.get_merged_tags(rev):
-            commit = repo.get_commit_for_tag(tag)
-            if commit in selected_commits:
-                yield tag, commit
+        for tag, commit in _get_tags(repo, rev, rev_selection):
+            yield tag, commit
 
     else:
         # The rev selection is empty, select all tagged commits for the

@@ -87,9 +87,7 @@ exclude_patterns = []
 html_theme = "pydata_sphinx_theme"
 
 html_theme_options = {
-    "external_links": [
-        {"url": "https://www.materialscloud.org/aiidalab", "name": "AiiDAlab"}
-    ],
+    "external_links": [{"url": "https://www.aiidalab.net/", "name": "AiiDAlab"}],
     "github_url": "https://github.com/aiidalab/aiidalab",
     "use_edit_page_button": True,
 }

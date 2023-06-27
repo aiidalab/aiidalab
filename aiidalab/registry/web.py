@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 def copy_static_tree_from_path(base_path, static_path):
-
     for root, _, files in os.walk(static_path):
         # Create directory
         base_path.joinpath(Path(root).relative_to(static_path)).mkdir(
