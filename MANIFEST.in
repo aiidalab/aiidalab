@@ -8,11 +8,8 @@ recursive-exclude miscellaneous *
 exclude .pre-commit-config.yaml
 exclude .readthedocs.yml
 exclude tox.ini
-exclude .flake8
 
-include .gitmodules
 include LICENSE
-include CHANGELOG.md
 recursive-include aiidalab *.css
 recursive-include aiidalab *.html
 recursive-include aiidalab *.json
