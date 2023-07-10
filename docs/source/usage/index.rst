@@ -63,7 +63,7 @@ Profile Management
 ^^^^^^^^^^^^^^^^^^
 
 The tool allows to manage multiple profiles, e.g., with different home directories or ports.
-See ``aiidalab-launch profiles --help`` for more information.
+See ``aiidalab-launch profile --help`` for more information.
 
 ******************
 AiiDAlab Home page
