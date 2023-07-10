@@ -18,7 +18,7 @@ repos:
     #      - id: check-manifest
 
     - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
-      rev: 0.2.2
+      rev: 0.2.3
       hooks:
           - id: yamlfmt
 
@@ -41,18 +41,18 @@ repos:
             args: [--profile, black, --filter-files]
 
     - repo: https://github.com/sirosen/check-jsonschema
-      rev: 0.22.0
+      rev: 0.23.2
       hooks:
           - id: check-github-workflows
 
     - repo: https://github.com/asottile/pyupgrade
-      rev: v3.3.1
+      rev: v3.8.0
       hooks:
           - id: pyupgrade
             args: [--py38-plus]
 
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.1.1
+      rev: v1.4.1
       hooks:
           - id: mypy
             args: [--config-file=setup.cfg]
