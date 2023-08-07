@@ -1,6 +1,7 @@
 """Module to manage AiiDAlab configuration."""
 from os import getenv
 from pathlib import Path
+from typing import Any
 
 import click
 import toml
@@ -18,11 +19,11 @@ if _DEVELOP_MODE:  # Warn developer that the mode is enabled.
     click.secho("\n".join([f"\U0001F6A7  {line}" for line in lines]), fg="yellow")
 
 
-def _as_env_var_name(key):
+def _as_env_var_name(key: str) -> str:
     return "AIIDALAB_" + key.upper()
 
 
-def _get_config_value(key, default=None):
+def _get_config_value(key: str, default: str) -> Any:
     """Return config value from configuration source.
 
     The standard configuration source order is:

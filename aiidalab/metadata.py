@@ -1,15 +1,17 @@
 """App metadata specification"""
 from __future__ import annotations
 
-from configparser import ConfigParser
+from configparser import ConfigParser, SectionProxy
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Generator
 
 __all__ = [
     "Metadata",
 ]
 
 
-def _map_development_state(classifiers):
+def _map_development_state(classifiers: str | list[str]) -> str:
     "Map standard trove classifiers (PEP 301) to aiidalab development states."
     if "Development Status :: 1 - Planning" in classifiers:
         return "registered"
@@ -28,7 +30,7 @@ def _map_development_state(classifiers):
         return "registered"
 
 
-def _parse_config_dict(dict_):
+def _parse_config_dict(dict_: str) -> Generator[tuple[str, str], None, None]:
     "Parse a config dict string for key-values pairs."
     for line in dict_.splitlines():
         if line:
@@ -36,16 +38,19 @@ def _parse_config_dict(dict_):
             yield key.strip(), value.strip()
 
 
-def _parse_setup_cfg(setup_cfg):
+def _parse_setup_cfg(
+    setup_cfg: str,
+) -> Generator[tuple[str, str | list[str]], None, None]:
     "Parse a setup.cfg configuration file string for metadata."
     cfg = ConfigParser()
     cfg.read_string(setup_cfg)
 
-    try:
-        metadata_pep426 = cfg["metadata"]
-    except KeyError:
-        metadata_pep426 = dict()
-    aiidalab = cfg["aiidalab"] if "aiidalab" in cfg else dict()
+    metadata_pep426: SectionProxy | dict[Any, Any] = (
+        cfg["metadata"] if "metadata" in cfg else {}
+    )
+    aiidalab: SectionProxy | dict[Any, Any] = (
+        cfg["aiidalab"] if "aiidalab" in cfg else {}
+    )
 
     yield "title", aiidalab.get("title", metadata_pep426.get("name"))
     yield "version", aiidalab.get("version", metadata_pep426.get("version"))
@@ -62,12 +67,12 @@ def _parse_setup_cfg(setup_cfg):
         "logo", project_urls.get("Logo") or project_urls.get("logo")
     )
     yield "state", aiidalab.get(
-        "state", _map_development_state(metadata_pep426.get("classifiers", []))
+        "state", _map_development_state(metadata_pep426.get("classifiers", ""))
     )
 
     # Allow passing single category and convert to list
     # and allow parse line separated string as list
-    categories = aiidalab.get("categories", [])
+    categories = aiidalab.get("categories", "")
     if isinstance(categories, str):
         categories = [c for c in categories.split("\n") if c]
     yield "categories", categories
@@ -90,7 +95,7 @@ class Metadata:
     _search_dirs = (".aiidalab", "./")
 
     @staticmethod
-    def _parse(path):
+    def _parse(path: Path) -> dict[str, Any]:
         try:
             return {
                 key: value
@@ -103,7 +108,7 @@ class Metadata:
             return {}
 
     @classmethod
-    def parse(cls, root):
+    def parse(cls, root: Path) -> Metadata:
         """Parse the app metadata from a setup.cfg within the app repository.
 
         This function will parse metadata fields from a possible "aiidalab"
