@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError, run
-from typing import Generator
+from typing import Any, Generator
 from urllib.parse import urldefrag
 
 from dulwich.porcelain import branch_list, status
@@ -38,7 +38,7 @@ class BranchTrackingStatus(Enum):
 class GitManagedAppRepo(Repo):  # type: ignore
     """Utility class to simplify management of git-based apps."""
 
-    def list_branches(self):  # type: ignore
+    def list_branches(self) -> Any:
         """List all repository branches."""
         return branch_list(self)
 
@@ -52,7 +52,7 @@ class GitManagedAppRepo(Repo):  # type: ignore
             return branches[0]
         raise RuntimeError("In detached HEAD state.")
 
-    def get_tracked_branch(self, branch=None):  # type: ignore
+    def get_tracked_branch(self, branch: bytes | None = None) -> Any:
         """Return the tracked branch for a given branch or None if the branch is not tracking."""
         if branch is None:
             branch = self.branch()
@@ -209,7 +209,7 @@ class GitPath(os.PathLike):  # type: ignore
             else:
                 raise  # unexpected error
 
-    def read_text(self, encoding: str | None = None, errors: str | None = None):  # type: ignore
+    def read_text(self, encoding: str | None = None, errors: str | None = None) -> str:
         if encoding is None:
             encoding = locale.getpreferredencoding(False)
         if errors is None:
@@ -237,7 +237,7 @@ class GitRepo(Repo):  # type: ignore
             )
         return branch.strip()
 
-    def get_commit_for_tag(self, tag: str):  # type: ignore
+    def get_commit_for_tag(self, tag: str) -> Any:
         return self.get_peeled(f"refs/tags/{tag}".encode()).decode()
 
     def get_merged_tags(self, branch: str) -> Generator[str, None, None]:
