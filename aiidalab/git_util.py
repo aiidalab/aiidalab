@@ -1,4 +1,17 @@
 """Utility module for git-managed AiiDAlab apps."""
+
+# This future import turns on postponed evaluation of annotations, per PEP 563.
+# https://peps.python.org/pep-0563/
+# This is needed for two reasons:
+# 1. Using the new Union syntax (type1 | type2) with Python < 3.10
+# 2. Instead of using the Self type when returning an instance of the class,
+#    which is only available since 3.11, we can use the class directly,
+#    because the annotation evaluation is deffered (as per PEP) See:
+#    https://realpython.com/python-type-self/#using-the-__future__-module
+# For the 2., we could instead import Self from type_extensions, see:
+# https://realpython.com/python-type-self/#how-to-annotate-a-method-with-the-self-type-in-python
+from __future__ import annotations
+
 import locale
 import os
 import re
@@ -6,6 +19,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError, run
+from typing import Any, Generator
 from urllib.parse import urldefrag
 
 from dulwich.porcelain import branch_list, status
@@ -21,14 +35,14 @@ class BranchTrackingStatus(Enum):
     DIVERGED = 2
 
 
-class GitManagedAppRepo(Repo):
+class GitManagedAppRepo(Repo):  # type: ignore
     """Utility class to simplify management of git-based apps."""
 
-    def list_branches(self):
+    def list_branches(self) -> Any:
         """List all repository branches."""
         return branch_list(self)
 
-    def branch(self):
+    def branch(self) -> bytes:
         """Return the current branch.
 
         Raises RuntimeError if the repository is in a detached HEAD state.
@@ -38,7 +52,7 @@ class GitManagedAppRepo(Repo):
             return branches[0]
         raise RuntimeError("In detached HEAD state.")
 
-    def get_tracked_branch(self, branch=None):
+    def get_tracked_branch(self, branch: bytes | None = None) -> Any:
         """Return the tracked branch for a given branch or None if the branch is not tracking."""
         if branch is None:
             branch = self.branch()
@@ -53,19 +67,19 @@ class GitManagedAppRepo(Repo):
         except KeyError:
             return None
 
-    def dirty(self):
+    def dirty(self) -> bool:
         """Check if there are likely local user modifications to the app repository."""
         status_ = status(self)
         return bool(any(bool(_) for _ in status_.staged.values()) or status_.unstaged)
 
-    def update_available(self):
+    def update_available(self) -> bool:
         """Check whether there non-pulled commits on the tracked branch."""
         return (
             self.get_branch_tracking_status(self.branch())
             is BranchTrackingStatus.BEHIND
         )
 
-    def get_branch_tracking_status(self, branch):
+    def get_branch_tracking_status(self, branch: bytes) -> BranchTrackingStatus | None:
         """Return the tracking status of branch."""
         tracked_branch = self.get_tracked_branch(branch)
         if tracked_branch:
@@ -89,7 +103,7 @@ class GitManagedAppRepo(Repo):
 
         return None
 
-    def _get_branch_for_ref(self, ref):
+    def _get_branch_for_ref(self, ref: bytes) -> list[bytes]:
         """Get the branch name for a given reference."""
         pattern = rb"refs\/heads\/"
         return [
@@ -99,7 +113,7 @@ class GitManagedAppRepo(Repo):
         ]
 
 
-def git_clone(url, commit, path):
+def git_clone(url, commit, path: Path):  # type: ignore
     try:
         run(
             ["git", "clone", str(url), str(path)],
@@ -120,22 +134,22 @@ def git_clone(url, commit, path):
 
 
 @dataclass
-class GitPath(os.PathLike):
+class GitPath(os.PathLike):  # type: ignore
     """Utility class to operate on git objects like path objects."""
 
     repo: Path
     commit: str
     path: Path = Path(".")
 
-    def __fspath__(self):
+    def __fspath__(self) -> str:
         return str(Path(self.repo).joinpath(self.path))
 
-    def joinpath(self, *other):
+    def joinpath(self, *other: str) -> GitPath:
         return type(self)(
             repo=self.repo, path=self.path.joinpath(*other), commit=self.commit
         )
 
-    def resolve(self, strict=False):
+    def resolve(self, strict: bool = False) -> GitPath:
         return type(self)(
             repo=self.repo,
             path=Path(self.repo)
@@ -145,7 +159,7 @@ class GitPath(os.PathLike):
             commit=self.commit,
         )
 
-    def _get_type(self):
+    def _get_type(self) -> str | None:
         # Git expects that a current directory path ("." or "./") is
         # represented with a trailing slash for this function.
         path = "./" if self.path == Path() else self.path
@@ -166,13 +180,13 @@ class GitPath(os.PathLike):
                 return None
             raise
 
-    def is_file(self):
+    def is_file(self) -> bool:
         return self._get_type() == "blob"
 
-    def is_dir(self):
+    def is_dir(self) -> bool:
         return self._get_type() == "tree"
 
-    def read_bytes(self):
+    def read_bytes(self) -> bytes:
         try:
             return run(
                 ["git", "show", f"{self.commit}:{self.path}"],
@@ -195,7 +209,7 @@ class GitPath(os.PathLike):
             else:
                 raise  # unexpected error
 
-    def read_text(self, encoding=None, errors=None):
+    def read_text(self, encoding: str | None = None, errors: str | None = None) -> str:
         if encoding is None:
             encoding = locale.getpreferredencoding(False)
         if errors is None:
@@ -203,8 +217,8 @@ class GitPath(os.PathLike):
         return self.read_bytes().decode(encoding=encoding, errors=errors)
 
 
-class GitRepo(Repo):
-    def get_current_branch(self):
+class GitRepo(Repo):  # type: ignore
+    def get_current_branch(self) -> str | None:
         try:
             branch = run(
                 ["git", "branch", "--show-current"],
@@ -223,10 +237,10 @@ class GitRepo(Repo):
             )
         return branch.strip()
 
-    def get_commit_for_tag(self, tag):
+    def get_commit_for_tag(self, tag: str) -> Any:
         return self.get_peeled(f"refs/tags/{tag}".encode()).decode()
 
-    def get_merged_tags(self, branch):
+    def get_merged_tags(self, branch: str) -> Generator[str, None, None]:
         for branch_ref in [f"refs/heads/{branch}", f"refs/remotes/origin/{branch}"]:
             if branch_ref.encode() in self.refs:
                 yield from run(
@@ -240,7 +254,7 @@ class GitRepo(Repo):
         else:
             raise ValueError(f"Not a branch: {branch}")
 
-    def rev_list(self, rev_selection):
+    def rev_list(self, rev_selection: str) -> list[str]:
         return run(
             ["git", "rev-list", rev_selection],
             cwd=self.path,
@@ -249,7 +263,7 @@ class GitRepo(Repo):
             capture_output=True,
         ).stdout.splitlines()
 
-    def ref_from_rev(self, rev):
+    def ref_from_rev(self, rev: str) -> str:
         """Determine ref from rev.
 
         Returns branch reference if a branch with that name exists, otherwise a
@@ -266,7 +280,7 @@ class GitRepo(Repo):
             return rev
 
     @classmethod
-    def clone_from_url(cls, url, path):
+    def clone_from_url(cls, url: str, path: str) -> GitRepo:
         run(
             ["git", "clone", urldefrag(url).url, path],
             cwd=Path(path).parent,
