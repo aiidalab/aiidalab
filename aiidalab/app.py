@@ -85,7 +85,9 @@ class _AiidaLabApp:
     releases: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_registry_entry(cls, path, registry_entry):
+    def from_registry_entry(
+        cls, path: Path, registry_entry: dict[str, Any]
+    ) -> _AiidaLabApp:
         return cls(
             path=path,
             **{
@@ -112,7 +114,12 @@ class _AiidaLabApp:
             }
 
     @classmethod
-    def from_id(cls, app_id, registry_entry=None, apps_path=None):
+    def from_id(
+        cls,
+        app_id: str,
+        registry_entry: dict[str, Any] | None = None,
+        apps_path: str | None = None,
+    ) -> _AiidaLabApp:
         if apps_path is None:
             apps_path = AIIDALAB_APPS
 
@@ -125,7 +132,7 @@ class _AiidaLabApp:
 
         return cls.from_registry_entry(path=app_path, registry_entry=registry_entry)
 
-    def is_registered(self):
+    def is_registered(self) -> bool | None:
         try:
             app_registry_index = load_app_registry_index()
         except RuntimeError as error:
@@ -135,7 +142,7 @@ class _AiidaLabApp:
             return self.name in app_registry_index["apps"]
 
     @property
-    def _repo(self):
+    def _repo(self) -> Repo | None:
         try:
             return Repo(str(self.path))
         except NotGitRepository:
@@ -195,7 +202,7 @@ class _AiidaLabApp:
         """The app is installed if the corresponding folder is present."""
         return self.path.exists()
 
-    def remote_update_status(self, prereleases=False):
+    def remote_update_status(self, prereleases: bool = False) -> AppRemoteUpdateStatus:
         """Determine the remote update satus.
 
         Arguments:
@@ -227,18 +234,19 @@ class _AiidaLabApp:
 
         return AppRemoteUpdateStatus(0)  # app is not installed
 
-    def _move_to_trash(self):
+    def _move_to_trash(self) -> Path | None:
         trash_path = Path.home().joinpath(".trash", f"{self.name}-{uuid4()!s}")
         if self.path.exists():
             trash_path.parent.mkdir(parents=True, exist_ok=True)
             self.path.rename(trash_path)
             return trash_path
+        return None
 
-    def _restore_from(self, trash_path):
+    def _restore_from(self, trash_path: Path) -> None:
         self._move_to_trash()
         trash_path.rename(self.path)
 
-    def uninstall(self):
+    def uninstall(self) -> None:
         self._move_to_trash()
 
     def find_matching_releases(self, specifier, prereleases=None):
@@ -250,7 +258,9 @@ class _AiidaLabApp:
         return matching_releases
 
     @staticmethod
-    def _strict_dependencies_met(requirements: list[Requirement], python_bin) -> bool:
+    def _strict_dependencies_met(
+        requirements: list[Requirement], python_bin: str | None
+    ) -> bool:
         """Check whether the given requirements are compatible with the core dependencies of a package."""
         from packaging.utils import canonicalize_name
 
@@ -281,7 +291,7 @@ class _AiidaLabApp:
             elif not pkg.fulfills(requirement):
                 yield requirement
 
-    def is_detached(self):
+    def is_detached(self) -> bool:
         """Check whether the app is detached from the registry."""
         return self.remote_update_status() == AppRemoteUpdateStatus.DETACHED
 
@@ -413,7 +423,7 @@ class _AiidaLabApp:
                 except CalledProcessError:
                     raise RuntimeError("Failed to install dependencies.")
 
-    def _post_install_triggers(self):
+    def _post_install_triggers(self) -> None:
         """Run a post_install script.
 
         Typically used to execute additional commands after the app installation.
@@ -594,10 +604,10 @@ class AiidaLabAppWatch:
         self._observer = None
         self._monitor_thread_stop = threading.Event()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{type(self).__name__}(app={self.app!r})>"
 
-    def _start_observer(self):
+    def _start_observer(self) -> None:
         """Start the directory observer thread.
 
         The ._observer thread is controlled by the ._monitor_thread.
@@ -620,7 +630,7 @@ class AiidaLabAppWatch:
             else:  # reraise unrelated error
                 raise error
 
-    def _stop_observer(self):
+    def _stop_observer(self) -> None:
         """Stop the directory observer thread.
 
         The ._observer thread is controlled by the ._monitor_thread.
@@ -628,7 +638,7 @@ class AiidaLabAppWatch:
         assert self._observer is not None
         self._observer.stop()
 
-    def start(self):
+    def start(self) -> None:
         """Watch the app repository for file system events.
 
         The app state is refreshed automatically for all events.
@@ -640,7 +650,7 @@ class AiidaLabAppWatch:
 
         if self._monitor_thread is None:
 
-            def check_path_exists_changed():
+            def check_path_exists_changed() -> None:
                 is_dir = os.path.isdir(self.app.path)
                 while not self._monitor_thread_stop.is_set():
                     switched = is_dir != os.path.isdir(self.app.path)
@@ -667,16 +677,16 @@ class AiidaLabAppWatch:
 
         self._started = True
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop watching the app repository for file system events."""
         if self._monitor_thread is not None:
             self._monitor_thread_stop.set()
 
-    def is_alive(self):
+    def is_alive(self) -> Any:
         """Return True if this watch is still alive."""
         return self._monitor_thread and self._monitor_thread.is_alive()
 
-    def join(self, timeout=None):
+    def join(self, timeout: float | None = None) -> None:
         """Join the watch and observer after stopping.
 
         This function will timeout if a timeout argument is provided. Use the
@@ -724,7 +734,13 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
     compatible = traitlets.Bool(allow_none=True).tag(readonly=True)
     compatibility_info = traitlets.Dict()
 
-    def __init__(self, name, app_data, aiidalab_apps_path, watch=True):
+    def __init__(
+        self,
+        name: str,
+        app_data: dict[str, Any],
+        aiidalab_apps_path: str,
+        watch: bool = True,
+    ):
         self._app = _AiidaLabApp.from_id(
             name, registry_entry=app_data, apps_path=aiidalab_apps_path
         )
@@ -828,7 +844,9 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         except NotGitRepository:
             return False
 
-    def install_app(self, version=None, stdout=None):
+    def install_app(
+        self, version: str | None = None, stdout: str | None = None
+    ) -> AppVersion | str:
         """Installing the app."""
         with self._show_busy():
             self._app.install(
@@ -838,7 +856,9 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             self.refresh()
             return self._get_installed_version()
 
-    def update_app(self, _=None, stdout=None) -> AppVersion | str:
+    def update_app(
+        self, _: str | None = None, stdout: str | None = None
+    ) -> AppVersion | str:
         """Perform app update."""
         with self._show_busy():
             # Installing with version=None automatically selects latest

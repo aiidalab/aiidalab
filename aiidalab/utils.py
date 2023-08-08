@@ -55,7 +55,7 @@ else:
     )
 
 
-def load_app_registry_index():  # type: ignore
+def load_app_registry_index() -> Any:
     """Load apps' information from the AiiDAlab registry."""
     try:
         return requests.get(f"{AIIDALAB_REGISTRY}/apps_index.json").json()
@@ -63,7 +63,7 @@ def load_app_registry_index():  # type: ignore
         raise RuntimeError(f"Unable to load registry index: '{error}'")
 
 
-def load_app_registry_entry(app_id: str):  # type: ignore
+def load_app_registry_entry(app_id: str) -> Any:
     """Load registry enty for app with app_id."""
     try:
         return requests.get(f"{AIIDALAB_REGISTRY}/apps/{app_id}.json").json()
@@ -235,7 +235,7 @@ def this_or_only_subdir(path: Path) -> Path:
     return members[0] if len(members) == 1 and members[0].is_dir() else path
 
 
-def run_pip_install(*args, python_bin=sys.executable):  # type: ignore
+def run_pip_install(*args: Any, python_bin: str) -> Any:
     return subprocess.Popen(
         [python_bin, "-m", "pip", "install", "--user", *args],
         stdout=subprocess.PIPE,
@@ -243,7 +243,7 @@ def run_pip_install(*args, python_bin=sys.executable):  # type: ignore
     )
 
 
-def run_reentry_scan():  # type: ignore
+def run_reentry_scan() -> Any:
     return subprocess.Popen(
         ["reentry", "scan"],
         stdout=subprocess.PIPE,
@@ -251,7 +251,7 @@ def run_reentry_scan():  # type: ignore
     )
 
 
-def run_verdi_daemon_restart():  # type: ignore
+def run_verdi_daemon_restart() -> Any:
     return subprocess.Popen(
         ["verdi", "daemon", "restart"],
         stdout=subprocess.PIPE,
@@ -259,7 +259,7 @@ def run_verdi_daemon_restart():  # type: ignore
     )
 
 
-def run_post_install_script(post_install_script_path):  # type: ignore
+def run_post_install_script(post_install_script_path: Path) -> Any:
     return subprocess.Popen(
         f"./{post_install_script_path.resolve().stem}",
         cwd=post_install_script_path.resolve().parent,
