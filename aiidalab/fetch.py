@@ -7,7 +7,7 @@ import zipfile
 from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Generator
+from typing import Generator
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 
 import dulwich
@@ -45,7 +45,7 @@ def _fetch_from_path(path: Path | GitPath) -> Generator[Path | GitPath, None, No
 
 
 @contextmanager
-def _fetch_from_https(url: Any) -> Generator[Path | GitPath, None, None]:
+def _fetch_from_https(url: str) -> Generator[Path | GitPath, None, None]:
     response = requests.get(url, stream=True)
     response.raise_for_status()
     content = response.content
@@ -59,7 +59,7 @@ def _fetch_from_https(url: Any) -> Generator[Path | GitPath, None, None]:
             raise RuntimeError(f"Unable to read from '{url}': {error}")
 
 
-def _parse_git_url(git_url: Any) -> tuple[Any, Any, Any]:
+def _parse_git_url(git_url: str) -> tuple[str, str, str]:
     path = urldefrag(git_url).fragment
     if "@" in git_url:
         url, rev = urldefrag(git_url).url.rsplit("@", 1)
@@ -69,18 +69,18 @@ def _parse_git_url(git_url: Any) -> tuple[Any, Any, Any]:
 
 
 @contextmanager
-def _fetch_from_git_https(git_url: Any) -> Generator[Path, None, None]:
+def _fetch_from_git_https(git_url: str) -> Generator[Path | GitPath, None, None]:
     url, rev, path = _parse_git_url(git_url)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         repo = GitRepo.clone_from_url(url, tmp_dir)
         git_path = GitPath(repo.path, repo.ref_from_rev(rev)).joinpath(path)
-        with _fetch_from_path(git_path) as path:
-            yield path
+        with _fetch_from_path(git_path) as tmp_path:
+            yield tmp_path
 
 
 @contextmanager
-def _fetch_from_git_local(git_url: Any) -> Generator[Path | GitPath, None, None]:
+def _fetch_from_git_local(git_url: str) -> Generator[Path | GitPath, None, None]:
     url, rev, path = _parse_git_url(git_url)
 
     try:
@@ -92,12 +92,12 @@ def _fetch_from_git_local(git_url: Any) -> Generator[Path | GitPath, None, None]
         )
 
     git_path = GitPath(repo.path, repo.ref_from_rev(rev)).joinpath(path)
-    with _fetch_from_path(git_path) as path:
-        yield path
+    with _fetch_from_path(git_path) as tmp_path:
+        yield tmp_path
 
 
 @contextmanager
-def fetch_from_url(url: Any) -> Generator[Path | GitPath, None, None]:
+def fetch_from_url(url: str) -> Generator[Path | GitPath, None, None]:
     ps = urlsplit(url)
 
     if ps.scheme in ("", "file"):  # on the local file system
