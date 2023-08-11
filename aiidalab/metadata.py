@@ -1,12 +1,15 @@
 """App metadata specification"""
 from __future__ import annotations
 
-from configparser import ConfigParser, SectionProxy
+from configparser import ConfigParser
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any, Generator
 
-from .git_util import GitPath
+if TYPE_CHECKING:
+    from configparser import SectionProxy
+
+    from .git_util import GitPath
 
 __all__ = [
     "Metadata",
