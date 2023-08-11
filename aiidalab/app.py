@@ -682,7 +682,7 @@ class AiidaLabAppWatch:
         if self._monitor_thread is not None:
             self._monitor_thread_stop.set()
 
-    def is_alive(self) -> Any:
+    def is_alive(self) -> bool | None:
         """Return True if this watch is still alive."""
         return self._monitor_thread and self._monitor_thread.is_alive()
 
