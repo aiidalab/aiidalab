@@ -27,6 +27,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator
 
+from .git_util import GitPath
+
 __all__ = [
     "Environment",
 ]
@@ -46,13 +48,13 @@ class Environment:
     _FILES = ("requirements.txt",)
 
     @staticmethod
-    def _scan(path: Path) -> Generator[Any, None, None]:
+    def _scan(path: Path | GitPath) -> Generator[Any, None, None]:
         def _parse_reqs(requirements: str) -> Generator[str, None, None]:
             for line in (line.strip() for line in requirements.splitlines()):
                 if line and not line.startswith("#"):
                     yield line
 
-        def _parse_setup_cfg(setup_cfg):  # type: ignore
+        def _parse_setup_cfg(setup_cfg: str) -> Any:
             cfg = ConfigParser()
             cfg.read_string(setup_cfg)
             return cfg["options"].get("install_requires", None)
@@ -72,6 +74,6 @@ class Environment:
                 pass
 
     @classmethod
-    def scan(cls, root: Path) -> Environment:
+    def scan(cls, root: Path | GitPath) -> Environment:
         """Scan the root path and determine the environment specification."""
         return cls(**dict(cls._scan(root)))

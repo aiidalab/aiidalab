@@ -1,10 +1,15 @@
 """App metadata specification"""
 from __future__ import annotations
 
-from configparser import ConfigParser, SectionProxy
+from configparser import ConfigParser
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any, Generator
+
+if TYPE_CHECKING:
+    from configparser import SectionProxy
+
+    from .git_util import GitPath
 
 __all__ = [
     "Metadata",
@@ -95,7 +100,7 @@ class Metadata:
     _search_dirs = (".aiidalab", "./")
 
     @staticmethod
-    def _parse(path: Path) -> dict[str, Any]:
+    def _parse(path: Path | GitPath) -> dict[str, Any]:
         try:
             return {
                 key: value
@@ -108,7 +113,7 @@ class Metadata:
             return {}
 
     @classmethod
-    def parse(cls, root: Path) -> Metadata:
+    def parse(cls, root: Path | GitPath) -> Metadata:
         """Parse the app metadata from a setup.cfg within the app repository.
 
         This function will parse metadata fields from a possible "aiidalab"
