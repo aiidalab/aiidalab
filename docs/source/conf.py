@@ -17,7 +17,6 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
-    "sphinxcontrib.contentui",
     "sphinx_panels",
 ]
 
@@ -25,7 +24,7 @@ extensions = [
 panels_add_bootstrap_css = False
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.7", None),
+    "python": ("https://docs.python.org/3.10", None),
 }
 
 # Add any paths that contain templates here, relative to this directory.
@@ -85,6 +84,9 @@ htmlhelp_basename = "aiidalab-doc"
 exclude_patterns = []
 
 html_theme = "pydata_sphinx_theme"
+
+# The pydata-sphinx-theme already loads the bootstrap css.
+panels_add_bootstrap_css = False
 
 html_theme_options = {
     "external_links": [{"url": "https://www.aiidalab.net/", "name": "AiiDAlab"}],
