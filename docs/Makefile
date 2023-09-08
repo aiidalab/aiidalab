@@ -39,3 +39,6 @@ html:
 
 view:
 	xdg-open $(BUILDDIR)/html/index.html
+
+rebuild:
+	@ make -s clean html

@@ -103,6 +103,12 @@ Once satisfied with the change set, push it to your fork and create a
 (draft) pull request.
 This will ensure that the unit and integration tests are executed.
 
+Release guide for ecosystem components
+--------------------------------------
+
+Since AiiDAlab is a collection of components in different repositories, the release process is slightly more involved than for a single repository.
+The release guide :doc:`release_guide <./release.rst>` provides detailed instructions on how to release a new version of the AiiDAlab ecosystem components and when we anounce new releases for the whole ecosystem.
+
 AiiDAlab Docker Stack
 =====================
 
