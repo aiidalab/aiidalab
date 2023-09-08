@@ -16,7 +16,7 @@ For medium-sized deployments (a handful of users), an AiiDAlab multi-user server
 Since deploying a multi-user server requires additional packages, such as `JupyterHub <https://jupyter.org/hub>`__, `DockerSpawner <https://github.com/jupyterhub/dockerspawner>`__, `Apache HTTP Server <https://www.apache.org/>`__, and `Docker <http://www.docker.com>`__, we provide the ``aiidalab-server`` `Ansible <https://www.ansible.com/>`__ role which automates the setup of the server.
 Please see the `corresponding git repository <https://github.com/aiidalab/ansible-role-aiidalab-server>`__ for more information.
 
-We also provide `instructions for deploy with microk8s in a single-server setup <https://github.com/aiidalab/aiidalab-microk8s-deploy>`__. This is a good option if you want to deploy AiiDAlab on a single machine, but expect a large number of users (>50).
+We also provide `instructions for deploy with microk8s in a single-server setup <https://github.com/aiidalab/aiidalab-microk8s-deploy#readme>`. This is a good option if you want to deploy AiiDAlab on a single machine, but expect a moderate amount of users (<50).
 
 
 Full kubernetes deployment
