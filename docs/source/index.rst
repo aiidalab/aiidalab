@@ -14,6 +14,8 @@ AiiDAlab builds on `AiiDA <https://www.aiida.net/>`_ as the computational workfl
    admin/index.rst
    API documentation <apidoc/aiidalab>
 
+AiiDAlib is open-source, release under the MIT license, and available on `GitHub <https://github.com/aiidalab>`_.
+
 
 ***********
 How to cite
