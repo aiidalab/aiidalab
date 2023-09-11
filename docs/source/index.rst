@@ -9,10 +9,9 @@ AiiDAlab builds on `AiiDA <https://www.aiida.net/>`_ as the computational workfl
 .. toctree::
    :maxdepth: 1
 
-   usage/index
-   app_development/index
+   usage/index.rst
+   app_development/index.rst
    admin/index.rst
-   development/index
    API documentation <apidoc/aiidalab>
 
 
