@@ -20,6 +20,11 @@ The documentation is build from repository `aiidalab/aiidalab <https://github.co
 
 More development/user guide links, can be found in `AiiDAlab's GitHub page <https://github.com/aiidalab>`_.
 
+.. admonition:: Need support?
+   :class: title-icon-code-fork
+
+   For any questions, discussions and requests for support, please visit the `Discourse forum <https://aiida.discourse.group/c/aiidalab>`__.
+
 ***********
 How to cite
 ***********

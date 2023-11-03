@@ -39,7 +39,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "aiidalab"
-copyright_first_year = "2020"
+copyright_first_year = "2023"
 copyright_owners = "The AiiDAlab Team"
 
 current_year = str(time.localtime().tm_year)
@@ -89,9 +89,34 @@ html_theme = "pydata_sphinx_theme"
 panels_add_bootstrap_css = False
 
 html_theme_options = {
-    "external_links": [{"url": "https://www.aiidalab.net/", "name": "AiiDAlab"}],
     "github_url": "https://github.com/aiidalab/aiidalab",
     "use_edit_page_button": True,
+    'icon_links': [
+        {
+            'name': 'AiiDA',
+            'url': 'http://aiidalab.net',
+            'icon': '_static/logo-aiidalab-gray.png',
+            'type': 'local',
+        },
+        {
+            'name': 'Discourse',
+            'url': 'https://aiida.discourse.group/c/aiidalab',
+            'icon': 'fa-brands fa-discourse',
+            'type': 'fontawesome',
+        },
+        {
+            'name': 'GitHub',
+            'url': 'https://www.github.com/aiidalab',
+            'icon': 'fa-brands fa-square-github',
+            'type': 'fontawesome',
+        },
+        {
+            'name': 'Twitter',
+            'url': 'https://www.twitter.com/aiidateam',
+            'icon': 'fa-brands fa-twitter-square',
+            'type': 'fontawesome',
+        },
+    ],
 }
 
 # for "edit on github" button
