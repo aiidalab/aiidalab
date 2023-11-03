@@ -91,30 +91,30 @@ panels_add_bootstrap_css = False
 html_theme_options = {
     "github_url": "https://github.com/aiidalab/aiidalab",
     "use_edit_page_button": True,
-    'icon_links': [
+    "icon_links": [
         {
-            'name': 'AiiDA',
-            'url': 'http://aiidalab.net',
-            'icon': '_static/logo-aiidalab-gray.png',
-            'type': 'local',
+            "name": "AiiDA",
+            "url": "http://aiidalab.net",
+            "icon": "_static/logo-aiidalab-gray.png",
+            "type": "local",
         },
         {
-            'name': 'Discourse',
-            'url': 'https://aiida.discourse.group/c/aiidalab',
-            'icon': 'fa-brands fa-discourse',
-            'type': 'fontawesome',
+            "name": "Discourse",
+            "url": "https://aiida.discourse.group/c/aiidalab",
+            "icon": "fa-brands fa-discourse",
+            "type": "fontawesome",
         },
         {
-            'name': 'GitHub',
-            'url': 'https://www.github.com/aiidalab',
-            'icon': 'fa-brands fa-square-github',
-            'type': 'fontawesome',
+            "name": "GitHub",
+            "url": "https://www.github.com/aiidalab",
+            "icon": "fa-brands fa-square-github",
+            "type": "fontawesome",
         },
         {
-            'name': 'Twitter',
-            'url': 'https://www.twitter.com/aiidateam',
-            'icon': 'fa-brands fa-twitter-square',
-            'type': 'fontawesome',
+            "name": "Twitter",
+            "url": "https://www.twitter.com/aiidateam",
+            "icon": "fa-brands fa-twitter-square",
+            "type": "fontawesome",
         },
     ],
 }
