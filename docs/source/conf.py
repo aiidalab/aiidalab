@@ -39,7 +39,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "aiidalab"
-copyright_first_year = "2023"
+copyright_first_year = "2020"
 copyright_owners = "The AiiDAlab Team"
 
 current_year = str(time.localtime().tm_year)
