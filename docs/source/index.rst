@@ -18,6 +18,8 @@ AiiDAlab is open-source, released under the MIT license, and available on `GitHu
 The documentation is build from repository `aiidalab/aiidalab <https://github.com/aiidalab/aiidalab>`_ which is the package for tools and utilities for AiiDAlab. 
 Go to `API documentation <apidoc/aiidalab>`_ for the API documentation of the package.
 
+More development/user guide links, can be found in `AiiDAlab's GitHub page <https://github.com/aiidalab>`_.
+
 ***********
 How to cite
 ***********

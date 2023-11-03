@@ -1,5 +1,5 @@
 *******************
-Administrator guide
+Deployment guide
 *******************
 
 This guide explains how to deploy and manage AiiDAlab servers for multiple users.
