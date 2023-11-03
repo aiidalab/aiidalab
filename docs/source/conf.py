@@ -17,7 +17,6 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
-    "sphinxcontrib.contentui",
     "sphinx_panels",
 ]
 
@@ -25,7 +24,7 @@ extensions = [
 panels_add_bootstrap_css = False
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.7", None),
+    "python": ("https://docs.python.org/3.10", None),
 }
 
 # Add any paths that contain templates here, relative to this directory.
@@ -86,10 +85,37 @@ exclude_patterns = []
 
 html_theme = "pydata_sphinx_theme"
 
+# The pydata-sphinx-theme already loads the bootstrap css.
+panels_add_bootstrap_css = False
+
 html_theme_options = {
-    "external_links": [{"url": "https://www.aiidalab.net/", "name": "AiiDAlab"}],
-    "github_url": "https://github.com/aiidalab/aiidalab",
     "use_edit_page_button": True,
+    "icon_links": [
+        {
+            "name": "AiiDAlab",
+            "url": "http://aiidalab.net",
+            "icon": "_static/logo-aiidalab-gray.png",
+            "type": "local",
+        },
+        {
+            "name": "Discourse",
+            "url": "https://aiida.discourse.group/c/aiidalab",
+            "icon": "fa-brands fa-discourse",
+            "type": "fontawesome",
+        },
+        {
+            "name": "GitHub",
+            "url": "https://www.github.com/aiidalab",
+            "icon": "fa-brands fa-square-github",
+            "type": "fontawesome",
+        },
+        {
+            "name": "Twitter",
+            "url": "https://www.twitter.com/aiidateam",
+            "icon": "fa-brands fa-twitter-square",
+            "type": "fontawesome",
+        },
+    ],
 }
 
 # for "edit on github" button
@@ -112,7 +138,7 @@ def run_apidoc(_):
     See also https://github.com/rtfd/readthedocs.org/issues/1139
     """
     source_dir = os.path.abspath(os.path.dirname(__file__))
-    apidoc_dir = os.path.join(source_dir, "apidoc")
+    apidoc_dir = os.path.join(source_dir, "reference", "apidoc")
     package_dir = os.path.join(source_dir, os.pardir, os.pardir, "aiidalab")
 
     # In #1139, they suggest the route below, but this ended up

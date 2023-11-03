@@ -9,12 +9,21 @@ AiiDAlab builds on `AiiDA <https://www.aiida.net/>`_ as the computational workfl
 .. toctree::
    :maxdepth: 1
 
-   usage/index
-   app_development/index
+   usage/index.rst
+   app_development/index.rst
    admin/index.rst
-   development/index
-   API documentation <apidoc/aiidalab>
+   reference/index.rst
 
+AiiDAlab is open-source, released under the MIT license, and available on `GitHub <https://github.com/aiidalab>`_.
+
+The documentation is build from repository `aiidalab/aiidalab <https://github.com/aiidalab/aiidalab>`_ which is the package for tools and utilities for AiiDAlab the API documentation is in `Reference <reference/index>`_.
+
+More development/user guide links, can be found in `AiiDAlab's GitHub page <https://github.com/aiidalab>`_.
+
+.. admonition:: Need support?
+   :class: title-icon-code-fork
+
+   For any questions, discussions and requests for support, please visit the `Discourse forum <https://aiida.discourse.group/c/aiidalab>`__.
 
 ***********
 How to cite
