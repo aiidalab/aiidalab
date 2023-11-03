@@ -16,7 +16,12 @@ AiiDAlab builds on `AiiDA <https://www.aiida.net/>`_ as the computational workfl
 AiiDAlab is open-source, released under the MIT license, and available on `GitHub <https://github.com/aiidalab>`_.
 
 The documentation is build from repository `aiidalab/aiidalab <https://github.com/aiidalab/aiidalab>`_ which is the package for tools and utilities for AiiDAlab. 
-Go to `API documentation <apidoc/aiidalab>`_ for the API documentation of the package.
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   Reference <reference/index>
 
 More development/user guide links, can be found in `AiiDAlab's GitHub page <https://github.com/aiidalab>`_.
 

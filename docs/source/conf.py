@@ -81,7 +81,7 @@ htmlhelp_basename = "aiidalab-doc"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["**/apidoc/*.rst"]
+exclude_patterns = []
 
 html_theme = "pydata_sphinx_theme"
 
@@ -114,7 +114,7 @@ def run_apidoc(_):
     See also https://github.com/rtfd/readthedocs.org/issues/1139
     """
     source_dir = os.path.abspath(os.path.dirname(__file__))
-    apidoc_dir = os.path.join(source_dir, "apidoc")
+    apidoc_dir = os.path.join(source_dir, "reference", "apidoc")
     package_dir = os.path.join(source_dir, os.pardir, os.pardir, "aiidalab")
 
     # In #1139, they suggest the route below, but this ended up
