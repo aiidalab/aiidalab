@@ -12,11 +12,11 @@ AiiDAlab builds on `AiiDA <https://www.aiida.net/>`_ as the computational workfl
    usage/index.rst
    app_development/index.rst
    admin/index.rst
+   reference/index.rst
 
 AiiDAlab is open-source, released under the MIT license, and available on `GitHub <https://github.com/aiidalab>`_.
 
-The documentation is build from repository `aiidalab/aiidalab <https://github.com/aiidalab/aiidalab>`_ which is the package for tools and utilities for AiiDAlab.
-
+The documentation is build from repository `aiidalab/aiidalab <https://github.com/aiidalab/aiidalab>`_ which is the package for tools and utilities for AiiDAlab the API documentation is in `Reference <reference/index>`_.
 
 More development/user guide links, can be found in `AiiDAlab's GitHub page <https://github.com/aiidalab>`_.
 
