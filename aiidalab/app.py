@@ -149,27 +149,37 @@ class _AiidaLabApp:
             return None
 
     def installed_version(self) -> AppVersion | str:
+        def get_version_from_metadata() -> AppVersion | str:
+            version = self.metadata.get("version")
+            if isinstance(version, str):
+                return version
+            else:
+                return AppVersion.UNKNOWN
+
         if self._repo and self.is_registered():
             if self.dirty():
                 return AppVersion.UNKNOWN
+
+            try:
+                head_commit = self._repo.head().decode()
+                versions_by_commit = {
+                    split_git_url(release["url"])[1]: version
+                    for version, release in self.releases.items()
+                    if urlsplit(release["url"]).scheme.startswith("git+")
+                }
+            # TODO: Use less-broad Exception here!
+            except Exception as error:
+                logger.warning(f"Encountered error while determining version: {error}")
+                return AppVersion.UNKNOWN
+
+            version = versions_by_commit.get(head_commit)
+            if isinstance(version, str):
+                return version
             else:
-                try:
-                    head_commit = self._repo.head().decode()
-                    versions_by_commit = {
-                        split_git_url(release["url"])[1]: version
-                        for version, release in self.releases.items()
-                        if urlsplit(release["url"]).scheme.startswith("git+")
-                    }
-                    return versions_by_commit.get(
-                        head_commit, self.metadata.get("version", AppVersion.UNKNOWN)
-                    )
-                except Exception as error:
-                    logger.debug(
-                        f"Encountered error while determining version: {error}"
-                    )
-                    return AppVersion.UNKNOWN
+                return get_version_from_metadata()
+
         elif self.is_installed():
-            return self.metadata.get("version", AppVersion.UNKNOWN)
+            return get_version_from_metadata()
 
         return AppVersion.NOT_INSTALLED
 
