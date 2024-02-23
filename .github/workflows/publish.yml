@@ -38,7 +38,7 @@ jobs:
                   --outdir dist/
 
             - name: Upload distribution artifact
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               with:
                   name: release
                   path: dist/
@@ -59,7 +59,7 @@ jobs:
             url: https://test.pypi.org/project/aiidalab/
 
         steps:
-            - uses: actions/download-artifact@v2
+            - uses: actions/download-artifact@v4
               name: Download distribution artifact
               with:
                   name: release
@@ -88,7 +88,7 @@ jobs:
 
         steps:
 
-            - uses: actions/download-artifact@v2
+            - uses: actions/download-artifact@v4
               name: Download distribution artifact
               with:
                   name: release
