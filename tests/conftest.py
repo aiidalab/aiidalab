@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-import yaml
+from ruamel.yaml import YAML
 
 from aiidalab.app import AiidaLabApp, _AiidaLabApp
 
@@ -17,10 +17,11 @@ def generate_app(monkeypatch):
         watch=False,
     ):
         if app_data is None:
+            safe_yaml = YAML(typ="safe")
             with open(
                 Path(__file__).parent.absolute() / "static/app_registry.yaml"
             ) as f:
-                app_data = yaml.safe_load(f)
+                app_data = safe_yaml.load(f)
 
         # In the app_registry.yaml we defined the metadata which means
         # it is a installed app. Following monkeypatch make it more close
