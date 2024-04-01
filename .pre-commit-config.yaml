@@ -23,7 +23,7 @@ repos:
           - id: yamlfmt
 
     - repo: https://github.com/psf/black
-      rev: 23.12.1
+      rev: 24.3.0
       hooks:
           - id: black
             language_version: python3 # Should be a command that runs python3.6+
@@ -41,18 +41,18 @@ repos:
             args: [--profile, black, --filter-files]
 
     - repo: https://github.com/sirosen/check-jsonschema
-      rev: 0.28.0
+      rev: 0.28.1
       hooks:
           - id: check-github-workflows
 
     - repo: https://github.com/asottile/pyupgrade
-      rev: v3.15.1
+      rev: v3.15.2
       hooks:
           - id: pyupgrade
             args: [--py38-plus]
 
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.8.0
+      rev: v1.9.0
       hooks:
           - id: mypy
             args: [--config-file=setup.cfg]
