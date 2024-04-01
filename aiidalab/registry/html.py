@@ -1,4 +1,5 @@
 """Generate the app registry website HTML pages."""
+
 from collections import defaultdict
 
 from jinja2 import (

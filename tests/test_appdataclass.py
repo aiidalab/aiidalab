@@ -1,5 +1,6 @@
 """Test the dataclass _AiidaLabApp.
 We mock the app requirements and the medatada by a simple yaml file."""
+
 import sys
 from pathlib import Path
 

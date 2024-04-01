@@ -1,4 +1,5 @@
 """Custom filters for the Jinja2 template engine."""
+
 from packaging.version import parse
 
 

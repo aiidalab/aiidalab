@@ -1,4 +1,5 @@
 """Generate API endpoints."""
+
 import json
 
 from .apps_index import validate_apps_index_and_apps

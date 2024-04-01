@@ -1,4 +1,5 @@
 """Generate the apps index including all aggregated metadata."""
+
 import logging
 from collections import OrderedDict
 from copy import deepcopy
