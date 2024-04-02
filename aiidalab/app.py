@@ -951,9 +951,11 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
                 )
                 self.set_trait(
                     "detached",
-                    (self.installed_version is AppVersion.UNKNOWN)
-                    if (self._has_git_repo() and self._app.is_registered())
-                    else None,
+                    (
+                        (self.installed_version is AppVersion.UNKNOWN)
+                        if (self._has_git_repo() and self._app.is_registered())
+                        else None
+                    ),
                 )
 
     def refresh_async(self) -> None:

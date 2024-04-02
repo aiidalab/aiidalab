@@ -1,4 +1,5 @@
 """Helpful utilities for the AiiDAlab tools."""
+
 from __future__ import annotations
 
 import json

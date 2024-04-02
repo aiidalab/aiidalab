@@ -20,6 +20,7 @@ matching the order shown here:
         setup.cfg file.
 
 """
+
 from __future__ import annotations
 
 from configparser import ConfigParser

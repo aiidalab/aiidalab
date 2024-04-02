@@ -1,4 +1,5 @@
 """Module that implements a basic command line interface (CLI) for AiiDAlab."""
+
 from __future__ import annotations
 
 import json
