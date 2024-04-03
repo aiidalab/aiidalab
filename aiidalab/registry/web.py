@@ -6,6 +6,7 @@ import os.path
 import shutil
 from itertools import chain
 from pathlib import Path
+from typing import Optional
 
 import pkg_resources
 
@@ -63,10 +64,10 @@ def build(
     apps_path: Path,
     categories_path: Path,
     base_path: Path,
-    html_path: Path = None,
-    api_path: Path = None,
-    static_path: Path = None,
-    templates_path: Path = None,
+    html_path: Optional[Path] = None,
+    api_path: Optional[Path] = None,
+    static_path: Optional[Path] = None,
+    templates_path: Optional[Path] = None,
     validate_output: bool = True,
     validate_input: bool = False,
 ):

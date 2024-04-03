@@ -109,7 +109,7 @@ class _AiidaLabApp:
             logger.debug(f"Unable to parse metadata from '{path}'")
             return {
                 "name": path.stem,
-                "metadata": dict(title=path.stem, description=""),
+                "metadata": {"title": path.stem, "description": ""},
                 "releases": None,
             }
 
@@ -570,7 +570,7 @@ class _AiidaLabApp:
                     )
                     self._restore_from(trash_path)
             except RuntimeError as inner_error:
-                logger.error(f"Rollback failed due to error: {inner_error}!")
+                logger.exception(f"Rollback failed due to error: {inner_error}!")
             finally:
                 raise RuntimeError(
                     f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
@@ -638,7 +638,7 @@ class AiidaLabAppWatch:
                 self._observer.schedule(event_handler, self.app.path, recursive=True)
                 self._observer.start()
             else:  # reraise unrelated error
-                raise error
+                raise
 
     def _stop_observer(self) -> None:
         """Stop the directory observer thread.

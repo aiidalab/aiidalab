@@ -8,7 +8,7 @@ import click
 import toml
 
 CONFIG_PATH = Path.home() / "aiidalab.toml"
-_CONFIG = toml.loads(CONFIG_PATH.read_text()) if CONFIG_PATH.is_file() else dict()
+_CONFIG = toml.loads(CONFIG_PATH.read_text()) if CONFIG_PATH.is_file() else {}
 _DEVELOP_MODE = _CONFIG.get("develop", False)
 
 if _DEVELOP_MODE:  # Warn developer that the mode is enabled.

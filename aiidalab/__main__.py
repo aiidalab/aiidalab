@@ -139,12 +139,9 @@ def search(app_query, prereleases):
             raise click.ClickException(
                 f"Did not find entry for app with name '{app_requirement.name}'."
             )
-        matching_releases = [
-            version
-            for version in app.find_matching_releases(
-                app_requirement.specifier, prereleases
-            )
-        ]
+        matching_releases = list(
+            app.find_matching_releases(app_requirement.specifier, prereleases)
+        )
         if matching_releases:
             click.echo(
                 "\n".join(f"{app.name}=={version}" for version in matching_releases)
@@ -280,7 +277,10 @@ def _find_version_to_install(
     if app_requirement.url is not None:
         with fetch_from_url(app_requirement.url) as repo:
             metadata = Metadata.parse(repo)
-            registry_entry = dict(name=app_requirement.name, metadata=asdict(metadata))
+            registry_entry = {
+                "name": app_requirement.name,
+                "metadata": asdict(metadata),
+            }
             app = AiidaLabApp.from_id(
                 app_requirement.name, registry_entry=registry_entry
             )
