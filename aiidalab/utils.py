@@ -180,12 +180,11 @@ class Package:
 @cached(cache=FIND_INSTALLED_PACKAGES_CACHE)
 def find_installed_packages(python_bin: str | None = None) -> dict[str, Package]:
     """Return all currently installed packages."""
-    output = _pip_list(python_bin)
     return {
         canonicalize_name(package["name"]): Package(
             name=canonicalize_name(package["name"]), version=package["version"]
         )
-        for package in output
+        for package in _pip_list(python_bin)
     }
 
 
@@ -197,7 +196,7 @@ def _pip_list(python_bin: str | None = None) -> Any:
         [python_bin, "-m", "pip", "list", "--format=json"],
         encoding="utf-8",
         capture_output=True,
-        check=False,
+        check=True,
     ).stdout
 
     return json.loads(output)
