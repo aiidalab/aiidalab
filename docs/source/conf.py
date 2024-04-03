@@ -48,9 +48,7 @@ copyright_year_string = (
     if current_year == copyright_first_year
     else f"{copyright_first_year}-{current_year}"
 )
-copyright = "{}, {}. All rights reserved".format(
-    copyright_year_string, copyright_owners
-)  # pylint: disable=redefined-builtin
+copyright = f"{copyright_year_string}, {copyright_owners}. All rights reserved"  # noqa: A001
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -165,7 +163,7 @@ def run_apidoc(_):
     env["SPHINX_APIDOC_OPTIONS"] = (
         "members,special-members,private-members,undoc-members,show-inheritance"
     )
-    subprocess.check_call([cmd_path] + options, env=env)
+    subprocess.check_call([cmd_path, *options], env=env)
 
 
 def setup(app):

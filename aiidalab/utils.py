@@ -61,7 +61,7 @@ def load_app_registry_index() -> Any:
     try:
         return requests.get(f"{AIIDALAB_REGISTRY}/apps_index.json").json()
     except (ValueError, requests.ConnectionError) as error:
-        raise RuntimeError(f"Unable to load registry index: '{error}'")
+        raise RuntimeError("Unable to load registry index") from error
 
 
 def load_app_registry_entry(app_id: str) -> Any:
@@ -110,7 +110,7 @@ def parse_app_repo(
         }
 
 
-class throttled:  # pylint: disable=invalid-name
+class throttled:  # noqa: N801
     """Decorator to throttle calls to a function to a specified rate.
 
     The throttle is specific to the first argument of the wrapped
@@ -197,6 +197,7 @@ def _pip_list(python_bin: str | None = None) -> Any:
         [python_bin, "-m", "pip", "list", "--format=json"],
         encoding="utf-8",
         capture_output=True,
+        check=False,
     ).stdout
 
     return json.loads(output)
