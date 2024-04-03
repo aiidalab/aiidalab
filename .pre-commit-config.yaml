@@ -11,6 +11,14 @@ repos:
           - id: end-of-file-fixer
           - id: trailing-whitespace
 
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.3.5
+      hooks:
+          - id: ruff-format
+            exclude: ^docs/.*
+          - id: ruff
+            args: [--fix, --exit-non-zero-on-fix, --show-fixes]
+
     #  Currently disabled due to issues with installation pre-commit.ci:
     #- repo: https://github.com/mgedmin/check-manifest
     #  rev: '0.47'
@@ -22,34 +30,10 @@ repos:
       hooks:
           - id: yamlfmt
 
-    - repo: https://github.com/psf/black
-      rev: 24.3.0
-      hooks:
-          - id: black
-            language_version: python3 # Should be a command that runs python3.6+
-
-    - repo: https://github.com/PyCQA/flake8
-      rev: 7.0.0
-      hooks:
-          - id: flake8
-            args: [--count, --show-source, --statistics]
-
-    - repo: https://github.com/pycqa/isort
-      rev: 5.13.2
-      hooks:
-          - id: isort
-            args: [--profile, black, --filter-files]
-
     - repo: https://github.com/sirosen/check-jsonschema
       rev: 0.28.1
       hooks:
           - id: check-github-workflows
-
-    - repo: https://github.com/asottile/pyupgrade
-      rev: v3.15.2
-      hooks:
-          - id: pyupgrade
-            args: [--py38-plus]
 
     - repo: https://github.com/pre-commit/mirrors-mypy
       rev: v1.9.0
