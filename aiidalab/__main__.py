@@ -35,7 +35,7 @@ from .utils import parse_app_repo as _parse_app_repo
 SCHEMAS_CANONICAL_BASE_URL = "https://raw.githubusercontent.com/aiidalab/aiidalab/v21.10.0/aiidalab/registry/schemas"
 
 
-ICON_DETACHED = "\U000025AC"  # ▬
+ICON_DETACHED = "\U000025ac"  # ▬
 ICON_MODIFIED = "\U00002022"  # •
 
 

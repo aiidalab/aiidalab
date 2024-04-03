@@ -17,7 +17,7 @@ if _DEVELOP_MODE:  # Warn developer that the mode is enabled.
     if config_:  # The config does not only contain the 'develop' key.
         lines.append(f"{CONFIG_PATH!s} (takes precedence):")
         lines.extend(toml.dumps(config_).splitlines())
-    click.secho("\n".join([f"\U0001F6A7  {line}" for line in lines]), fg="yellow")
+    click.secho("\n".join([f"\U0001f6a7  {line}" for line in lines]), fg="yellow")
 
 
 def _as_env_var_name(key: str) -> str:

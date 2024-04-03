@@ -62,14 +62,20 @@ class Environment:
 
         # Parse the setup.cfg file (if present).
         try:
-            yield "python_requirements", list(
-                _parse_reqs(_parse_setup_cfg(path.joinpath("setup.cfg").read_text()))
+            yield (
+                "python_requirements",
+                list(
+                    _parse_reqs(
+                        _parse_setup_cfg(path.joinpath("setup.cfg").read_text())
+                    )
+                ),
             )
         except (FileNotFoundError, KeyError):
             # Parse the requirements.txt file (if present).
             try:
-                yield "python_requirements", list(
-                    _parse_reqs(path.joinpath("requirements.txt").read_text())
+                yield (
+                    "python_requirements",
+                    list(_parse_reqs(path.joinpath("requirements.txt").read_text())),
                 )
             except FileNotFoundError:
                 pass
