@@ -40,7 +40,7 @@ ICON_MODIFIED = "\U00002022"  # •
 
 
 @contextmanager
-def _spinner_with_message(message, message_final="Done.\n", **kwargs):
+def _spinner_with_message(message, message_final="Done.\n"):
     try:
         click.echo(message, err=True, nl=False)
         with spinner():

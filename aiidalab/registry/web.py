@@ -122,7 +122,6 @@ def build(
                 api_path=base_path / api_path,
                 apps_index=apps_index,
                 apps_data=apps_data,
-                scan_app_repository=parse_app_repo,
             )
             if api_path
             else ()

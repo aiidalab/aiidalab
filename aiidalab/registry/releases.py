@@ -144,10 +144,10 @@ def _gather_releases(release_specs, scan_app_repository, app_metadata):
             version_override = release_spec.get("version")
 
         def _set_overrides(version, release):
-            return version_override or version, replace(
+            return version_override or version, replace(  # noqa: B023
                 release,
-                environment=environment_override or release.environment,
-                metadata=metadata_override or release.metadata,
+                environment=environment_override or release.environment,  # noqa: B023
+                metadata=metadata_override or release.metadata,  # noqa: B023
             )
 
         # The way that an app is retrieved is determined by the scheme of the

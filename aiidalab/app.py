@@ -475,7 +475,7 @@ class _AiidaLabApp:
                         for member in tar.getmembers():
                             member_path = os.path.join(path, member.name)
                             if not is_within_directory(path, member_path):
-                                raise Exception("Attempted Path Traversal in Tar File")
+                                raise Exception("Attempted Path Traversal in Tar File")  # noqa: TRY002
 
                         tar.extractall(path, members, numeric_owner=numeric_owner)
 
@@ -543,8 +543,8 @@ class _AiidaLabApp:
                     urlunsplit(split_url._replace(scheme="https"))
                 )
             else:
-                raise NotImplementedError(
-                    "Unsupported scheme: {split_url.scheme} ({url})"
+                raise NotImplementedError(  # noqa: TRY301
+                    f"Unsupported scheme: {split_url.scheme} ({url})"
                 )
 
             # Install dependencies
@@ -569,15 +569,15 @@ class _AiidaLabApp:
                         "Performing rollback to previously installed version."
                     )
                     self._restore_from(trash_path)
-            except RuntimeError as inner_error:
-                logger.exception(f"Rollback failed due to error: {inner_error}!")
+            except RuntimeError:
+                logger.exception("Rollback failed! Consider re-installing the app.")
             finally:
                 raise RuntimeError(
                     f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
                 ) from error
 
 
-class AppNotInstalledException(Exception):
+class AppNotInstalledException(Exception):  # noqa: N818
     pass
 
 
@@ -850,9 +850,10 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         """Check if the app has a .git folder in it."""
         try:
             Repo(self.path)
-            return True
         except NotGitRepository:
             return False
+        else:
+            return True
 
     def install_app(
         self, version: str | None = None, stdout: str | None = None
