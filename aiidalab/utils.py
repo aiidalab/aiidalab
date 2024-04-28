@@ -10,6 +10,7 @@ import time
 from collections import defaultdict
 from dataclasses import asdict
 from functools import wraps
+from importlib.metadata import version
 from pathlib import Path
 from subprocess import run
 from threading import Lock
@@ -253,8 +254,17 @@ def run_reentry_scan() -> Any:
 
 
 def run_verdi_daemon_restart() -> Any:
+    # When installing or updating a plugin package, one needs to
+    # restart the daemon with the ``--reset`` flag for changes to take effect.
+    # however, in the latest aiida-core branch, this is now the default.
+    # Define command based on aiida-core version
+    aiida_version = version("aiida-core")
+    if aiida_version <= "2.5.1":
+        command = ["verdi", "daemon", "restart", "--reset"]
+    else:
+        command = ["verdi", "daemon", "restart"]
     return subprocess.Popen(
-        ["verdi", "daemon", "restart"],
+        command,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
