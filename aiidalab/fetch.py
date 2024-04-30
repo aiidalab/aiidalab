@@ -32,7 +32,7 @@ def _fetch_from_path(path: Path | GitPath) -> Generator[Path | GitPath, None, No
             try:
                 data = path.read_bytes()
             except (ValueError, FileNotFoundError) as error:
-                raise RuntimeError(f"{error}")
+                raise RuntimeError(f"{error}") from error
             try:
                 with tarfile.open(fileobj=BytesIO(data)) as tar_file:
                     tar_file.extractall(path=tmp_dir)
@@ -44,8 +44,8 @@ def _fetch_from_path(path: Path | GitPath) -> Generator[Path | GitPath, None, No
                         zip_file.extractall(path=tmp_dir)
                         yield _this_or_only_subdir(Path(tmp_dir))
                 except zipfile.BadZipFile as error:
-                    logger.debug(str(error))
-                    raise RuntimeError("Failed to extract archive from file.")
+                    msg = "Failed to extract archive from file: {error}"
+                    raise RuntimeError(msg) from error
 
 
 @contextmanager
@@ -60,7 +60,8 @@ def _fetch_from_https(url: str) -> Generator[Path | GitPath, None, None]:
             with _fetch_from_path(Path(tmp_file.name)) as path:
                 yield path
         except RuntimeError as error:
-            raise RuntimeError(f"Unable to read from '{url}': {error}")
+            msg = f"Unable to read from '{url}': {error}"
+            raise RuntimeError(msg) from error
 
 
 def _parse_git_url(git_url: str) -> tuple[str, str, str]:
@@ -90,10 +91,10 @@ def _fetch_from_git_local(git_url: str) -> Generator[Path | GitPath, None, None]
     try:
         repo = GitRepo(urlsplit(url).path)
     except dulwich.errors.NotGitRepository as error:
-        raise RuntimeError(
-            f"{error}"
-            + (" Did you use a relative path?" if urlsplit(url).netloc else "")
-        )
+        msg = f"{error}"
+        if urlsplit(url).netloc:
+            msg += "\nDid you use a relative path?"
+        raise RuntimeError(msg) from error
 
     git_path = GitPath(repo.path, repo.ref_from_rev(rev)).joinpath(path)
     with _fetch_from_path(git_path) as tmp_path:
@@ -109,9 +110,10 @@ def fetch_from_url(url: str) -> Generator[Path | GitPath, None, None]:
             with _fetch_from_path(Path(ps.path)) as path:
                 yield path
         except FileNotFoundError as error:
-            raise RuntimeError(
-                f"{error}" + (" Did you use a relative path?" if ps.netloc else "")
-            )
+            msg = f"{error}"
+            if ps.netloc:
+                msg += "\nDid you use a relative path?"
+            raise RuntimeError(msg) from error
 
     elif ps.scheme == "https":  # access archive via https
         with _fetch_from_https(url) as path:
