@@ -30,13 +30,17 @@ def _fetch_from_path(path: Path | GitPath) -> Generator[Path | GitPath, None, No
     else:
         with tempfile.TemporaryDirectory() as tmp_dir:
             try:
-                with tarfile.open(fileobj=BytesIO(path.read_bytes())) as tar_file:
+                data = path.read_bytes()
+            except (ValueError, FileNotFoundError) as error:
+                raise RuntimeError(f"{error}")
+            try:
+                with tarfile.open(fileobj=BytesIO(data)) as tar_file:
                     tar_file.extractall(path=tmp_dir)
                     yield _this_or_only_subdir(Path(tmp_dir))
             except tarfile.ReadError as error:
                 logger.debug(str(error))
                 try:
-                    with zipfile.ZipFile(BytesIO(path.read_bytes())) as zip_file:
+                    with zipfile.ZipFile(BytesIO(data)) as zip_file:
                         zip_file.extractall(path=tmp_dir)
                         yield _this_or_only_subdir(Path(tmp_dir))
                 except zipfile.BadZipFile as error:
