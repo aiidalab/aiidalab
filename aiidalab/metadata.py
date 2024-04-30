@@ -65,15 +65,22 @@ def _parse_setup_cfg(
     yield "external_url", aiidalab.get("external_url", metadata_pep426.get("url"))
 
     project_urls = dict(_parse_config_dict(metadata_pep426.get("project_urls", "")))
-    yield "documentation_url", aiidalab.get(
+    yield (
         "documentation_url",
-        project_urls.get("Documentation") or project_urls.get("documentation"),
+        aiidalab.get(
+            "documentation_url",
+            project_urls.get("Documentation") or project_urls.get("documentation"),
+        ),
     )
-    yield "logo", aiidalab.get(
-        "logo", project_urls.get("Logo") or project_urls.get("logo")
+    yield (
+        "logo",
+        aiidalab.get("logo", project_urls.get("Logo") or project_urls.get("logo")),
     )
-    yield "state", aiidalab.get(
-        "state", _map_development_state(metadata_pep426.get("classifiers", ""))
+    yield (
+        "state",
+        aiidalab.get(
+            "state", _map_development_state(metadata_pep426.get("classifiers", ""))
+        ),
     )
 
     # Allow passing single category and convert to list

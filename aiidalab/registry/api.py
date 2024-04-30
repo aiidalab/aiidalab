@@ -5,7 +5,7 @@ import json
 from .apps_index import validate_apps_index_and_apps
 
 
-def build_api_v1(api_path, apps_index, apps_data, scan_app_repository):
+def build_api_v1(api_path, apps_index, apps_data):
     """Build tree for API endpoint v1."""
 
     # Create base path if necessary.

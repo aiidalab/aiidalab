@@ -61,11 +61,12 @@ class GitManagedAppRepo(Repo):  # type: ignore
         try:
             remote = cfg[(b"branch", branch)][b"remote"]
             merge = cfg[(b"branch", branch)][b"merge"]
+        except KeyError:
+            return None
+        else:
             pattern = rb"refs\/heads"
             remote_ref = b"refs/remotes/" + remote + re.sub(pattern, b"", merge)
             return remote_ref
-        except KeyError:
-            return None
 
     def dirty(self) -> bool:
         """Check if there are likely local user modifications to the app repository."""
