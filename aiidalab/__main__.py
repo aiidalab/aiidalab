@@ -17,7 +17,6 @@ import pkg_resources
 import requests_mock
 from click_spinner import spinner
 from jsonref import JsonRefError
-from jsonschema.exceptions import RefResolutionError, ValidationError
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
 from tabulate import tabulate
@@ -27,7 +26,6 @@ from .app import AppVersion
 from .app import _AiidaLabApp as AiidaLabApp
 from .fetch import fetch_from_url
 from .metadata import Metadata
-from .registry import build as build_registry
 from .utils import PEP508CompliantUrl, load_app_registry_index
 from .utils import parse_app_repo as _parse_app_repo
 
@@ -687,6 +685,10 @@ def build(
 
         build --apps=apps.yaml --categories=categories.yaml --out=./build/
     """
+    from jsonschema.exceptions import RefResolutionError, ValidationError
+
+    from .registry import build as build_registry
+
     if any(path and Path(path).is_absolute() for path in (html_path, api_path)):
         raise click.ClickException("The html- and api-paths must be relative paths.")
 

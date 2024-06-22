@@ -38,8 +38,14 @@ jobs:
             # NOTE: We need editable install to collect code coverage
               run: uv pip install --system -e .[dev]
 
-            - name: Run tests
-              run: pytest -vs --cov=aiidalab
+            - name: Run tests without registry tests
+              run: pytest -s -m "not registry" tests/
+
+            - name: Install registry extras
+              run: uv pip install --system -e .[dev,registry]
+
+            - name: Run all unit tests
+              run: pytest -s --cov=aiidalab tests/
 
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v4

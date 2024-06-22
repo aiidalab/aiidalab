@@ -1,11 +1,16 @@
 import os
 
+import pytest
+
 from aiidalab.fetch import GitRepo, fetch_from_url
-from aiidalab.registry.releases import _get_release_commits, _split_release_line
+
+pytestmark = pytest.mark.registry
 
 
 def test_get_all_tagged_releases():
     """Test that all tagged releases are returned."""
+    from aiidalab.registry.releases import _get_release_commits, _split_release_line
+
     url = "git+https://github.com/aiidalab/aiidalab-qe.git@*:v23.04.0^.."
     base_url, release_line = _split_release_line(url)
 
@@ -18,6 +23,8 @@ def test_get_all_tagged_releases():
 
 def test_get_releases_from_branch():
     """Test that all tagged releases of perticular branch (main) are returned."""
+    from aiidalab.registry.releases import _get_release_commits, _split_release_line
+
     url = "git+https://github.com/aiidalab/aiidalab-qe.git@main:v23.04.0^.."
     base_url, release_line = _split_release_line(url)
 
