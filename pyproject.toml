@@ -29,3 +29,6 @@ select = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ARG001"]
+
+[tool.pytest.ini_options]
+addopts = '--strict-config --strict-markers -ra'
