@@ -35,10 +35,11 @@ jobs:
               run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/astral-sh/uv/releases/download/0.2.13/uv-installer.sh | sh
 
             - name: Install package with uv
-              run: uv pip install --system .[dev]
+            # NOTE: We need editable install to collect code coverage
+              run: uv pip install --system -e .[dev]
 
             - name: Run all unit tests
-              run: pytest -sv --cov aiidalab
+              run: pytest -sv --cov=aiidalab
 
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v4
