@@ -32,16 +32,29 @@ jobs:
                   python-version: ${{ matrix.python-version }}
 
             - name: Install uv
-              run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/astral-sh/uv/releases/download/0.2.4/uv-installer.sh | sh
+              run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/astral-sh/uv/releases/download/0.2.13/uv-installer.sh | sh
 
             - name: Install package with uv
-              run: uv pip install --system -e .[dev]
+              run: uv pip install --system .[dev]
 
-            - name: Run tests
-              run: pytest -vs --cov
+            - name: Run all unit tests
+              run: pytest -vs --cov=aiidalab
 
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v4
               with:
                   flags: py-${{ matrix.python-version }}
+                  token: ${{ secrets.CODECOV_TOKEN }}
+
+            - name: Test basic CLI usage
+              run: |
+                  coverage run -m aiidalab -h
+                  coverage run -a -m aiidalab --version
+                  coverage run -a -m aiidalab list
+                  coverage run -a -m aiidalab info
+
+            - name: Upload coverage reports to Codecov
+              uses: codecov/codecov-action@v4
+              with:
+                  flags: cli
                   token: ${{ secrets.CODECOV_TOKEN }}
