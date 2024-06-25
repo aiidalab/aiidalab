@@ -27,6 +27,26 @@ def test_list_no_apps(aiidalab_env):
     assert "No apps installed" in result.output
 
 
+def test_install_no_apps():
+    """
+    Smoke test for `aiidalab install` with no apps to install.
+    """
+    runner = CliRunner()
+    result = runner.invoke(cli.cli, ["install", "--dry-run"])
+
+    assert "Nothing to install" in result.output
+
+
+def test_uninstall_no_apps():
+    """
+    Smoke test for `aiidalab uninstall` with no apps to uninstall.
+    """
+    runner = CliRunner()
+    result = runner.invoke(cli.cli, ["uninstall", "--dry-run"])
+
+    assert "Nothing to uninstall" in result.output
+
+
 def test_info_default():
     """
     Test `aiidalab info` with default environment values.

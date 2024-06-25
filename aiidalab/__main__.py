@@ -335,7 +335,7 @@ def _find_version_to_install(
 
 
 @cli.command()
-@click.argument("app-requirement", nargs=-1)
+@click.argument("app-requirements", nargs=-1)
 @click.option("--yes", is_flag=True, help="Do not prompt for confirmation.")
 @click.option(
     "-n",
@@ -382,7 +382,7 @@ def _find_version_to_install(
     help="Include prereleases among the candidates for installation.",
 )
 def install(
-    app_requirement, yes, dry_run, force, dependencies, python_bin, prereleases
+    app_requirements, yes, dry_run, force, dependencies, python_bin, prereleases
 ):
     """Install apps.
 
@@ -409,7 +409,7 @@ def install(
                 python_bin=python_bin,
                 prereleases=prereleases,
             )
-            for requirement in map(_parse_requirement, set(app_requirement))
+            for requirement in map(_parse_requirement, set(app_requirements))
         }
 
     if all(version is None for (_, version) in install_candidates.values()):
