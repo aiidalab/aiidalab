@@ -14,9 +14,7 @@ from textwrap import indent, wrap
 
 import click
 import pkg_resources
-import requests_mock
 from click_spinner import spinner
-from jsonref import JsonRefError
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
 from tabulate import tabulate
@@ -559,6 +557,8 @@ def uninstall(app_name, yes, dry_run, force):
 
 @contextmanager
 def _mock_schemas_endpoints():
+    import requests_mock
+
     schema_paths = [
         path
         for path in pkg_resources.resource_listdir(f"{__package__}.registry", "schemas")
@@ -685,6 +685,7 @@ def build(
 
         build --apps=apps.yaml --categories=categories.yaml --out=./build/
     """
+    from jsonref import JsonRefError
     from jsonschema.exceptions import RefResolutionError, ValidationError
 
     from .registry import build as build_registry
