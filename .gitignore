@@ -11,3 +11,4 @@ Pipfile.lock
 requirements.txt_dev
 requirements.txt_stable
 .DS_Store
+.coverage
