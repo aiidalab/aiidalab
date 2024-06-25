@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import asdict
 from functools import wraps
 from pathlib import Path
@@ -16,8 +17,9 @@ from threading import Lock
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
+import cachetools
+import packaging
 import requests
-from cachetools import TTLCache, cached
 from packaging.requirements import Requirement
 from packaging.utils import NormalizedName, canonicalize_name
 
@@ -27,7 +29,7 @@ from .fetch import fetch_from_url
 from .metadata import Metadata
 
 logger = logging.getLogger(__name__)
-FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)  # type: ignore
+FIND_INSTALLED_PACKAGES_CACHE = cachetools.TTLCache(maxsize=32, ttl=60)  # type: ignore
 
 # Warning: try-except is a fix for Quantum Mobile release v19.03.0 where
 # requests_cache is not installed.
@@ -177,7 +179,7 @@ class Package:
         )
 
 
-@cached(cache=FIND_INSTALLED_PACKAGES_CACHE)
+@cachetools.cached(cache=FIND_INSTALLED_PACKAGES_CACHE)
 def find_installed_packages(python_bin: str | None = None) -> dict[str, Package]:
     """Return all currently installed packages."""
     return {
@@ -272,3 +274,32 @@ def run_post_install_script(post_install_script_path: Path) -> Any:
         stdout=subprocess.DEVNULL,
         stderr=subprocess.STDOUT,
     )
+
+
+def sort_versions(
+    versions: Iterable[str], pre: bool = False
+) -> list[packaging.version.Version]:
+    """Semantically sort versions strings, skipping over invalid versions"""
+
+    """
+    # This version requires new external dependency more_itertools
+    from more_itertools import map_except
+    from packaging.version import parse, InvalidVersion
+    parsed_versions = map_except(parse, versions, InvalidVersion)
+    return [
+        version
+        for version in sorted(parsed_versions, reverse=True)
+        if pre or not version.is_prerelease
+    ]
+    """
+    parsed_versions = []
+    for version in versions:
+        try:
+            parsed_version = packaging.version.parse(version)
+        except packaging.version.InvalidVersion:
+            continue
+        else:
+            if pre or not parsed_version.is_prerelease:
+                parsed_versions.append(parsed_version)
+
+    return sorted(parsed_versions)
