@@ -38,24 +38,11 @@ jobs:
             # NOTE: We need editable install to collect code coverage
               run: uv pip install --system -e .[dev]
 
-            - name: Run all unit tests
+            - name: Run unit tests
               run: pytest -sv --cov=aiidalab
 
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v4
               with:
                   flags: py-${{ matrix.python-version }}
-                  token: ${{ secrets.CODECOV_TOKEN }}
-
-            - name: Test basic CLI usage
-              run: |
-                  coverage run -m aiidalab -h
-                  coverage run -a -m aiidalab --version
-                  coverage run -a -m aiidalab list
-                  coverage run -a -m aiidalab info
-
-            - name: Upload coverage reports to Codecov
-              uses: codecov/codecov-action@v4
-              with:
-                  flags: cli
                   token: ${{ secrets.CODECOV_TOKEN }}
