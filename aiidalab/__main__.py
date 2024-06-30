@@ -25,7 +25,6 @@ from tabulate import tabulate
 from . import __version__
 from .app import AppVersion
 from .app import _AiidaLabApp as AiidaLabApp
-from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 from .fetch import fetch_from_url
 from .metadata import Metadata
 from .registry import build as build_registry
@@ -79,6 +78,8 @@ def cli(verbose):
 @cli.command()
 def info():
     """Show information about the AiiDAlab configuration."""
+    from aiidalab.config import AIIDALAB_APPS, AIIDALAB_REGISTRY
+
     click.echo(f"AiiDAlab, version {__version__}")
     click.echo(f"Apps path:      {Path(AIIDALAB_APPS).resolve()}")
     click.echo(f"Apps registry:  {AIIDALAB_REGISTRY}")
@@ -167,6 +168,7 @@ def list_apps():
 
     This command will list all apps, their version, and their full path.
     """
+    from .config import AIIDALAB_APPS
 
     apps = list(_list_apps(Path(AIIDALAB_APPS)))
     if len(apps) > 0:
@@ -333,7 +335,7 @@ def _find_version_to_install(
 
 
 @cli.command()
-@click.argument("app-requirement", nargs=-1)
+@click.argument("app-requirements", nargs=-1)
 @click.option("--yes", is_flag=True, help="Do not prompt for confirmation.")
 @click.option(
     "-n",
@@ -380,7 +382,7 @@ def _find_version_to_install(
     help="Include prereleases among the candidates for installation.",
 )
 def install(
-    app_requirement, yes, dry_run, force, dependencies, python_bin, prereleases
+    app_requirements, yes, dry_run, force, dependencies, python_bin, prereleases
 ):
     """Install apps.
 
@@ -407,7 +409,7 @@ def install(
                 python_bin=python_bin,
                 prereleases=prereleases,
             )
-            for requirement in map(_parse_requirement, set(app_requirement))
+            for requirement in map(_parse_requirement, set(app_requirements))
         }
 
     if all(version is None for (_, version) in install_candidates.values()):
@@ -477,6 +479,8 @@ def install(
 )
 def uninstall(app_name, yes, dry_run, force):
     """Uninstall apps."""
+    from .config import AIIDALAB_APPS
+
     with _spinner_with_message("Collecting apps to uninstall... "):
         apps_to_uninstall = [
             (path, name, app)

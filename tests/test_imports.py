@@ -3,9 +3,10 @@ def test_imports():
 
     This is just a basic smoke test.
     """
-    # flake8: noqa: F401
+    # ruff: noqa: F401
 
     import aiidalab
+    import aiidalab.__main__
     import aiidalab.app
     import aiidalab.config
     import aiidalab.utils
