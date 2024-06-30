@@ -38,7 +38,7 @@ jobs:
               run: uv pip install --system -e .[dev]
 
             - name: Run tests
-              run: pytest -vs --cov
+              run: pytest -vs --cov=aiidalab
 
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v4
