@@ -1,4 +1,10 @@
 ---
-quantum-espresso:
+home:
     releases:
-        - url: git+https://github.com/aiidalab/aiidalab-qe.git@*:v22.05.0^..
+        - url: git+https://github.com/aiidalab/aiidalab-home.git@main:v23.03.0^..
+          metadata:
+              categories: [setup]
+              title: Home App
+              description: Where thou art — that — is home
+              authors: Aliaksandr Yakutovich, et al
+              external_url: https://github.com/aiidalab/aiidalab-home
