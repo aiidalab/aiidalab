@@ -1,3 +1,5 @@
+import pytest
+
 # To learn more about testing Click applications see
 # http://click.pocoo.org/5/testing/
 from click.testing import CliRunner
@@ -79,6 +81,7 @@ def test_info_from_envvars(aiidalab_env):
     assert aiidalab_env["AIIDALAB_APPS"] in result.output
 
 
+@pytest.mark.registry
 def test_registry_build(tmp_path, aiidalab_env, apps_path, categories_path):
     """
     Test `registry build` - API endpoint only.
