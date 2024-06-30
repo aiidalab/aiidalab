@@ -13,7 +13,6 @@ from pathlib import Path
 from textwrap import indent, wrap
 
 import click
-import pkg_resources
 from click_spinner import spinner
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
@@ -557,6 +556,7 @@ def uninstall(app_name, yes, dry_run, force):
 
 @contextmanager
 def _mock_schemas_endpoints():
+    import pkg_resources
     import requests_mock
 
     schema_paths = [

@@ -70,3 +70,38 @@ def test_info_from_envvars(aiidalab_env):
 
     assert aiidalab_env["AIIDALAB_REGISTRY"] in result.output
     assert aiidalab_env["AIIDALAB_APPS"] in result.output
+
+
+def test_registry_build(tmp_path, aiidalab_env, apps_path, categories_path):
+    """
+    Test `registry build` - API endpoint only.
+    """
+    build_dir = tmp_path / "build"
+    api_dir = build_dir / "api" / "v100"
+    apps_dir = api_dir / "apps"
+    index_file = api_dir / "apps_index.json"
+
+    runner = CliRunner(env=aiidalab_env)
+    result = runner.invoke(
+        cli.cli,
+        [
+            "registry",
+            "build",
+            "--mock-schemas-endpoints",
+            "--out",
+            build_dir,
+            "--apps",
+            apps_path,
+            "--categories",
+            categories_path,
+            "--html-path",
+            "''",
+            "--api-path",
+            "api/v100",
+        ],
+    )
+
+    assert result.output == ""
+    assert api_dir.is_dir()
+    assert apps_dir.is_dir()
+    assert index_file.is_file()

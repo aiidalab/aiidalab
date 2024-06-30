@@ -8,8 +8,26 @@ from aiidalab.app import AiidaLabApp, _AiidaLabApp
 
 
 @pytest.fixture(scope="session")
-def app_registry_path():
-    return Path(__file__).parent.absolute() / "static/app_registry.yaml"
+def static_path():
+    # TODO: Switch to importlib.resources once we drop support for Python 3.8
+    # import importlib.resources
+    # return importlib.resources.files() / "static"
+    return Path(__file__).parent.absolute() / "static"
+
+
+@pytest.fixture(scope="session")
+def apps_path(static_path):
+    return static_path / "apps.yaml"
+
+
+@pytest.fixture(scope="session")
+def categories_path(static_path):
+    return static_path / "categories.yaml"
+
+
+@pytest.fixture(scope="session")
+def app_registry_path(static_path):
+    return static_path / "app_registry.yaml"
 
 
 @pytest.fixture

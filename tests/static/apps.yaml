@@ -1,0 +1,4 @@
+---
+quantum-espresso:
+    releases:
+        - url: git+https://github.com/aiidalab/aiidalab-qe.git@*:v22.05.0^..
