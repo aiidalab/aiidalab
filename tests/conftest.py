@@ -80,7 +80,8 @@ def installed_packages(monkeypatch):
 def aiidalab_env(tmp_path, app_registry_path):
     """Set AIIDALAB_APPS to tmp_path and set a file-based AIIDALAB_REGISTRY"""
     # This is needed so that the config module is imported again env vars are re-parsed
-    del sys.modules["aiidalab.config"]
+    if "aiidalab.config" in sys.modules:
+        del sys.modules["aiidalab.config"]
 
     return {
         "AIIDALAB_REGISTRY": str(app_registry_path),

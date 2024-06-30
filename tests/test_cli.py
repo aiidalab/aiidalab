@@ -82,7 +82,7 @@ def test_info_from_envvars(aiidalab_env):
 
 
 @pytest.mark.registry
-def test_registry_build(tmp_path, aiidalab_env, apps_path, categories_path):
+def test_registry_build_api(tmp_path, apps_path, categories_path):
     """
     Test `registry build` - API endpoint only.
     """
@@ -91,7 +91,7 @@ def test_registry_build(tmp_path, aiidalab_env, apps_path, categories_path):
     apps_dir = api_dir / "apps"
     index_file = api_dir / "apps_index.json"
 
-    runner = CliRunner(env=aiidalab_env)
+    runner = CliRunner()
     result = runner.invoke(
         cli.cli,
         [
@@ -116,3 +116,38 @@ def test_registry_build(tmp_path, aiidalab_env, apps_path, categories_path):
     assert api_dir.is_dir()
     assert apps_dir.is_dir()
     assert index_file.is_file()
+
+
+@pytest.mark.registry
+def test_registry_build_html(tmp_path, apps_path, categories_path):
+    """
+    Test `registry build` - HTML only.
+    """
+    build_dir = tmp_path / "build"
+    api_dir = build_dir / "api"
+    html_dir = build_dir / "html"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli.cli,
+        [
+            "registry",
+            "build",
+            "--mock-schemas-endpoints",
+            "--out",
+            build_dir,
+            "--apps",
+            apps_path,
+            "--categories",
+            categories_path,
+            "--html-path",
+            "html",
+            "--api-path",
+            "''",
+        ],
+    )
+
+    assert result.output == ""
+    assert result.exit_code == 0
+    assert not api_dir.is_dir()
+    assert html_dir.is_dir()
