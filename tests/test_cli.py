@@ -12,6 +12,8 @@ def test_version_displays_library_version():
     """
     runner = CliRunner()
     result = runner.invoke(cli.cli, ["--version"])
+
+    assert result.exit_code == 0
     assert (
         __version__ in result.output.strip()
     ), "Version number should match library version."
@@ -24,6 +26,7 @@ def test_list_no_apps(aiidalab_env):
     runner = CliRunner(env=aiidalab_env)
     result = runner.invoke(cli.cli, ["list"])
 
+    assert result.exit_code == 0
     assert "No apps installed" in result.output
 
 
@@ -34,6 +37,7 @@ def test_install_no_apps():
     runner = CliRunner()
     result = runner.invoke(cli.cli, ["install", "--dry-run"])
 
+    assert result.exit_code == 0
     assert "Nothing to install" in result.output
 
 
@@ -44,6 +48,7 @@ def test_uninstall_no_apps():
     runner = CliRunner()
     result = runner.invoke(cli.cli, ["uninstall", "--dry-run"])
 
+    assert result.exit_code == 0
     assert "Nothing to uninstall" in result.output
 
 
@@ -56,6 +61,7 @@ def test_info_default():
     runner = CliRunner()
     result = runner.invoke(cli.cli, ["info"])
 
+    assert result.exit_code == 0
     assert AIIDALAB_REGISTRY in result.output
     assert AIIDALAB_APPS in result.output
 
@@ -68,6 +74,7 @@ def test_info_from_envvars(aiidalab_env):
     runner = CliRunner(env=aiidalab_env)
     result = runner.invoke(cli.cli, ["info"])
 
+    assert result.exit_code == 0
     assert aiidalab_env["AIIDALAB_REGISTRY"] in result.output
     assert aiidalab_env["AIIDALAB_APPS"] in result.output
 
@@ -102,6 +109,7 @@ def test_registry_build(tmp_path, aiidalab_env, apps_path, categories_path):
     )
 
     assert result.output == ""
+    assert result.exit_code == 0
     assert api_dir.is_dir()
     assert apps_dir.is_dir()
     assert index_file.is_file()
