@@ -38,7 +38,7 @@ def replace_refs(obj):
 
 
 def loads(s):
-    """Deserialize serialized YAML file 's' to a Python object and dereference all references."""
+    """Deserialize YAML string to a Python object and dereference all references."""
     return replace_refs(YAML(typ="safe").load(s))
 
 

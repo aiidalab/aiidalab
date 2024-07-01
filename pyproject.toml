@@ -32,3 +32,6 @@ select = [
 
 [tool.pytest.ini_options]
 addopts = '--strict-config --strict-markers -ra'
+markers = [
+  'registry: Tests relating to AiiDAlab registry functionality',
+]
