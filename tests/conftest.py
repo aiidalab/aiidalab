@@ -8,8 +8,26 @@ from aiidalab.app import AiidaLabApp, _AiidaLabApp
 
 
 @pytest.fixture(scope="session")
-def app_registry_path():
-    return Path(__file__).parent.absolute() / "static/app_registry.yaml"
+def static_path():
+    # TODO: Switch to importlib.resources once we drop support for Python 3.8
+    # import importlib.resources
+    # return importlib.resources.files() / "static"
+    return Path(__file__).parent.absolute() / "static"
+
+
+@pytest.fixture(scope="session")
+def apps_path(static_path):
+    return static_path / "apps.yaml"
+
+
+@pytest.fixture(scope="session")
+def categories_path(static_path):
+    return static_path / "categories.yaml"
+
+
+@pytest.fixture(scope="session")
+def app_registry_path(static_path):
+    return static_path / "app_registry.yaml"
 
 
 @pytest.fixture
@@ -62,7 +80,8 @@ def installed_packages(monkeypatch):
 def aiidalab_env(tmp_path, app_registry_path):
     """Set AIIDALAB_APPS to tmp_path and set a file-based AIIDALAB_REGISTRY"""
     # This is needed so that the config module is imported again env vars are re-parsed
-    del sys.modules["aiidalab.config"]
+    if "aiidalab.config" in sys.modules:
+        del sys.modules["aiidalab.config"]
 
     return {
         "AIIDALAB_REGISTRY": str(app_registry_path),
