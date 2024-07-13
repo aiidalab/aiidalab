@@ -572,9 +572,9 @@ class _AiidaLabApp:
             except RuntimeError:
                 logger.exception("Rollback failed! Consider re-installing the app.")
             finally:
-                raise RuntimeError(
-                    f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
-                ) from error
+                msg = f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
+                logger.exception(msg)
+                raise error
 
 
 class AppNotInstalledException(Exception):  # noqa: N818

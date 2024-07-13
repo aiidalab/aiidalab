@@ -81,6 +81,27 @@ def test_info_from_envvars(aiidalab_env):
     assert aiidalab_env["AIIDALAB_APPS"] in result.output
 
 
+def test_dry_install(aiidalab_env, static_path):
+    """
+    Test `aiidalab install --dry-run`.
+    """
+    app_path = static_path / "app_with_setupcfg"
+    app = f"hello-world @ file://{app_path}"
+
+    runner = CliRunner(env=aiidalab_env)
+    result = runner.invoke(cli.cli, ["-v", "install", "--dry-run", "--yes", app])
+
+    print(aiidalab_env)
+    assert result.exit_code == 0, result.output
+    assert "Would install" in result.output
+
+    runner = CliRunner(env=aiidalab_env)
+    result = runner.invoke(cli.cli, ["list"])
+
+    assert result.exit_code == 0, result.output
+    assert "No apps installed" in result.output
+
+
 @pytest.mark.registry
 def test_registry_build_api(tmp_path, apps_path, categories_path):
     """

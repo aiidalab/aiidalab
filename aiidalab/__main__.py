@@ -433,28 +433,26 @@ def install(
         ],
         headers=["App", "Version", "Path"],
     )
-    click.echo(f"Would install:\n\n{indent(apps_table, '  ')}\n")
+    click.echo(f"Installation plan:\n\n{indent(apps_table, '  ')}\n")
     if yes or click.confirm("Proceed?", default=True):
         for app, version in install_candidates.values():
-            if version is not None:
-                if dry_run:
-                    click.secho(
-                        f"Would install '{app.name}' version '{version}'.", fg="green"
-                    )
-                else:
-                    try:
-                        app.install(
-                            version=version,
-                            install_dependencies=dependencies == "install",
-                            python_bin=python_bin,
-                        )
-                    except RuntimeError as error:
-                        click.secho(f"Error: {error}", fg="red")
-                        break
-                    else:
-                        click.secho(
-                            f"Installed '{app.name}' version '{version}'.", fg="green"
-                        )
+            if version is None:
+                continue
+            if dry_run:
+                click.secho(
+                    f"Would install '{app.name}' version '{version}'.", fg="green"
+                )
+                continue
+            try:
+                app.install(
+                    version=version,
+                    install_dependencies=dependencies == "install",
+                    python_bin=python_bin,
+                )
+            except RuntimeError as error:
+                raise click.ClickException(error)
+            else:
+                click.secho(f"Installed '{app.name}' version '{version}'.", fg="green")
 
 
 @cli.command()
