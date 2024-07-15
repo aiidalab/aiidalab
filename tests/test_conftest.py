@@ -1,11 +1,11 @@
-"""Test (un)installation of AiiDAlab applications"""
+"""Test fixtures defined in conftest.py"""
 
 import pytest
 
 
 def test_forbidden_functions():
     """Ensure that we fail if we try to run `pip install`
-    and other functions that might influence global environment
+    and other functions that might influence global environment.
     """
     from aiidalab.utils import (
         run_pip_install,
