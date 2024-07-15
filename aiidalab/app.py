@@ -250,7 +250,7 @@ class _AiidaLabApp:
         trash_path = Path.home().joinpath(".trash", f"{self.name}-{uuid4()!s}")
         if self.path.exists():
             trash_path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.rename(trash_path)
+            shutil.move(self.path, trash_path)
             return trash_path
         return None
 
