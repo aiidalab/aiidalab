@@ -71,7 +71,9 @@ def forbid_external_commands(monkeypatch):
 
     # Can't use lambda to raise an exception
     def raise_exc(msg=""):
-        raise NotImplementedError(msg)
+        # NOTE: We use SystemExit which is derived from BaseException
+        # so that this is not accidentally caught in the code.
+        raise SystemExit(msg)
 
     monkeypatch.setattr(
         "aiidalab.utils.run_pip_install",
@@ -87,6 +89,14 @@ def forbid_external_commands(monkeypatch):
         "aiidalab.utils.run_verdi_daemon_restart",
         lambda: raise_exc("Running `verdi daemon restart` not allowed in tests!"),
     )
+
+    # TODO: Enable this once the existing tests don't use it
+    """
+    monkeypatch.setattr(
+        "aiidalab.utils.load_app_registry_index",
+        lambda: raise_exc("Running fetching registry index not allowed in tests!"),
+    )
+    """
 
 
 @pytest.fixture

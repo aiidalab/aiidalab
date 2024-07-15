@@ -91,15 +91,14 @@ def test_dry_install(aiidalab_env, static_path):
     runner = CliRunner(env=aiidalab_env)
     result = runner.invoke(cli.cli, ["-v", "install", "--dry-run", "--yes", app])
 
-    print(aiidalab_env)
     assert result.exit_code == 0, result.output
-    assert "Would install" in result.output
+    assert "Would install" in result.output, result.output
 
     runner = CliRunner(env=aiidalab_env)
     result = runner.invoke(cli.cli, ["list"])
 
     assert result.exit_code == 0, result.output
-    assert "No apps installed" in result.output
+    assert "No apps installed" in result.output, result.output
 
 
 @pytest.mark.registry

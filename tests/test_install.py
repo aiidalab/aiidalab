@@ -13,14 +13,14 @@ def test_forbidden_functions():
         run_verdi_daemon_restart,
     )
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(SystemExit):
         process = run_pip_install(python_bin="python")
         process.wait()
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(SystemExit):
         process = run_verdi_daemon_restart()
         process.wait()
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(SystemExit):
         process = run_post_install_script("post_install")
         process.wait()
