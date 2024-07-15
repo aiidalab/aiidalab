@@ -396,7 +396,8 @@ class _AiidaLabApp:
                 stdout.write(line)
             process.wait()
             if process.returncode != 0:
-                raise RuntimeError("Failed to install dependencies.")
+                msg = "pip failed to install dependencies"
+                raise RuntimeError(msg)
 
             # AiiDA plugins require reentry run to be found by AiiDA.
             if _should_run_reentry():
