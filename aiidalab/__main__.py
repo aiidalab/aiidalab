@@ -470,7 +470,12 @@ def install(
     is_flag=True,
     help="Ignore all warnings and perform potentially dangerous operations anyways.",
 )
-def uninstall(app_name, yes, dry_run, force):
+@click.option(
+    "--fully-remove",
+    is_flag=True,
+    help="Do not move application directory to ~/.trash.",
+)
+def uninstall(app_name, yes, dry_run, force, fully_remove):
     """Uninstall apps."""
     from .config import AIIDALAB_APPS
 
@@ -545,7 +550,7 @@ def uninstall(app_name, yes, dry_run, force):
                         f"Would uninstall '{app.name}' ('{app.path!s}').", err=True
                     )
                 else:
-                    app.uninstall()
+                    app.uninstall(move_to_trash=not fully_remove)
                     click.echo(
                         f"Uninstalled '{app.name}' ('{app.path!s}').",
                         err=True,

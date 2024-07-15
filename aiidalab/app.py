@@ -258,8 +258,11 @@ class _AiidaLabApp:
         self._move_to_trash()
         trash_path.rename(self.path)
 
-    def uninstall(self) -> None:
-        self._move_to_trash()
+    def uninstall(self, move_to_trash: bool = True) -> None:
+        if move_to_trash:
+            self._move_to_trash()
+        else:
+            shutil.rmtree(self.path)
 
     def find_matching_releases(self, specifier, prereleases=None):
         matching_releases = list(

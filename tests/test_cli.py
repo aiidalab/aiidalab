@@ -128,7 +128,9 @@ def test_install_uninstall(aiidalab_env, static_path):
     assert app_name in result.output, result.output
 
     runner = CliRunner(env=aiidalab_env)
-    result = runner.invoke(cli.cli, ["-v", "uninstall", "--yes", app_name])
+    result = runner.invoke(
+        cli.cli, ["-v", "uninstall", "--fully-remove", "--yes", app_name]
+    )
 
     assert result.exit_code == 0, result.output
     assert f"Uninstalled '{app_name}'" in result.output, result.output
