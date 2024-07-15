@@ -473,6 +473,7 @@ def install(
 @click.option(
     "--fully-remove",
     is_flag=True,
+    hidden=True,
     help="Do not move application directory to ~/.trash.",
 )
 def uninstall(app_name, yes, dry_run, force, fully_remove):
