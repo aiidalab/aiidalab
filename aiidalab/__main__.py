@@ -450,7 +450,8 @@ def install(
                     python_bin=python_bin,
                 )
             except RuntimeError as error:
-                raise click.ClickException(error)
+                msg = f"{error}\nHint: Use `aiidalab -v install` to display full stack trace"
+                raise click.ClickException(msg)
             else:
                 click.secho(f"Installed '{app.name}' version '{version}'.", fg="green")
 
