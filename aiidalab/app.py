@@ -26,7 +26,7 @@ from uuid import uuid4
 import requests
 import traitlets
 from dulwich.errors import NotGitRepository
-from packaging.requirements import Requirement
+from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
 from watchdog.events import EVENT_TYPE_OPENED, FileSystemEventHandler
 from watchdog.observers import Observer
@@ -192,14 +192,20 @@ class _AiidaLabApp:
         """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered():
             for version in sorted(self.releases, key=parse, reverse=True):
-                version_requirements = [
-                    Requirement(r)
-                    for r in (
-                        self.releases[version]
-                        .get("environment", {})
-                        .get("python_requirements", [])
-                    )
-                ]
+                version_requirements = []
+                # TODO: Make this into a function and reuse it everywhere
+                # Or rather, parse the requirements in the Environment class
+                for req in (
+                    self.releases[version]
+                    .get("environment", {})
+                    .get("python_requirements", [])
+                ):
+                    try:
+                        parsed_req = Requirement(req)
+                    except InvalidRequirement:
+                        continue
+                    else:
+                        version_requirements.append(parsed_req)
                 if (
                     prereleases or not parse(version).is_prerelease
                 ) and self._strict_dependencies_met(version_requirements, python_bin):
@@ -298,12 +304,18 @@ class _AiidaLabApp:
         requirements: list[str], python_bin: str
     ) -> Generator[Requirement, None, None]:
         packages = find_installed_packages(python_bin)
-        for requirement in map(Requirement, requirements):
-            pkg = get_package_by_name(packages, requirement.name)
+        # TODO: Perhaps this function should accept list[Requirement]
+        for req in requirements:
+            try:
+                parsed_req = Requirement(req)
+            except InvalidRequirement:
+                # TODO: Log an error
+                pass
+            pkg = get_package_by_name(packages, parsed_req.name)
             if pkg is None:
-                yield requirement
-            elif not pkg.fulfills(requirement):
-                yield requirement
+                yield parsed_req
+            elif not pkg.fulfills(parsed_req):
+                yield parsed_req
 
     def is_detached(self) -> bool:
         """Check whether the app is detached from the registry."""

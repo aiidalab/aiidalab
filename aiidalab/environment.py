@@ -44,6 +44,7 @@ class Environment:
     detect whether a given environment is meeting the specification.
     """
 
+    # TODO: The type should be list[Requirement], so that we parse only once.
     python_requirements: list[str] = field(default_factory=list)
 
     @staticmethod
