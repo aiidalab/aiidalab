@@ -26,7 +26,7 @@ from uuid import uuid4
 import requests
 import traitlets
 from dulwich.errors import NotGitRepository
-from packaging.requirements import Requirement
+from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
 from watchdog.events import EVENT_TYPE_OPENED, FileSystemEventHandler
 from watchdog.observers import Observer
@@ -149,6 +149,18 @@ class _AiidaLabApp:
         except NotGitRepository:
             return None
 
+    def parse_python_requirements(self, requirements: list[str]) -> list[Requirement]:
+        parsed_reqs = []
+        for req in requirements:
+            try:
+                parsed_req = Requirement(req)
+            except InvalidRequirement:
+                logger.warning(f"{self.name} app: Invalid requirement '{req}'")
+                continue
+            else:
+                parsed_reqs.append(parsed_req)
+        return parsed_reqs
+
     def installed_version(self) -> AppVersion | str:
         def get_version_from_metadata() -> AppVersion | str:
             version = self.metadata.get("version")
@@ -192,14 +204,11 @@ class _AiidaLabApp:
         """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered():
             for version in sorted(self.releases, key=parse, reverse=True):
-                version_requirements = [
-                    Requirement(r)
-                    for r in (
-                        self.releases[version]
-                        .get("environment", {})
-                        .get("python_requirements", [])
-                    )
-                ]
+                version_requirements = self.parse_python_requirements(
+                    self.releases[version]
+                    .get("environment", {})
+                    .get("python_requirements", [])
+                )
                 if (
                     prereleases or not parse(version).is_prerelease
                 ) and self._strict_dependencies_met(version_requirements, python_bin):
@@ -297,10 +306,10 @@ class _AiidaLabApp:
 
     @staticmethod
     def _find_incompatibilities_python(
-        requirements: list[str], python_bin: str
+        requirements: list[Requirement], python_bin: str
     ) -> Generator[Requirement, None, None]:
         packages = find_installed_packages(python_bin)
-        for requirement in map(Requirement, requirements):
+        for requirement in requirements:
             pkg = get_package_by_name(packages, requirement.name)
             if pkg is None:
                 yield requirement
@@ -331,9 +340,10 @@ class _AiidaLabApp:
 
         for key, spec in environment.items():
             if key == "python_requirements":
+                requirements = self.parse_python_requirements(spec)
                 yield from zip(
                     repeat("python"),
-                    self._find_incompatibilities_python(spec, python_bin),
+                    self._find_incompatibilities_python(requirements, python_bin),
                 )
             else:
                 raise ValueError(f"Unknown eco-system '{key}'")
