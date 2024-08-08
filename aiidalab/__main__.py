@@ -433,28 +433,27 @@ def install(
         ],
         headers=["App", "Version", "Path"],
     )
-    click.echo(f"Would install:\n\n{indent(apps_table, '  ')}\n")
+    click.echo(f"Installation plan:\n\n{indent(apps_table, '  ')}\n")
     if yes or click.confirm("Proceed?", default=True):
         for app, version in install_candidates.values():
-            if version is not None:
-                if dry_run:
-                    click.secho(
-                        f"Would install '{app.name}' version '{version}'.", fg="green"
-                    )
-                else:
-                    try:
-                        app.install(
-                            version=version,
-                            install_dependencies=dependencies == "install",
-                            python_bin=python_bin,
-                        )
-                    except RuntimeError as error:
-                        click.secho(f"Error: {error}", fg="red")
-                        break
-                    else:
-                        click.secho(
-                            f"Installed '{app.name}' version '{version}'.", fg="green"
-                        )
+            if version is None:
+                continue
+            if dry_run:
+                click.secho(
+                    f"Would install '{app.name}' version '{version}'.", fg="green"
+                )
+                continue
+            try:
+                app.install(
+                    version=version,
+                    install_dependencies=dependencies == "install",
+                    python_bin=python_bin,
+                )
+            except RuntimeError as error:
+                msg = f"{error}\nHint: Use `aiidalab -v install` to display full stack trace"
+                raise click.ClickException(msg)
+            else:
+                click.secho(f"Installed '{app.name}' version '{version}'.", fg="green")
 
 
 @cli.command()
@@ -472,7 +471,13 @@ def install(
     is_flag=True,
     help="Ignore all warnings and perform potentially dangerous operations anyways.",
 )
-def uninstall(app_name, yes, dry_run, force):
+@click.option(
+    "--fully-remove",
+    is_flag=True,
+    hidden=True,
+    help="Do not move application directory to ~/.trash.",
+)
+def uninstall(app_name, yes, dry_run, force, fully_remove):
     """Uninstall apps."""
     from .config import AIIDALAB_APPS
 
@@ -547,7 +552,7 @@ def uninstall(app_name, yes, dry_run, force):
                         f"Would uninstall '{app.name}' ('{app.path!s}').", err=True
                     )
                 else:
-                    app.uninstall()
+                    app.uninstall(move_to_trash=not fully_remove)
                     click.echo(
                         f"Uninstalled '{app.name}' ('{app.path!s}').",
                         err=True,
