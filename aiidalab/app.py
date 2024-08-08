@@ -38,8 +38,6 @@ from aiidalab.utils import (
     PEP508CompliantUrl,
     find_installed_packages,
     get_package_by_name,
-    load_app_registry_entry,
-    load_app_registry_index,
     run_pip_install,
     run_post_install_script,
     run_verdi_daemon_restart,
@@ -48,7 +46,6 @@ from aiidalab.utils import (
     throttled,
 )
 
-from .config import AIIDALAB_APPS
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
@@ -119,6 +116,9 @@ class _AiidaLabApp:
         registry_entry: dict[str, Any] | None = None,
         apps_path: str | None = None,
     ) -> _AiidaLabApp:
+        from .config import AIIDALAB_APPS
+        from .utils import load_app_registry_entry
+
         if apps_path is None:
             apps_path = AIIDALAB_APPS
 
@@ -132,6 +132,8 @@ class _AiidaLabApp:
         return cls.from_registry_entry(path=app_path, registry_entry=registry_entry)
 
     def is_registered(self) -> bool | None:
+        from .utils import load_app_registry_index
+
         try:
             app_registry_index = load_app_registry_index()
         except RuntimeError as error:
@@ -247,7 +249,7 @@ class _AiidaLabApp:
         trash_path = Path.home().joinpath(".trash", f"{self.name}-{uuid4()!s}")
         if self.path.exists():
             trash_path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.rename(trash_path)
+            shutil.move(self.path, trash_path)
             return trash_path
         return None
 
@@ -255,8 +257,11 @@ class _AiidaLabApp:
         self._move_to_trash()
         trash_path.rename(self.path)
 
-    def uninstall(self) -> None:
-        self._move_to_trash()
+    def uninstall(self, move_to_trash: bool = True) -> None:
+        if move_to_trash:
+            self._move_to_trash()
+        else:
+            shutil.rmtree(self.path)
 
     def find_matching_releases(self, specifier, prereleases=None):
         matching_releases = list(
@@ -376,7 +381,8 @@ class _AiidaLabApp:
                 stdout.write(line)
             process.wait()
             if process.returncode != 0:
-                raise RuntimeError("Failed to install dependencies.")
+                msg = "pip failed to install dependencies"
+                raise RuntimeError(msg)
 
             # Restarting the AiiDA daemon to import newly installed plugins.
             # TODO: Skip this if verdi is not available (useful for testing).
@@ -548,9 +554,9 @@ class _AiidaLabApp:
             except RuntimeError:
                 logger.exception("Rollback failed! Consider re-installing the app.")
             finally:
-                raise RuntimeError(
-                    f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
-                ) from error
+                logger.info("Full stack trace", exc_info=True)
+                msg = f"Failed to install '{self.name}' (version={version}) at '{self.path}'"
+                raise RuntimeError(msg) from error
 
 
 class AppNotInstalledException(Exception):  # noqa: N818

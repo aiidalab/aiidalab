@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 # To learn more about testing Click applications see
@@ -79,6 +81,61 @@ def test_info_from_envvars(aiidalab_env):
     assert result.exit_code == 0
     assert aiidalab_env["AIIDALAB_REGISTRY"] in result.output
     assert aiidalab_env["AIIDALAB_APPS"] in result.output
+
+
+def test_dry_install(aiidalab_env, static_path):
+    """
+    Test `aiidalab install --dry-run`.
+    """
+    app_path = static_path / "app_with_setupcfg"
+    app = f"hello-world @ file://{app_path}"
+
+    runner = CliRunner(env=aiidalab_env)
+    result = runner.invoke(cli.cli, ["-v", "install", "--dry-run", "--yes", app])
+
+    assert result.exit_code == 0, result.output
+    assert "Would install" in result.output, result.output
+
+    runner = CliRunner(env=aiidalab_env)
+    result = runner.invoke(cli.cli, ["list"])
+
+    assert result.exit_code == 0, result.output
+    assert "No apps installed" in result.output, result.output
+
+
+def test_install_uninstall(aiidalab_env, static_path):
+    """
+    Test `aiidalab install` followed by `aiidalab uninstall`.
+    """
+    aiidalab_apps = Path(aiidalab_env["AIIDALAB_APPS"])
+    app_name = "hello-world"
+    app_path = static_path / "app_with_setupcfg"
+    app_req = f"{app_name} @ file://{app_path}"
+
+    runner = CliRunner(env=aiidalab_env)
+    result = runner.invoke(cli.cli, ["-v", "install", "--yes", app_req])
+
+    assert result.exit_code == 0, result.output
+    assert f"Installed '{app_name}'" in result.output, result.output
+
+    installed_app = Path(aiidalab_apps / app_name)
+    assert installed_app.is_dir()
+
+    runner = CliRunner(env=aiidalab_env)
+    result = runner.invoke(cli.cli, ["list"])
+
+    assert result.exit_code == 0, result.output
+    assert app_name in result.output, result.output
+
+    runner = CliRunner(env=aiidalab_env)
+    result = runner.invoke(
+        cli.cli, ["-v", "uninstall", "--fully-remove", "--yes", app_name]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert f"Uninstalled '{app_name}'" in result.output, result.output
+
+    assert not installed_app.exists()
 
 
 @pytest.mark.registry
