@@ -1,0 +1,25 @@
+---
+# Configuration for automatically generated release notes:
+# https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes#configuring-automatically-generated-release-notes
+# We exclude PRs from bots and categorize PRs based on labels
+changelog:
+    exclude:
+        authors:
+            - dependabot
+            - pre-commit-ci
+    categories:
+        - title: Breaking Changes 🛠
+          labels:
+              - breaking
+        - title: New Features 🎉
+          labels:
+              - enhancement
+        - title: Bug fixes 🐛
+          labels:
+              - bug
+        - title: Documentation 📝
+          labels:
+              - documentation
+        - title: Other Changes
+          labels:
+              - '*'
