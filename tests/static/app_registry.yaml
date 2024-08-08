@@ -82,3 +82,5 @@ releases:
             title: Quantum ESPRESSO
             version: 23.1.0b1
         url: git+https://github.com/aiidalab/aiidalab-qe.git@d89b58390c0a691bf16dfaa50036bc290fca017c
+    invalid_version:
+        url: git+https://github.com/aiidalab/aiidalab-qe.git@d89b58390c0a691bf16dfaa50036bc290fca017c

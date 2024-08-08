@@ -6,7 +6,6 @@ from copy import deepcopy
 from dataclasses import asdict
 
 import jsonschema
-from packaging.version import parse
 
 from . import util
 from .releases import gather_releases
@@ -36,18 +35,24 @@ def _migrate_app_data(app_data):
 
 
 def _fetch_app_data(app_id, app_data, scan_app_repository):
+    from packaging.version import InvalidVersion, parse
+
     # Gather all release data.
     _migrate_app_data(app_data)
 
     app_data["name"] = _determine_app_name(app_id)
-    app_data["releases"] = {
-        version: asdict(release)
-        for version, release in gather_releases(app_data, scan_app_repository)
-    }
+    app_data["releases"] = {}
+    for version, release in gather_releases(app_data, scan_app_repository):
+        try:
+            parse(version)
+        except InvalidVersion:
+            continue
+        else:
+            app_data["releases"][version] = asdict(release)
     if len(app_data["releases"]):
-        # Sort all releases semantically to determine the latest version.
-        latest_version = sorted(app_data["releases"], key=parse, reverse=True)[0]
+        # Sort all releases semantically to determine the latest version (including pre-releases).
         # The metadata of the latest release is considered authoritative for the whole app.
+        latest_version = sorted(app_data["releases"], key=parse, reverse=True)[0]
         app_data["metadata"] = app_data["releases"][latest_version]["metadata"]
         return app_data
 
