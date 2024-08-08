@@ -2,9 +2,7 @@
 [![codecov](https://codecov.io/gh/aiidalab/aiidalab/branch/main/graph/badge.svg)](https://codecov.io/gh/aiidalab/aiidalab)
 # AiiDAlab package
 
-The `aiidalab` package sets up the python environment found on the
-[AiiDAlab](https://www.aiidalab.net).
-
+The `aiidalab` package manages [AiiDAlab](https://www.aiidalab.net) applications within the [AiiDAlab Docker stack](https://github.com/aiidalab/aiidalab-docker-stack). It contains API and CLI interface to install/uninstall apps from the [AiiDAlab App registry](https://aiidalab.github.io/aiidalab-registry/) or directly from Git repositories. It also contains the code for building the App Registry, although the actual registry data are housed and deployed in a [aiidalab-registry repository](https://github.com/aiidalab/aiidalab-registry).
 
 ## Installation
 
@@ -54,7 +52,7 @@ aiidalab@materialscloud.org
 
 This work is supported by the [MARVEL National Centre for Competency in Research](<https://nccr-marvel.ch>)
 funded by the [Swiss National Science Foundation](<https://www.snf.ch/en>), as well as by the [MaX
-European Centre of Excellence](<http://www.max-centre.eu/>) funded by the Horizon 2020 EINFRA-5 program,
+European Centre of Excellence](https://www.max-centre.eu/) funded by the Horizon 2020 EINFRA-5 program,
 Grant No. 676598.
 
 ![MARVEL](miscellaneous/logos/MARVEL.png)

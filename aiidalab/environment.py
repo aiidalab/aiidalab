@@ -46,8 +46,6 @@ class Environment:
 
     python_requirements: list[str] = field(default_factory=list)
 
-    _FILES = ("requirements.txt",)
-
     @staticmethod
     def _scan(path: Path | GitPath) -> Generator[Any, None, None]:
         def _parse_reqs(requirements: str) -> Generator[str, None, None]:

@@ -244,14 +244,6 @@ def run_pip_install(*args: Any, python_bin: str) -> Any:
     )
 
 
-def run_reentry_scan() -> Any:
-    return subprocess.Popen(
-        ["reentry", "scan"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-
-
 def run_verdi_daemon_restart() -> Any:
     # When installing or updating a plugin package, one needs to
     # restart the daemon with the ``--reset`` flag for changes to take effect.
@@ -269,6 +261,8 @@ def run_post_install_script(post_install_script_path: Path) -> Any:
     return subprocess.Popen(
         f"./{post_install_script_path.resolve().stem}",
         cwd=post_install_script_path.resolve().parent,
+        # TODO: We should redirect to a file (maybe post_install.out?"
+        # Otherwise any errors are impossible to debug.
         stdout=subprocess.DEVNULL,
         stderr=subprocess.STDOUT,
     )

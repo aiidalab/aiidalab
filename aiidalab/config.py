@@ -48,10 +48,13 @@ def _get_config_value(key: str, default: Optional[str] = None) -> Any:
     return getenv(_as_env_var_name(key), _CONFIG.get(key, default))
 
 
-AIIDALAB_HOME = _get_config_value("home", "/project")
 AIIDALAB_APPS = _get_config_value("apps", "/project/apps")
-AIIDALAB_SCRIPTS = _get_config_value("scripts", "/opt")
 AIIDALAB_REGISTRY = _get_config_value(
     "registry", "https://aiidalab.github.io/aiidalab-registry/api/v1"
 )
+# All the variables below are currently not used.
+# The README in the aiidalab-home home app states that AIIDALAB_HOME
+# is searched for SSH credentials, but that doesn't seem to be the case.
+AIIDALAB_HOME = _get_config_value("home", "/project")
+AIIDALAB_SCRIPTS = _get_config_value("scripts", "/opt")
 AIIDALAB_DEFAULT_GIT_BRANCH = _get_config_value("default_git_branch", "master")

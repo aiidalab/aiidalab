@@ -13,11 +13,7 @@ from pathlib import Path
 from textwrap import indent, wrap
 
 import click
-import pkg_resources
-import requests_mock
 from click_spinner import spinner
-from jsonref import JsonRefError
-from jsonschema.exceptions import RefResolutionError, ValidationError
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
 from tabulate import tabulate
@@ -25,10 +21,8 @@ from tabulate import tabulate
 from . import __version__
 from .app import AppVersion
 from .app import _AiidaLabApp as AiidaLabApp
-from .config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 from .fetch import fetch_from_url
 from .metadata import Metadata
-from .registry import build as build_registry
 from .utils import PEP508CompliantUrl, load_app_registry_index
 from .utils import parse_app_repo as _parse_app_repo
 
@@ -79,6 +73,8 @@ def cli(verbose):
 @cli.command()
 def info():
     """Show information about the AiiDAlab configuration."""
+    from aiidalab.config import AIIDALAB_APPS, AIIDALAB_REGISTRY
+
     click.echo(f"AiiDAlab, version {__version__}")
     click.echo(f"Apps path:      {Path(AIIDALAB_APPS).resolve()}")
     click.echo(f"Apps registry:  {AIIDALAB_REGISTRY}")
@@ -167,6 +163,7 @@ def list_apps():
 
     This command will list all apps, their version, and their full path.
     """
+    from .config import AIIDALAB_APPS
 
     apps = list(_list_apps(Path(AIIDALAB_APPS)))
     if len(apps) > 0:
@@ -333,7 +330,7 @@ def _find_version_to_install(
 
 
 @cli.command()
-@click.argument("app-requirement", nargs=-1)
+@click.argument("app-requirements", nargs=-1)
 @click.option("--yes", is_flag=True, help="Do not prompt for confirmation.")
 @click.option(
     "-n",
@@ -380,7 +377,7 @@ def _find_version_to_install(
     help="Include prereleases among the candidates for installation.",
 )
 def install(
-    app_requirement, yes, dry_run, force, dependencies, python_bin, prereleases
+    app_requirements, yes, dry_run, force, dependencies, python_bin, prereleases
 ):
     """Install apps.
 
@@ -407,7 +404,7 @@ def install(
                 python_bin=python_bin,
                 prereleases=prereleases,
             )
-            for requirement in map(_parse_requirement, set(app_requirement))
+            for requirement in map(_parse_requirement, set(app_requirements))
         }
 
     if all(version is None for (_, version) in install_candidates.values()):
@@ -436,28 +433,27 @@ def install(
         ],
         headers=["App", "Version", "Path"],
     )
-    click.echo(f"Would install:\n\n{indent(apps_table, '  ')}\n")
+    click.echo(f"Installation plan:\n\n{indent(apps_table, '  ')}\n")
     if yes or click.confirm("Proceed?", default=True):
         for app, version in install_candidates.values():
-            if version is not None:
-                if dry_run:
-                    click.secho(
-                        f"Would install '{app.name}' version '{version}'.", fg="green"
-                    )
-                else:
-                    try:
-                        app.install(
-                            version=version,
-                            install_dependencies=dependencies == "install",
-                            python_bin=python_bin,
-                        )
-                    except RuntimeError as error:
-                        click.secho(f"Error: {error}", fg="red")
-                        break
-                    else:
-                        click.secho(
-                            f"Installed '{app.name}' version '{version}'.", fg="green"
-                        )
+            if version is None:
+                continue
+            if dry_run:
+                click.secho(
+                    f"Would install '{app.name}' version '{version}'.", fg="green"
+                )
+                continue
+            try:
+                app.install(
+                    version=version,
+                    install_dependencies=dependencies == "install",
+                    python_bin=python_bin,
+                )
+            except RuntimeError as error:
+                msg = f"{error}\nHint: Use `aiidalab -v install` to display full stack trace"
+                raise click.ClickException(msg)
+            else:
+                click.secho(f"Installed '{app.name}' version '{version}'.", fg="green")
 
 
 @cli.command()
@@ -475,8 +471,16 @@ def install(
     is_flag=True,
     help="Ignore all warnings and perform potentially dangerous operations anyways.",
 )
-def uninstall(app_name, yes, dry_run, force):
+@click.option(
+    "--fully-remove",
+    is_flag=True,
+    hidden=True,
+    help="Do not move application directory to ~/.trash.",
+)
+def uninstall(app_name, yes, dry_run, force, fully_remove):
     """Uninstall apps."""
+    from .config import AIIDALAB_APPS
+
     with _spinner_with_message("Collecting apps to uninstall... "):
         apps_to_uninstall = [
             (path, name, app)
@@ -548,7 +552,7 @@ def uninstall(app_name, yes, dry_run, force):
                         f"Would uninstall '{app.name}' ('{app.path!s}').", err=True
                     )
                 else:
-                    app.uninstall()
+                    app.uninstall(move_to_trash=not fully_remove)
                     click.echo(
                         f"Uninstalled '{app.name}' ('{app.path!s}').",
                         err=True,
@@ -557,6 +561,9 @@ def uninstall(app_name, yes, dry_run, force):
 
 @contextmanager
 def _mock_schemas_endpoints():
+    import pkg_resources
+    import requests_mock
+
     schema_paths = [
         path
         for path in pkg_resources.resource_listdir(f"{__package__}.registry", "schemas")
@@ -683,6 +690,11 @@ def build(
 
         build --apps=apps.yaml --categories=categories.yaml --out=./build/
     """
+    from jsonref import JsonRefError
+    from jsonschema.exceptions import RefResolutionError, ValidationError
+
+    from .registry import build as build_registry
+
     if any(path and Path(path).is_absolute() for path in (html_path, api_path)):
         raise click.ClickException("The html- and api-paths must be relative paths.")
 
