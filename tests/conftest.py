@@ -62,6 +62,43 @@ _MONKEYPATCHED_INSTALLED_PACKAGES = [
 ]
 
 
+@pytest.fixture(autouse=True, scope="function")
+def forbid_external_commands(monkeypatch):
+    """Don't allow running external commands such as `pip install` during tests.
+
+    Patch utils.run_* functions and raise an error if anybody tries to call it.
+    """
+
+    # Can't use lambda to raise an exception
+    def raise_exc(msg=""):
+        # NOTE: We use SystemExit which is derived from BaseException
+        # so that this is not accidentally caught in the code.
+        raise SystemExit(msg)
+
+    monkeypatch.setattr(
+        "aiidalab.utils.run_pip_install",
+        lambda python_bin: raise_exc("Running `pip install` not allowed in tests!"),  # noqa: ARG005
+    )
+
+    monkeypatch.setattr(
+        "aiidalab.utils.run_post_install_script",
+        lambda _: raise_exc("Running `./post_install` not allowed in tests!"),
+    )
+
+    monkeypatch.setattr(
+        "aiidalab.utils.run_verdi_daemon_restart",
+        lambda: raise_exc("Running `verdi daemon restart` not allowed in tests!"),
+    )
+
+    # TODO: Enable this once the existing tests don't use it
+    """
+    monkeypatch.setattr(
+        "aiidalab.utils.load_app_registry_index",
+        lambda: raise_exc("Running fetching registry index not allowed in tests!"),
+    )
+    """
+
+
 @pytest.fixture
 def installed_packages(monkeypatch):
     """change the return of pip_list.
