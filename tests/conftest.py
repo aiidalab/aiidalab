@@ -8,7 +8,7 @@ from ruamel.yaml import YAML
 def static_path():
     import importlib.resources
 
-    return importlib.resources.files() / "static"
+    return importlib.resources.files(__name__) / "static"
 
 
 @pytest.fixture(scope="session")
