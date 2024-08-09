@@ -20,6 +20,7 @@ import requests
 from cachetools import TTLCache, cached
 from packaging.requirements import Requirement
 from packaging.utils import NormalizedName, canonicalize_name
+from requests_cache import CachedSession
 
 from .config import AIIDALAB_REGISTRY
 from .environment import Environment
@@ -29,37 +30,22 @@ from .metadata import Metadata
 logger = logging.getLogger(__name__)
 FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)  # type: ignore
 
-# Warning: try-except is a fix for Quantum Mobile release v19.03.0 where
-# requests_cache is not installed.
-try:
-    import requests_cache
-except ImportError:
-    logger.warning(
-        "The requests_cache package is missing.  Requests made to the app "
-        "registry will not be cached!"
-    )
-else:
-    # Install global cache for all requests.
-
-    # The cache file is placed within the user home directory.
-    cache_file = Path.home().joinpath(".cache", "requests", "cache")
-    cache_file.parent.mkdir(parents=True, exist_ok=True)
-
-    # The cache is configured to avoid spamming the index server with requests
-    # that are made in rapid succession and also serves as a fallback in case
-    # that the index server is not reachable.
-    requests_cache.install_cache(
-        cache_name=str(cache_file),
-        backend="sqlite",
-        expire_after=60,  # seconds
-        old_data_on_error=True,
-    )
+# The cache is configured to avoid spamming the app registry server with requests
+# that are made in rapid succession and also serves as a fallback in case
+# that the index server is temporarily not reachable.
+session = CachedSession(
+    "aiidalab_registry",
+    use_cache_dir=True,  # store cache in ~/.cache/
+    backend="sqlite",
+    expire_after=60,  # seconds
+    old_data_on_error=True,
+)
 
 
 def load_app_registry_index() -> Any:
     """Load apps' information from the AiiDAlab registry."""
     try:
-        return requests.get(f"{AIIDALAB_REGISTRY}/apps_index.json").json()
+        return session.get(f"{AIIDALAB_REGISTRY}/apps_index.json").json()
     except (ValueError, requests.ConnectionError) as error:
         raise RuntimeError("Unable to load registry index") from error
 
@@ -67,7 +53,7 @@ def load_app_registry_index() -> Any:
 def load_app_registry_entry(app_id: str) -> Any:
     """Load registry enty for app with app_id."""
     try:
-        return requests.get(f"{AIIDALAB_REGISTRY}/apps/{app_id}.json").json()
+        return session.get(f"{AIIDALAB_REGISTRY}/apps/{app_id}.json").json()
     except (ValueError, requests.ConnectionError):
         logger.debug(f"Unable to load registry entry for app with id '{app_id}'.")
         return None
