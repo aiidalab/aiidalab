@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 import pytest
 from ruamel.yaml import YAML
@@ -6,9 +7,7 @@ from ruamel.yaml import YAML
 
 @pytest.fixture(scope="session")
 def static_path():
-    import importlib.resources
-
-    return importlib.resources.files(__name__) / "static"
+    return Path(__file__).parent.absolute() / "static"
 
 
 @pytest.fixture(scope="session")
