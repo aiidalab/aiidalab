@@ -33,27 +33,27 @@ FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)  # type: ignore
 # The cache is configured to avoid spamming the app registry server with requests
 # that are made in rapid succession and also serves as a fallback in case
 # that the index server is temporarily not reachable.
-session = CachedSession(
+_session = CachedSession(
     "aiidalab_registry",
     use_cache_dir=True,  # store cache in ~/.cache/
     backend="sqlite",
     expire_after=60,  # seconds
-    old_data_on_error=True,
+    stale_if_error=True,
 )
 
 
 def load_app_registry_index() -> Any:
     """Load apps' information from the AiiDAlab registry."""
     try:
-        return session.get(f"{AIIDALAB_REGISTRY}/apps_index.json").json()
+        return _session.get(f"{AIIDALAB_REGISTRY}/apps_index.json").json()
     except (ValueError, requests.ConnectionError) as error:
         raise RuntimeError("Unable to load registry index") from error
 
 
 def load_app_registry_entry(app_id: str) -> Any:
-    """Load registry enty for app with app_id."""
+    """Load registry entry for app with app_id."""
     try:
-        return session.get(f"{AIIDALAB_REGISTRY}/apps/{app_id}.json").json()
+        return _session.get(f"{AIIDALAB_REGISTRY}/apps/{app_id}.json").json()
     except (ValueError, requests.ConnectionError):
         logger.debug(f"Unable to load registry entry for app with id '{app_id}'.")
         return None
