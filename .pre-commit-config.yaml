@@ -44,6 +44,8 @@ repos:
                 - types-cachetools
                 - types-requests
                 - types-toml
+                - types-click
+          #- packaging
             exclude: >-
                 (?x)^(
                   docs/.*|

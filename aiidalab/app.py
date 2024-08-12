@@ -205,9 +205,11 @@ class _AiidaLabApp:
                 ) and self._strict_dependencies_met(version_requirements, python_bin):
                     yield version
 
-    def dirty(self):
+    def dirty(self) -> bool | None:
         if self._repo:
             return self._repo.dirty()
+        else:
+            return None
 
     def is_installed(self) -> bool:
         """The app is installed if the corresponding folder is present."""
@@ -309,7 +311,9 @@ class _AiidaLabApp:
         """Check whether the app is detached from the registry."""
         return self.remote_update_status() == AppRemoteUpdateStatus.DETACHED
 
-    def find_incompatibilities(self, version, python_bin=None):
+    def find_incompatibilities(
+        self, version: str, python_bin: str | None = None
+    ) -> Generator[tuple[str, Requirement], None, None]:
         """Compatibility is checked by comparing the app requirements
         with the packages installed in the python environment.
 
@@ -334,7 +338,7 @@ class _AiidaLabApp:
             else:
                 raise ValueError(f"Unknown eco-system '{key}'")
 
-    def is_compatible(self, version, python_bin=None):
+    def is_compatible(self, version: str, python_bin: str | None = None) -> bool:
         return not any(self.find_incompatibilities(version, python_bin))
 
     def find_dependencies_to_install(
@@ -367,10 +371,10 @@ class _AiidaLabApp:
             for name, requirement in unmatched_dependencies.items()
         ]
 
-    def _install_dependencies(self, python_bin, stdout):
+    def _install_dependencies(self, python_bin: str, stdout: Any) -> None:
         """Try to install the app dependencies with pip (if specified)."""
 
-        def _pip_install(*args, stdout):
+        def _pip_install(*args: str, stdout: Any) -> None:
             # The implementation of this function is taken and adapted from:
             # https://www.endpoint.com/blog/2015/01/getting-realtime-output-using-python/
 
@@ -436,14 +440,14 @@ class _AiidaLabApp:
                 )
                 raise CalledProcessError(process.returncode, str(post_install_file))
 
-    def _install_from_path(self, path):
+    def _install_from_path(self, path: Path) -> None:
         if path.is_dir():
             shutil.copytree(this_or_only_subdir(path), self.path)
         else:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 with tarfile.open(path) as tar_file:
 
-                    def is_within_directory(directory, target):
+                    def is_within_directory(directory: Any, target: Any) -> Any:
                         abs_directory = os.path.abspath(directory)
                         abs_target = os.path.abspath(target)
 
@@ -451,20 +455,18 @@ class _AiidaLabApp:
 
                         return prefix == abs_directory
 
-                    def safe_extract(
-                        tar, path=".", members=None, *, numeric_owner=False
-                    ):
+                    def safe_extract(tar: Any, path: Any) -> None:
                         for member in tar.getmembers():
                             member_path = os.path.join(path, member.name)
                             if not is_within_directory(path, member_path):
                                 raise Exception("Attempted Path Traversal in Tar File")  # noqa: TRY002
 
-                        tar.extractall(path, members, numeric_owner=numeric_owner)
+                        tar.extractall(path)
 
                     safe_extract(tar_file, path=tmp_dir)
                     self._install_from_path(Path(tmp_dir))
 
-    def _install_from_https(self, url):
+    def _install_from_https(self, url: str) -> None:
         response = requests.get(url, stream=True)
         response.raise_for_status()
         content = response.content
@@ -474,7 +476,7 @@ class _AiidaLabApp:
             tmp_file.flush()
             self._install_from_path(Path(tmp_file.name))
 
-    def _install_from_git_repository(self, git_url):
+    def _install_from_git_repository(self, git_url: str) -> None:
         if urldefrag(git_url).fragment:
             raise NotImplementedError(
                 "Path specification via fragment not yet supported."
@@ -484,13 +486,13 @@ class _AiidaLabApp:
 
     def install(
         self,
-        version=None,
-        python_bin=None,
-        install_dependencies=True,
-        stdout=sys.stdout,
-        prereleases=False,
-        post_install_triggers=True,
-    ):
+        version: str | None = None,
+        python_bin: str | None = None,
+        install_dependencies: bool = True,
+        stdout: Any = sys.stdout,
+        prereleases: bool = False,
+        post_install_triggers: bool = True,
+    ) -> None:
         if version is None:
             try:
                 version = [
@@ -580,7 +582,7 @@ class AiidaLabAppWatch:
     class AppPathFileSystemEventHandler(FileSystemEventHandler):  # type: ignore
         """Internal event handeler for app path file system events."""
 
-        def __init__(self, app):
+        def __init__(self, app: AiidaLabApp):
             self.app = app
 
         def on_any_event(self, event):
@@ -588,12 +590,12 @@ class AiidaLabAppWatch:
             if event.event_type != EVENT_TYPE_OPENED:
                 self.app.refresh_async()
 
-    def __init__(self, app):
+    def __init__(self, app: AiidaLabApp):
         self.app = app
 
         self._started = False
-        self._monitor_thread = None
-        self._observer = None
+        self._monitor_thread: Thread | None = None
+        self._observer: Observer | None = None
         self._monitor_thread_stop = threading.Event()
 
     def __repr__(self) -> str:
@@ -674,7 +676,7 @@ class AiidaLabAppWatch:
         if self._monitor_thread is not None:
             self._monitor_thread_stop.set()
 
-    def is_alive(self) -> bool | None:
+    def is_alive(self) -> bool | None | Thread:
         """Return True if this watch is still alive."""
         return self._monitor_thread and self._monitor_thread.is_alive()
 
@@ -824,11 +826,11 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
                 if self._busy_count == 0:
                     self.set_trait("busy", False)
 
-    def in_category(self, category):
+    def in_category(self, category: str) -> bool:
         # One should test what happens if the category won't be defined.
         return category in self.categories
 
-    def _has_git_repo(self):
+    def _has_git_repo(self) -> bool:
         """Check if the app has a .git folder in it."""
         try:
             Repo(self.path)
@@ -861,8 +863,8 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             self.refresh()
             return version
 
-    def uninstall_app(self, _=None):
-        """Perfrom app uninstall."""
+    def uninstall_app(self, _: Any = None) -> None:
+        """Uninstall application."""
         # Perform uninstall process.
         with self._show_busy():
             self._app.uninstall()
