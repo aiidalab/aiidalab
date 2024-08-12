@@ -93,6 +93,11 @@ def forbid_external_commands(monkeypatch):
         lambda: raise_exc("Fetching registry index not allowed in tests!"),
     )
 
+    monkeypatch.setattr(
+        "aiidalab.utils.load_app_registry_entry",
+        lambda _: raise_exc("Fetching app registry entry not allowed in tests!"),
+    )
+
 
 @pytest.fixture
 def installed_packages(monkeypatch):
