@@ -447,7 +447,7 @@ class _AiidaLabApp:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 with tarfile.open(path) as tar_file:
 
-                    def is_within_directory(directory: Any, target: Any) -> Any:
+                    def is_within_directory(directory: str, target: str) -> bool:
                         abs_directory = os.path.abspath(directory)
                         abs_target = os.path.abspath(target)
 
@@ -455,7 +455,7 @@ class _AiidaLabApp:
 
                         return prefix == abs_directory
 
-                    def safe_extract(tar: Any, path: Any) -> None:
+                    def safe_extract(tar: tarfile.TarFile, path: str) -> None:
                         for member in tar.getmembers():
                             member_path = os.path.join(path, member.name)
                             if not is_within_directory(path, member_path):
@@ -764,7 +764,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         else:
             self._watch = None  # type: ignore
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<AiidaLabApp name='{self._app.name}'>"
 
     @traitlets.default("include_prereleases")
