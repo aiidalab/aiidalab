@@ -31,7 +31,7 @@ select = [
 "tests/*" = ["ARG001"]
 
 [tool.pytest.ini_options]
-addopts = '--strict-config --strict-markers -ra'
+addopts = '--strict-config --strict-markers -ra --durations-min=1 --durations=10'
 markers = [
   'registry: Tests relating to AiiDAlab registry functionality',
 ]
