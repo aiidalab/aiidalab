@@ -863,7 +863,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             self.refresh()
             return version
 
-    def uninstall_app(self, _: Any = None) -> None:
+    def uninstall_app(self) -> None:
         """Uninstall application."""
         # Perform uninstall process.
         with self._show_busy():
