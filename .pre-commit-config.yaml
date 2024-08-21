@@ -45,6 +45,7 @@ repos:
                 - types-requests
                 - types-toml
                 - types-click
+                - traitlets~=5.0
             exclude: >-
                 (?x)^(
                   docs/.*|
