@@ -19,7 +19,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any, Generator
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
@@ -28,7 +28,7 @@ import traitlets
 from dulwich.errors import NotGitRepository
 from packaging.requirements import Requirement
 from packaging.version import parse
-from watchdog.events import EVENT_TYPE_OPENED, FileSystemEventHandler
+from watchdog.events import EVENT_TYPE_OPENED, FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
@@ -50,6 +50,9 @@ from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
 from .metadata import Metadata
+
+if TYPE_CHECKING:
+    from packaging.specifiers import SpecifierSet
 
 logger = logging.getLogger(__name__)
 
@@ -265,7 +268,10 @@ class _AiidaLabApp:
         else:
             shutil.rmtree(self.path)
 
-    def find_matching_releases(self, specifier, prereleases=None):
+    def find_matching_releases(
+        self, specifier: SpecifierSet, prereleases: bool | None = None
+    ) -> list[str]:
+        """TODO: Write a docstring"""
         matching_releases = list(
             specifier.filter(self.releases or [], prereleases=prereleases)
         )
@@ -585,7 +591,7 @@ class AiidaLabAppWatch:
         def __init__(self, app: AiidaLabApp):
             self.app = app
 
-        def on_any_event(self, event):
+        def on_any_event(self, event: FileSystemEvent) -> None:
             """Refresh app for any event except opened."""
             if event.event_type != EVENT_TYPE_OPENED:
                 self.app.refresh_async()
@@ -768,17 +774,17 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         return f"<AiidaLabApp name='{self._app.name}'>"
 
     @traitlets.default("include_prereleases")
-    def _default_include_prereleases(self):
+    def _default_include_prereleases(self):  # type: ignore[no-untyped-def]
         "Provide default value for include_prereleases trait." ""
         return False
 
     @traitlets.observe("include_prereleases")
-    def _observe_include_prereleases(self, change):
+    def _observe_include_prereleases(self, change):  # type: ignore[no-untyped-def]
         if change["old"] != change["new"]:
             self.refresh()
 
     @traitlets.default("detached")
-    def _default_detached(self):
+    def _default_detached(self):  # type: ignore[no-untyped-def]
         """Provide default value for detached traitlet."""
         if self.is_installed():
             return (
@@ -787,11 +793,11 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         return None
 
     @traitlets.default("busy")
-    def _default_busy(self):  # pylint: disable=no-self-use
+    def _default_busy(self):  # type: ignore[no-untyped-def]
         return False
 
     @traitlets.validate("version_to_install")
-    def _validate_version_to_install(self, proposal):
+    def _validate_version_to_install(self, proposal):  # type: ignore[no-untyped-def]
         """Validate the version to install."""
         with self._show_busy():
             if proposal["value"] is None:
@@ -804,12 +810,12 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             return proposal["value"]
 
     @traitlets.observe("version_to_install")
-    def _observe_version_to_install(self, change):
+    def _observe_version_to_install(self, change):  # type: ignore[no-untyped-def]
         if change["old"] != change["new"]:
             self.refresh()
 
     @contextmanager
-    def _show_busy(self):
+    def _show_busy(self) -> Generator[None, None, None]:
         """Apply this decorator to indicate that the app is busy during execution."""
         # we need to use a lock here, because the busy trait is not thread-safe
         # we may use _show_busy in different threads, e.g. when installing and auto-status refresh
@@ -949,7 +955,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         refresh_thread.start()
 
     @property
-    def metadata(self):
+    def metadata(self) -> dict[str, Any]:
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
         return self._app.metadata
 
