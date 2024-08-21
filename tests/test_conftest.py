@@ -8,6 +8,8 @@ def test_forbidden_functions():
     and other functions that might influence global environment.
     """
     from aiidalab.utils import (
+        load_app_registry_entry,
+        load_app_registry_index,
         run_pip_install,
         run_post_install_script,
         run_verdi_daemon_restart,
@@ -24,3 +26,9 @@ def test_forbidden_functions():
     with pytest.raises(SystemExit):
         process = run_post_install_script("post_install")
         process.wait()
+
+    with pytest.raises(SystemExit):
+        load_app_registry_index()
+
+    with pytest.raises(SystemExit):
+        load_app_registry_entry("app")

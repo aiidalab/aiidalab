@@ -103,10 +103,15 @@ def test_dry_install(aiidalab_env, static_path):
     assert "No apps installed" in result.output, result.output
 
 
-def test_install_uninstall(aiidalab_env, static_path):
+def test_install_uninstall(monkeypatch, aiidalab_env, static_path):
     """
     Test `aiidalab install` followed by `aiidalab uninstall`.
     """
+    monkeypatch.setattr(
+        "aiidalab.utils.load_app_registry_entry",
+        lambda _: None,
+    )
+
     aiidalab_apps = Path(aiidalab_env["AIIDALAB_APPS"])
     app_name = "hello-world"
     app_path = static_path / "app_with_setupcfg"

@@ -4,14 +4,9 @@ from pathlib import Path
 import pytest
 from ruamel.yaml import YAML
 
-from aiidalab.app import AiidaLabApp, _AiidaLabApp
-
 
 @pytest.fixture(scope="session")
 def static_path():
-    # TODO: Switch to importlib.resources once we drop support for Python 3.8
-    # import importlib.resources
-    # return importlib.resources.files() / "static"
     return Path(__file__).parent.absolute() / "static"
 
 
@@ -40,6 +35,8 @@ def generate_app(monkeypatch, app_registry_path):
         app_data=None,
         watch=False,
     ):
+        from aiidalab.app import AiidaLabApp, _AiidaLabApp
+
         if app_data is None:
             safe_yaml = YAML(typ="safe")
             with app_registry_path.open() as f:
@@ -49,6 +46,7 @@ def generate_app(monkeypatch, app_registry_path):
         # it is a installed app. Following monkeypatch make it more close
         # to the real scenario for test.
         monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
+        monkeypatch.setattr(_AiidaLabApp, "is_registered", lambda _: True)
         app = AiidaLabApp(name, app_data, aiidalab_apps_path, watch=watch)
 
         return app
@@ -90,13 +88,15 @@ def forbid_external_commands(monkeypatch):
         lambda: raise_exc("Running `verdi daemon restart` not allowed in tests!"),
     )
 
-    # TODO: Enable this once the existing tests don't use it
-    """
     monkeypatch.setattr(
         "aiidalab.utils.load_app_registry_index",
-        lambda: raise_exc("Running fetching registry index not allowed in tests!"),
+        lambda: raise_exc("Fetching registry index not allowed in tests!"),
     )
-    """
+
+    monkeypatch.setattr(
+        "aiidalab.utils.load_app_registry_entry",
+        lambda _: raise_exc("Fetching app registry entry not allowed in tests!"),
+    )
 
 
 @pytest.fixture

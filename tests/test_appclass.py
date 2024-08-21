@@ -6,7 +6,7 @@ from time import sleep
 import pytest
 import traitlets
 
-from aiidalab.app import AiidaLabApp, AiidaLabAppWatch, _AiidaLabApp
+from aiidalab.app import AiidaLabApp, AiidaLabAppWatch
 
 
 def test_init_refresh(generate_app):
@@ -45,10 +45,10 @@ def test_dependencies(generate_app):
 @pytest.mark.usefixtures("installed_packages")
 def test_app_is_not_registered(generate_app, monkeypatch, tmp_path):
     """test the app is not registered and the available versions are empty."""
-    # monkeypatch and make the app not registered
-    monkeypatch.setattr(_AiidaLabApp, "is_registered", lambda _: False)
 
     app: AiidaLabApp = generate_app()
+    # monkeypatch and make the app not registered
+    monkeypatch.setattr(app._app, "is_registered", lambda: False)
     app.refresh()
 
     assert app.is_installed() is True
