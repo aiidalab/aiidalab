@@ -769,7 +769,7 @@ class AiidaLabApp(traitlets.HasTraits):
         self.path = str(self._app.path)
         self.refresh_async()
 
-        self._watch: AiidaLabAppWatch | None = None
+        self._watch = None
         if watch:
             self._watch = AiidaLabAppWatch(self)
             self._watch.start()
