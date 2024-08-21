@@ -212,7 +212,7 @@ def get_package_by_name(packages: dict[str, Package], name: str) -> Package | No
     return None
 
 
-def split_git_url(git_url):  # type: ignore
+def split_git_url(git_url: str) -> tuple[str, str | None]:
     """Split the base url and the ref pointer of a git url.
 
     For example: git+https://example.com/app.git@v1 is split into and returned
