@@ -19,14 +19,13 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any, Generator
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
 import requests
 import traitlets
 from dulwich.errors import NotGitRepository
-from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
 from watchdog.events import EVENT_TYPE_OPENED, FileSystemEventHandler
 from watchdog.observers import Observer
@@ -50,6 +49,9 @@ from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
 from .metadata import Metadata
+
+if TYPE_CHECKING:
+    from packaging.requirements import Requirement
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +152,18 @@ class _AiidaLabApp:
             return None
 
     def parse_python_requirements(self, requirements: list[str]) -> list[Requirement]:
+        """Turn a list of python package requirements
+        from strings to packaging.Requirement instances.
+
+        Invalid requirements are skipped. This is an okay approach here since
+        we only look at the requirements in a best-effort way to determine if
+        an app can be installed.
+
+        If an app contains an invalid requirement, it may (will) fail to install
+        once we invoke pip, but we don't want to to fail here.
+        """
+        from packaging.requirements import InvalidRequirement, Requirement
+
         parsed_reqs = []
         for req in requirements:
             try:
