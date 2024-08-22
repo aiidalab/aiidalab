@@ -15,7 +15,7 @@ releases:
     v22.11.0:
         environment:
             python_requirements:
-                - Jinja2~=2.11.3
+                - 'Jinja2~=2.11.3 # invalid requirement'
                 - aiida-core~=1.0
                 - aiida-quantumespresso~=3.5
                 - aiidalab-qe-workchain@https://github.com/aiidalab/aiidalab-qe/releases/download/v22.11.0/aiidalab_qe_workchain-22.11.0-py3-none-any.whl
@@ -38,7 +38,7 @@ releases:
     v22.11.1:
         environment:
             python_requirements:
-                - Jinja2~=3.0
+                - 'Jinja2~=3.0  # this comment makes the requirement invalid'
                 - aiida-core~=2.1
                 - aiida-quantumespresso~=4.1
                 - aiidalab-qe-workchain@https://github.com/aiidalab/aiidalab-qe/releases/download/v22.12.0/aiidalab_qe_workchain-22.12.0-py3-none-any.whl
@@ -62,7 +62,7 @@ releases:
     v23.01.0b1:
         environment:
             python_requirements:
-                - Jinja2~=3.0
+                - 'Jinja2~=3.0  # this comment makes the requirement invalid'
                 - aiida-core>=2.1,<3
                 - aiida-quantumespresso~=4.1
                 - aiidalab-qe-workchain@https://github.com/aiidalab/aiidalab-qe/releases/download/v23.01.0b1/aiidalab_qe_workchain-23.1.0b1-py3-none-any.whl

@@ -14,7 +14,6 @@ from textwrap import indent, wrap
 
 import click
 from click_spinner import spinner
-from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import parse
 from tabulate import tabulate
 
@@ -113,6 +112,7 @@ def search(app_query, prereleases):
         search 'hello-world>=1.0'
 
     """
+    from packaging.requirements import InvalidRequirement, Requirement
 
     with _spinner_with_message("Collecting apps and releases... "):
         try:
@@ -173,6 +173,8 @@ def list_apps():
 
 
 def _parse_requirement(app_requirement):
+    from packaging.requirements import InvalidRequirement, Requirement
+
     try:
         return Requirement(app_requirement)
     except InvalidRequirement as error:

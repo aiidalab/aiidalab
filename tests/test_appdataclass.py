@@ -48,6 +48,33 @@ def test_strict_dependencies_met_package_name_canonicalized(
     assert not _AiidaLabApp._strict_dependencies_met(requirements, python_bin)
 
 
+def test_invalid_requirements_skipped():
+    """Test that invalid Python requirements are skipped."""
+    app_data = _AiidaLabApp(
+        metadata={},
+        name="test",
+        path=Path("test"),
+        releases={
+            "v1.0.0": {
+                "environment": {
+                    "python_requirements": [
+                        "valid==2.0",
+                        "invalid==1.0 # this comment makes this invalid",
+                    ],
+                },
+                "metadata": {},
+                "url": "",
+            },
+        },
+    )
+    all_reqs = app_data.releases["v1.0.0"]["environment"]["python_requirements"]
+    assert len(all_reqs) == 2
+
+    parsed_reqs = app_data.parse_python_requirements(all_reqs)
+    assert len(parsed_reqs) == 1
+    assert "valid" in parsed_reqs[0].name
+
+
 def test_find_dependencies_to_install(monkeypatch, installed_packages, python_bin):
     """Test find_dependencies_to_install method of _AiidaLabApp.
     By mocking the _AiidallabApp class with its attributes set."""
