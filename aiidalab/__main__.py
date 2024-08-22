@@ -11,6 +11,7 @@ from dataclasses import asdict
 from fnmatch import fnmatch
 from pathlib import Path
 from textwrap import indent, wrap
+from typing import Any, Generator
 
 import click
 from click_spinner import spinner
@@ -19,8 +20,7 @@ from packaging.version import parse
 from tabulate import tabulate
 
 from . import __version__
-from .app import AppVersion
-from .app import _AiidaLabApp as AiidaLabApp
+from .app import AppVersion, _AiidaLabApp
 from .fetch import fetch_from_url
 from .metadata import Metadata
 from .utils import PEP508CompliantUrl, load_app_registry_index
@@ -34,7 +34,9 @@ ICON_MODIFIED = "\U00002022"  # •
 
 
 @contextmanager
-def _spinner_with_message(message, message_final="Done.\n"):
+def _spinner_with_message(
+    message: str, message_final: str = "Done.\n"
+) -> Generator[None, None, None]:
     try:
         click.echo(message, err=True, nl=False)
         with spinner():
@@ -46,7 +48,9 @@ def _spinner_with_message(message, message_final="Done.\n"):
         click.echo(message_final, err=True)
 
 
-def _list_apps(apps_path):
+def _list_apps(
+    apps_path: Path,
+) -> Generator[tuple[Path, str, _AiidaLabApp | None], None, None]:
     if apps_path.is_dir():
         for path in apps_path.iterdir():
             if path.is_dir():
@@ -54,7 +58,7 @@ def _list_apps(apps_path):
                     continue  # exclude hidden directories and the Python cache directory.
                 app_name = str(path.relative_to(apps_path))
                 try:
-                    yield path, app_name, AiidaLabApp.from_id(app_name)
+                    yield path, app_name, _AiidaLabApp.from_id(app_name)
                 except KeyError:
                     yield path, app_name, None
     elif apps_path.exists():
@@ -66,12 +70,12 @@ def _list_apps(apps_path):
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.version_option(version=__version__, prog_name="AiiDAlab")
 @click.option("-v", "--verbose", count=True)
-def cli(verbose):
+def cli(verbose: int) -> None:
     logging.basicConfig(level=max(0, logging.WARNING - 10 * verbose))
 
 
 @cli.command()
-def info():
+def info() -> None:
     """Show information about the AiiDAlab configuration."""
     from aiidalab.config import AIIDALAB_APPS, AIIDALAB_REGISTRY
 
@@ -96,7 +100,7 @@ def info():
     help="Include prereleases among the search candidates. Note: Prereleases "
     "are automatically included if an app has only prereleases.",
 )
-def search(app_query, prereleases):
+def search(app_query: str, prereleases: bool) -> None:
     """Search for apps within the registry.
 
     Accepts either a search query with app names that contain wildcards ('*', '?')
@@ -121,7 +125,7 @@ def search(app_query, prereleases):
             try:
                 registry = load_app_registry_index()
             except RuntimeError as error:
-                raise click.ClickException(error)
+                raise click.ClickException(str(error))
             app_requirements = [
                 Requirement(app_name)
                 for app_name in registry["apps"].keys()
@@ -130,7 +134,7 @@ def search(app_query, prereleases):
 
     for app_requirement in app_requirements:
         try:
-            app = AiidaLabApp.from_id(app_requirement.name)
+            app = _AiidaLabApp.from_id(app_requirement.name)
         except KeyError:
             raise click.ClickException(
                 f"Did not find entry for app with name '{app_requirement.name}'."
@@ -144,7 +148,11 @@ def search(app_query, prereleases):
             )
 
 
-def _tabulate_apps(apps, headers=("App name", "Version", "Path"), **kwargs):
+def _tabulate_apps(
+    apps: list[tuple[Path, str, _AiidaLabApp | None]],
+    headers: tuple[str, str, str] = ("App name", "Version", "Path"),
+    **kwargs: Any,
+) -> Generator[str, None, None]:
     rows = []
     for app_path, app_name, app in sorted(apps):
         if app is None:
@@ -158,7 +166,7 @@ def _tabulate_apps(apps, headers=("App name", "Version", "Path"), **kwargs):
 
 
 @cli.command(name="list")
-def list_apps():
+def list_apps() -> None:
     """List all installed apps.
 
     This command will list all apps, their version, and their full path.
@@ -172,7 +180,7 @@ def list_apps():
         click.echo("No apps installed.", err=True)
 
 
-def _parse_requirement(app_requirement):
+def _parse_requirement(app_requirement: str) -> Requirement:
     try:
         return Requirement(app_requirement)
     except InvalidRequirement as error:
@@ -189,10 +197,10 @@ def _parse_requirement(app_requirement):
         )
 
 
-def _find_registered_app_from_id(name):
+def _find_registered_app_from_id(name: str) -> _AiidaLabApp:
     """Find app for a given requirement."""
     try:
-        app = AiidaLabApp.from_id(name)
+        app = _AiidaLabApp.from_id(name)
         if app.is_registered():
             return app
         else:
@@ -203,7 +211,9 @@ def _find_registered_app_from_id(name):
         raise click.ClickException(f"Did not find entry for app with name '{name}'.")
 
 
-def _find_app_and_releases(app_requirement):
+def _find_app_and_releases(
+    app_requirement: Requirement,
+) -> tuple[_AiidaLabApp, list[str]]:
     """Find app and a suitable release for a given requirement."""
     app = _find_registered_app_from_id(app_requirement.name)
     matching_releases = app.find_matching_releases(app_requirement.specifier)
@@ -215,7 +225,7 @@ def _find_app_and_releases(app_requirement):
 @click.option(
     "--indent", type=int, help="Specify level of identation of the JSON output."
 )
-def show_environment(app_requirement, indent):
+def show_environment(app_requirement: list[str], indent: int) -> None:
     """Show environment specification of apps.
 
     Example:
@@ -269,8 +279,12 @@ def show_environment(app_requirement, indent):
 
 
 def _find_version_to_install(
-    app_requirement, force, dependencies, python_bin, prereleases
-):
+    app_requirement: Requirement,
+    force: bool,
+    dependencies: str,
+    python_bin: str,
+    prereleases: bool,
+) -> tuple[_AiidaLabApp, str | None]:
     if app_requirement.url is not None:
         with fetch_from_url(app_requirement.url) as repo:
             metadata = Metadata.parse(repo)
@@ -278,7 +292,7 @@ def _find_version_to_install(
                 "name": app_requirement.name,
                 "metadata": asdict(metadata),
             }
-            app = AiidaLabApp.from_id(
+            app = _AiidaLabApp.from_id(
                 app_requirement.name, registry_entry=registry_entry
             )
             if not (force or (dependencies in ("install", "ignore"))):
@@ -377,8 +391,14 @@ def _find_version_to_install(
     help="Include prereleases among the candidates for installation.",
 )
 def install(
-    app_requirements, yes, dry_run, force, dependencies, python_bin, prereleases
-):
+    app_requirements: list[str],
+    yes: bool,
+    dry_run: bool,
+    force: bool,
+    dependencies: str,
+    python_bin: str,
+    prereleases: bool,
+) -> None:
     """Install apps.
 
     This command will install the latest version of an app matching the given requirement.
@@ -477,7 +497,9 @@ def install(
     hidden=True,
     help="Do not move application directory to ~/.trash.",
 )
-def uninstall(app_name, yes, dry_run, force, fully_remove):
+def uninstall(
+    app_name: list[str], yes: bool, dry_run: bool, force: bool, fully_remove: bool
+) -> None:
     """Uninstall apps."""
     from .config import AIIDALAB_APPS
 
@@ -560,7 +582,7 @@ def uninstall(app_name, yes, dry_run, force, fully_remove):
 
 
 @contextmanager
-def _mock_schemas_endpoints():
+def _mock_schemas_endpoints() -> Generator[None, None, None]:
     import pkg_resources
     import requests_mock
 
@@ -585,13 +607,13 @@ def _mock_schemas_endpoints():
 
 
 @cli.group()
-def registry():
+def registry() -> None:
     """Functions related to managing an app registry."""
 
 
 @registry.command()
 @click.argument("url")
-def parse_app_repo(url):
+def parse_app_repo(url: str) -> None:
     """Parse an app repo for metadata and other information.
 
     Use this command to parse a local or remote app repository for the app
@@ -674,16 +696,16 @@ def parse_app_repo(url):
     help="Mock the schemas endpoints such that the local versions are used insted of the published ones.",
 )
 def build(
-    apps,
-    categories,
-    out,
-    html_path,
-    api_path,
-    static,
-    templates,
-    validate,
-    mock_schemas,
-):
+    apps: str,
+    categories: str,
+    out: str,
+    html_path: str,
+    api_path: str,
+    static: str,
+    templates: str,
+    validate: bool,
+    mock_schemas: bool,
+) -> None:
     """Build the app store website and API endpoints.
 
     Example:

@@ -28,7 +28,7 @@ import traitlets
 from dulwich.errors import NotGitRepository
 from packaging.requirements import Requirement
 from packaging.version import parse
-from watchdog.events import EVENT_TYPE_OPENED, FileSystemEvent, FileSystemEventHandler
+from watchdog.events import EVENT_TYPE_OPENED, FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
@@ -53,6 +53,7 @@ from .metadata import Metadata
 
 if TYPE_CHECKING:
     from packaging.specifiers import SpecifierSet
+    from watchdog.events import FileSystemEvent
     from watchdog.observers.api import BaseObserver
 
 logger = logging.getLogger(__name__)
@@ -350,7 +351,7 @@ class _AiidaLabApp:
 
     def find_dependencies_to_install(
         self, version_to_install: str, python_bin: str | None = None
-    ) -> list[dict[str, Package | Requirement]]:
+    ) -> list[dict[str, Package | Requirement | None]]:
         """Returns a list of dependencies that need to be installed.
 
         If an unsupported version of a dependency is installed, it will look

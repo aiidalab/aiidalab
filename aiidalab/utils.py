@@ -169,7 +169,7 @@ class Package:
     def fulfills(self, requirement: Requirement) -> bool:
         """Returns True if this entry fulfills the requirement."""
         return self.canonical_name == canonicalize_name(requirement.name) and (
-            self.version in requirement.specifier or self.version is None
+            self.version is None or self.version in requirement.specifier
         )
 
 
