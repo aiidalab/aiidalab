@@ -10,7 +10,7 @@ from jinja2 import (
     select_autoescape,
 )
 
-from . import template_filters
+from ..utils import sort_semantic
 
 
 def build_html(base_path, apps_index, apps_data, templates_path):
@@ -28,7 +28,7 @@ def build_html(base_path, apps_index, apps_data, templates_path):
         loader=ChoiceLoader(loaders),
         autoescape=select_autoescape(["html", "xml"]),
     )
-    env.filters["sort_semantic"] = template_filters.sort_semantic
+    env.filters["sort_semantic"] = sort_semantic
 
     app_page_template = env.get_template("app_page.html")
     main_index_template = env.get_template("index.html")

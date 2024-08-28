@@ -4,10 +4,11 @@ import re
 from dataclasses import dataclass, replace
 from urllib.parse import urlsplit, urlunsplit
 
-from aiidalab.environment import Environment
-from aiidalab.fetch import fetch_from_url
-from aiidalab.git_util import GitRepo
-from aiidalab.metadata import Metadata
+from ..environment import Environment
+from ..fetch import fetch_from_url
+from ..git_util import GitRepo
+from ..metadata import Metadata
+from ..utils import is_valid_version
 
 logger = logging.getLogger(__name__)
 
@@ -199,4 +200,7 @@ def gather_releases(app_data, scan_app_repository):
     ):
         if version is None:
             raise ValueError(f"Unable to determine version for: {release}")
-        yield version, release
+        if is_valid_version(version):
+            yield version, release
+        else:
+            logger.warning(f"{release.url}: Skipping invalid version '{version}'")

@@ -26,29 +26,29 @@ from uuid import uuid4
 import requests
 import traitlets
 from dulwich.errors import NotGitRepository
-from packaging.version import parse
 from watchdog.events import EVENT_TYPE_OPENED, FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
-
-from aiidalab.utils import (
-    FIND_INSTALLED_PACKAGES_CACHE,
-    Package,
-    PEP508CompliantUrl,
-    find_installed_packages,
-    get_package_by_name,
-    run_pip_install,
-    run_post_install_script,
-    run_verdi_daemon_restart,
-    split_git_url,
-    this_or_only_subdir,
-    throttled,
-)
 
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
 from .metadata import Metadata
+from .utils import (
+    FIND_INSTALLED_PACKAGES_CACHE,
+    Package,
+    PEP508CompliantUrl,
+    find_installed_packages,
+    get_package_by_name,
+    is_valid_version,
+    run_pip_install,
+    run_post_install_script,
+    run_verdi_daemon_restart,
+    sort_semantic,
+    split_git_url,
+    this_or_only_subdir,
+    throttled,
+)
 
 if TYPE_CHECKING:
     from packaging.requirements import Requirement
@@ -83,12 +83,23 @@ class _AiidaLabApp:
     metadata: dict[str, Any]
     name: str
     path: Path
+    # TODO: It would be nicer to use parsed packaging.Version as a key instead of str
+    # That way it could also be pre-sorted.
     releases: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_registry_entry(
         cls, path: Path, registry_entry: dict[str, Any]
     ) -> _AiidaLabApp:
+        # Filter out invalid versions
+        if releases := registry_entry.get("releases"):
+            versions = list(releases.keys())
+            for version in versions:
+                if not is_valid_version(version):
+                    logger.warning(
+                        f"{registry_entry.get('name', path)}: Ignoring invalid version '{version}'"
+                    )
+                    del registry_entry["releases"][version]
         return cls(
             path=path,
             **{
@@ -220,15 +231,13 @@ class _AiidaLabApp:
     ) -> Generator[str, None, None]:
         """Return a list of available versions excluding the ones with core dependency conflicts."""
         if self.is_registered():
-            for version in sorted(self.releases, key=parse, reverse=True):
+            for version in sort_semantic(self.releases, prereleases=prereleases):
                 version_requirements = self.parse_python_requirements(
                     self.releases[version]
                     .get("environment", {})
                     .get("python_requirements", [])
                 )
-                if (
-                    prereleases or not parse(version).is_prerelease
-                ) and self._strict_dependencies_met(version_requirements, python_bin):
+                if self._strict_dependencies_met(version_requirements, python_bin):
                     yield version
 
     def dirty(self) -> bool | None:
@@ -298,9 +307,8 @@ class _AiidaLabApp:
         matching_releases = list(
             specifier.filter(self.releases or [], prereleases=prereleases)
         )
-        # Sort by intrinsic order (e.g. 1.1.0 -> 1.0.1 -> 1.0.0 and so on)
-        matching_releases.sort(key=parse, reverse=True)
-        return matching_releases
+        # Sort semantically from latest to oldest version (e.g. 1.1.0 -> 1.0.1 -> 1.0.0)
+        return sort_semantic(matching_releases, prereleases=prereleases)
 
     @staticmethod
     def _strict_dependencies_met(
@@ -524,14 +532,10 @@ class _AiidaLabApp:
         post_install_triggers: bool = True,
     ) -> None:
         if version is None:
-            try:
-                version = [
-                    version
-                    for version in sorted(self.releases, key=parse)
-                    if prereleases or not parse(version).is_prerelease
-                ][-1]
-            except IndexError:
+            versions = sort_semantic(self.releases, prereleases=prereleases)
+            if len(versions) == 0:
                 raise ValueError(f"No versions available for '{self}'.")
+            version = versions[0]
         if python_bin is None:
             python_bin = sys.executable
 
@@ -929,11 +933,15 @@ class AiidaLabApp(traitlets.HasTraits):
             return False  # compatibility indetermined for given version
 
     def _refresh_versions(self) -> None:
+        from packaging.version import parse
+
         self.installed_version = (
             self._get_installed_version()
         )  # only update at this refresh method
+
         self.include_prereleases = self.include_prereleases or (
             isinstance(self.installed_version, str)
+            and is_valid_version(self.installed_version)
             and parse(self.installed_version).is_prerelease
         )
 

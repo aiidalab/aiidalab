@@ -6,8 +6,8 @@ from copy import deepcopy
 from dataclasses import asdict
 
 import jsonschema
-from packaging.version import parse
 
+from ..utils import sort_semantic
 from . import util
 from .releases import gather_releases
 
@@ -46,7 +46,7 @@ def _fetch_app_data(app_id, app_data, scan_app_repository):
     }
     if len(app_data["releases"]):
         # Sort all releases semantically to determine the latest version.
-        latest_version = sorted(app_data["releases"], key=parse, reverse=True)[0]
+        latest_version = sort_semantic(app_data["releases"], prereleases=True)[0]
         # The metadata of the latest release is considered authoritative for the whole app.
         app_data["metadata"] = app_data["releases"][latest_version]["metadata"]
         return app_data
