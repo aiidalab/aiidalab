@@ -203,4 +203,4 @@ def gather_releases(app_data, scan_app_repository):
         if is_valid_version(version):
             yield version, release
         else:
-            logger.warning(f"{release.url}: Skipping invalid version {version}")
+            logger.warning(f"{release.url}: Skipping invalid version '{version}'")
