@@ -16,6 +16,9 @@ def test_init_refresh(generate_app):
     app.refresh()
     assert len(app.available_versions) != 0
 
+    # Test that invalid versions are skipped
+    assert "invalid_version" not in app.available_versions
+
 
 def test_prereleases(generate_app):
     app = generate_app()

@@ -14,7 +14,6 @@ from textwrap import indent, wrap
 
 import click
 from click_spinner import spinner
-from packaging.version import parse
 from tabulate import tabulate
 
 from . import __version__
@@ -22,7 +21,7 @@ from .app import AppVersion
 from .app import _AiidaLabApp as AiidaLabApp
 from .fetch import fetch_from_url
 from .metadata import Metadata
-from .utils import PEP508CompliantUrl, load_app_registry_index
+from .utils import PEP508CompliantUrl, load_app_registry_index, sort_semantic
 from .utils import parse_app_repo as _parse_app_repo
 
 SCHEMAS_CANONICAL_BASE_URL = "https://raw.githubusercontent.com/aiidalab/aiidalab/v21.10.0/aiidalab/registry/schemas"
@@ -232,7 +231,6 @@ def show_environment(app_requirement, indent):
         show-environment hello-world==0.1.0 other-app~=0.12
 
     """
-
     with _spinner_with_message(
         "Collecting apps and their environment specifications... "
     ):
@@ -253,8 +251,8 @@ def show_environment(app_requirement, indent):
             environment = app.releases[selected_versions[0]].get("environment")
         except IndexError:  # no matching release
             raise click.ClickException(
-                f"{app.name}: No matching release for '{requirement.specifier}'. "
-                f"Available releases: {','.join(map(str, sorted(map(parse, app.releases))))}"
+                f"{app.name}: No matching release for '{requirement.specifier}'.\n"
+                f"Available releases: {','.join(sort_semantic(app.releases, prereleases=True))}"
             )
         else:
             click.echo(f"Selected '{app.name}=={selected_versions[0]}'", err=True)
@@ -319,15 +317,15 @@ def _find_version_to_install(
     elif len(matching_releases) > 0:
         raise click.ClickException(
             f"There are releases matching '{app_requirement}' ("
-            f"{','.join(map(str, sorted(map(parse, matching_releases))))}), however "
+            f"{','.join(sort_semantic(matching_releases, prereleases=prereleases))}), however "
             "none of these are compatible with this environment."
         )
 
     # No matching releases, inform user about available releases.
     else:
         raise click.ClickException(
-            f"No matching release for '{app_requirement}'. "
-            f"Available releases: {','.join(map(str, sorted(map(parse, app.releases))))}"
+            f"No matching release for '{app_requirement}'.\n"
+            f"Available releases: {','.join(sort_semantic(app.releases, prereleases=prereleases))}"
         )
 
 
