@@ -226,9 +226,13 @@ def is_valid_version(version: str) -> bool:
         return True
 
 
-def sort_semantic(versions: Iterable[str], prereleases: bool = False) -> list[str]:
-    """Sort app versions semantically according to semver, latest first.
-    Optionally filter out the pre-release versions.
+def sort_semantic(
+    versions: Iterable[str], reverse: bool = True, prereleases: bool = False
+) -> list[str]:
+    """Sort a list of app version strings semantically according to semver.
+
+    By default, sorting is performed in descending order (i.e. latest versions first).
+    By default, pre-release versions are filtured out.
 
     :raises: packaging.version.InvalidVersion if the input list contains invalid version.
     """
@@ -236,7 +240,7 @@ def sort_semantic(versions: Iterable[str], prereleases: bool = False) -> list[st
 
     return [
         version
-        for version in sorted(versions, key=parse, reverse=True)
+        for version in sorted(versions, key=parse, reverse=reverse)
         if prereleases or not parse(version).is_prerelease
     ]
 
