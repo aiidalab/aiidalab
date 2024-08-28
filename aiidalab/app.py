@@ -303,12 +303,14 @@ class _AiidaLabApp:
     def find_matching_releases(
         self, specifier: SpecifierSet, prereleases: bool | None = None
     ) -> list[str]:
-        """TODO: Write a docstring"""
+        """Get available release versions matching the given specification."""
         matching_releases = list(
             specifier.filter(self.releases or [], prereleases=prereleases)
         )
         # Sort semantically from latest to oldest version (e.g. 1.1.0 -> 1.0.1 -> 1.0.0)
-        return sort_semantic(matching_releases, prereleases=prereleases)
+        # Note that prereleases were already potentially filtered
+        # so we do not need to filter again.
+        return sort_semantic(matching_releases, prereleases=True)
 
     @staticmethod
     def _strict_dependencies_met(
