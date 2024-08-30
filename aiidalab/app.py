@@ -52,6 +52,9 @@ from .utils import (
 
 if TYPE_CHECKING:
     from packaging.requirements import Requirement
+    from packaging.specifiers import SpecifierSet
+    from watchdog.events import FileSystemEvent
+    from watchdog.observers.api import BaseObserver
 
 logger = logging.getLogger(__name__)
 
@@ -297,12 +300,17 @@ class _AiidaLabApp:
         else:
             shutil.rmtree(self.path)
 
-    def find_matching_releases(self, specifier, prereleases=None):
+    def find_matching_releases(
+        self, specifier: SpecifierSet, prereleases: bool | None = None
+    ) -> list[str]:
+        """Get available release versions matching the given specification."""
         matching_releases = list(
             specifier.filter(self.releases or [], prereleases=prereleases)
         )
         # Sort semantically from latest to oldest version (e.g. 1.1.0 -> 1.0.1 -> 1.0.0)
-        return sort_semantic(matching_releases, prereleases=prereleases)
+        # Note that prereleases were already potentially filtered
+        # so we do not need to filter again.
+        return sort_semantic(matching_releases, prereleases=True)
 
     @staticmethod
     def _strict_dependencies_met(
@@ -375,7 +383,7 @@ class _AiidaLabApp:
 
     def find_dependencies_to_install(
         self, version_to_install: str, python_bin: str | None = None
-    ) -> list[dict[str, Package | Requirement]]:
+    ) -> list[dict[str, Package | Requirement | None]]:
         """Returns a list of dependencies that need to be installed.
 
         If an unsupported version of a dependency is installed, it will look
@@ -607,13 +615,13 @@ class AiidaLabAppWatch:
             The AiidaLab app to monitor.
     """
 
-    class AppPathFileSystemEventHandler(FileSystemEventHandler):  # type: ignore
+    class AppPathFileSystemEventHandler(FileSystemEventHandler):  # type: ignore[misc]
         """Internal event handeler for app path file system events."""
 
         def __init__(self, app: AiidaLabApp):
             self.app = app
 
-        def on_any_event(self, event):
+        def on_any_event(self, event: FileSystemEvent) -> None:
             """Refresh app for any event except opened."""
             if event.event_type != EVENT_TYPE_OPENED:
                 self.app.refresh_async()
@@ -623,7 +631,7 @@ class AiidaLabAppWatch:
 
         self._started = False
         self._monitor_thread: Thread | None = None
-        self._observer: Observer | None = None
+        self._observer: BaseObserver | None = None
         self._monitor_thread_stop = threading.Event()
 
     def __repr__(self) -> str:
@@ -634,6 +642,8 @@ class AiidaLabAppWatch:
 
         The ._observer thread is controlled by the ._monitor_thread.
         """
+        if not self.app.path:
+            return
         assert os.path.isdir(self.app.path)
         assert self._observer is None or not self._observer.is_alive()
 
@@ -673,6 +683,8 @@ class AiidaLabAppWatch:
         if self._monitor_thread is None:
 
             def check_path_exists_changed() -> None:
+                if not self.app.path:
+                    return
                 is_dir = os.path.isdir(self.app.path)
                 while not self._monitor_thread_stop.is_set():
                     switched = is_dir != os.path.isdir(self.app.path)
@@ -721,7 +733,7 @@ class AiidaLabAppWatch:
             self._observer.join(timeout=timeout)
 
 
-class AiidaLabApp(traitlets.HasTraits):  # type: ignore
+class AiidaLabApp(traitlets.HasTraits):
     """Manage installation status of an AiiDAlab app.
 
     Arguments:
@@ -744,7 +756,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         [traitlets.Unicode(), traitlets.UseEnum(AppVersion)]
     )  # installed_version is updated from _AiiDALabApp only
     version_to_install = traitlets.Unicode(allow_none=True)
-    dependencies_to_install = traitlets.List()
+    dependencies_to_install = traitlets.List()  # type: ignore[var-annotated]
     remote_update_status = traitlets.UseEnum(
         AppRemoteUpdateStatus, allow_none=True
     ).tag(readonly=True)
@@ -786,27 +798,26 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         self.path = str(self._app.path)
         self.refresh_async()
 
+        self._watch = None
         if watch:
             self._watch = AiidaLabAppWatch(self)
             self._watch.start()
-        else:
-            self._watch = None  # type: ignore
 
     def __str__(self) -> str:
         return f"<AiidaLabApp name='{self._app.name}'>"
 
     @traitlets.default("include_prereleases")
-    def _default_include_prereleases(self):
+    def _default_include_prereleases(self) -> bool:
         "Provide default value for include_prereleases trait." ""
         return False
 
     @traitlets.observe("include_prereleases")
-    def _observe_include_prereleases(self, change):
+    def _observe_include_prereleases(self, change: dict[str, Any]) -> None:
         if change["old"] != change["new"]:
             self.refresh()
 
     @traitlets.default("detached")
-    def _default_detached(self):
+    def _default_detached(self) -> bool | None:
         """Provide default value for detached traitlet."""
         if self.is_installed():
             return (
@@ -815,15 +826,15 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         return None
 
     @traitlets.default("busy")
-    def _default_busy(self):  # pylint: disable=no-self-use
+    def _default_busy(self) -> bool:
         return False
 
     @traitlets.validate("version_to_install")
-    def _validate_version_to_install(self, proposal):
+    def _validate_version_to_install(self, proposal: dict[str, str]) -> str | None:
         """Validate the version to install."""
         with self._show_busy():
             if proposal["value"] is None:
-                return
+                return None
 
             if proposal["value"] not in self.available_versions:
                 raise traitlets.TraitError(
@@ -832,12 +843,12 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
             return proposal["value"]
 
     @traitlets.observe("version_to_install")
-    def _observe_version_to_install(self, change):
+    def _observe_version_to_install(self, change: dict[str, Any]) -> None:
         if change["old"] != change["new"]:
             self.refresh()
 
     @contextmanager
-    def _show_busy(self):
+    def _show_busy(self) -> Generator[None, None, None]:
         """Apply this decorator to indicate that the app is busy during execution."""
         # we need to use a lock here, because the busy trait is not thread-safe
         # we may use _show_busy in different threads, e.g. when installing and auto-status refresh
@@ -902,8 +913,8 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         """Determine the currently installed version."""
         return self._app.installed_version()
 
-    @traitlets.default("compatible")  # type: ignore
-    def _default_compatible(self) -> None:  # pylint: disable=no-self-use
+    @traitlets.default("compatible")
+    def _default_compatible(self) -> None:
         return None
 
     def _is_compatible(self, app_version: str) -> bool:
@@ -946,9 +957,12 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         )
 
     def _refresh_dependencies_to_install(self) -> None:
-        self.dependencies_to_install = self._app.find_dependencies_to_install(
-            self.version_to_install
-        )
+        if self.version_to_install:
+            self.dependencies_to_install = self._app.find_dependencies_to_install(
+                self.version_to_install
+            )
+        else:
+            self.dependencies_to_install = []
 
     @throttled(calls_per_second=1)  # type: ignore
     def refresh(self) -> None:
@@ -981,7 +995,7 @@ class AiidaLabApp(traitlets.HasTraits):  # type: ignore
         refresh_thread.start()
 
     @property
-    def metadata(self):
+    def metadata(self) -> dict[str, Any]:
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
         return self._app.metadata
 

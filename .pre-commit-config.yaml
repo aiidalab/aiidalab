@@ -41,10 +41,16 @@ repos:
           - id: mypy
             args: [--config-file=setup.cfg]
             additional_dependencies:
+                - types-tabulate
+                - types-setuptools
+                - types-jsonschema
                 - types-cachetools
                 - types-requests
                 - types-toml
                 - types-click
+                - types-click-spinner
+                - traitlets~=5.0
+                - packaging
             exclude: >-
                 (?x)^(
                   docs/.*|
