@@ -12,7 +12,7 @@ repos:
           - id: trailing-whitespace
 
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.6.9
+      rev: v0.8.6
       hooks:
           - id: ruff-format
             exclude: ^docs/.*
@@ -31,12 +31,12 @@ repos:
           - id: yamlfmt
 
     - repo: https://github.com/sirosen/check-jsonschema
-      rev: 0.29.3
+      rev: 0.30.0
       hooks:
           - id: check-github-workflows
 
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.11.2
+      rev: v1.14.1
       hooks:
           - id: mypy
             args: [--config-file=setup.cfg]
