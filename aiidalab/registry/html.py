@@ -1,3 +1,4 @@
+# noqa: A005
 """Generate the app registry website HTML pages."""
 
 from collections import defaultdict

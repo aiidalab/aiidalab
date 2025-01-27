@@ -18,9 +18,9 @@ def test_version_displays_library_version():
     result = runner.invoke(cli.cli, ["--version"])
 
     assert result.exit_code == 0
-    assert (
-        __version__ in result.output.strip()
-    ), "Version number should match library version."
+    assert __version__ in result.output.strip(), (
+        "Version number should match library version."
+    )
 
 
 def test_list_no_apps(aiidalab_env):
