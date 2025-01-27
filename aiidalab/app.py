@@ -808,7 +808,6 @@ class AiidaLabApp(traitlets.HasTraits):
 
     @traitlets.default("include_prereleases")
     def _default_include_prereleases(self) -> bool:
-        "Provide default value for include_prereleases trait." ""
         return False
 
     @traitlets.observe("include_prereleases")
