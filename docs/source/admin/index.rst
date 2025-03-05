@@ -27,6 +27,17 @@ We provide `instructions and deployment k8s scripts <https://github.com/aiidalab
 
 .. _admin-guide:maintain-app-registry:
 
+
+Policy documents
+----------------
+
+When deploying AiiDAlab for multiple users, you should provide a privacy policy and terms of use.
+These legal documents should be accessible to users before they start using the service.
+We provide templates in the ``templates`` directory of the AiiDAlab repository.
+The templates were developed for Swiss-based deployments. Please adjust them to your needs.
+Utilities are provided in the ``templates`` directory to help you generate the documents.
+Please see the ``README.md`` file in the ``templates`` directory for more information.
+
 Maintaining an app registry
 ===========================
 
