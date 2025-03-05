@@ -1,0 +1,21 @@
+version: # the version of the deployed document
+year: # the year associated with the version
+
+# the institution that is deploying AiiDAlab
+institution:
+  name:
+    full: # full name of institution
+    short: # institution acronym
+  address: # institution address
+  description: # short institution description
+
+# the host of the AiiDAlab deployment
+host:
+  name: # the name of the host
+  location: # the physical location of the host
+
+# the contact email for issues with the deployment
+contact_email:
+
+# governing law
+court: # court in charge of this matter
