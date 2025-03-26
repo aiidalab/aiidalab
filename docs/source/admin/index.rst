@@ -2,8 +2,7 @@
 Deployment guide
 *******************
 
-This guide explains how to deploy and manage AiiDAlab servers for multiple users.
-See :ref:`usage:run-locally` for how to run the AiiDAlab docker container locally (e.g. for testing purposes).
+This guide explains how to deploy and manage AiiDAlab servers for multiple users. To test deployment locally, see the :ref:`local installation instructions <local-install>`.
 
 Multi-user deployment
 =====================
@@ -91,7 +90,7 @@ Here we describe how to maintain and publish a dedicated AiiDAlab apps registry.
             description: Apps for performing quantum-mechanical calculations.
             title: Quantum
 
-   .. _admin-guide:maintain-app-registry:build:
+      .. _admin-guide:maintain-app-registry:build:
 
    .. grid-item-card:: Build the new registry
 
@@ -105,7 +104,7 @@ Here we describe how to maintain and publish a dedicated AiiDAlab apps registry.
 
       You can check whether the registry was successfully built by opening the ``./build/index.html`` page directly in your browser or by inspecting the ``./build/api/v1/apps_index.json`` file.
 
-   .. _admin-guide:maintain-app-registry:serve:
+      .. _admin-guide:maintain-app-registry:serve:
 
    .. grid-item-card:: Serve the new registry
 
@@ -139,7 +138,7 @@ Here we describe how to maintain and publish a dedicated AiiDAlab apps registry.
          First, `install ngrok <https://ngrok.com/download>`__, then start your local web server as described above, and in a separate terminal run ``ngrok http 8000``.
          This will give you a public address that you can use as the base URL for your registry address.
 
-   .. _admin-guide:maintain-app-registry:configure:
+      .. _admin-guide:maintain-app-registry:configure:
 
    .. grid-item-card:: Configure AiiDAlab to use the new registry
 
@@ -188,7 +187,7 @@ Here we describe how to maintain and publish a dedicated AiiDAlab apps registry.
 
       The value behind "Apps registry" should point to the just configured address.
 
-   .. _admin-guide:maintain-app-registry:test:
+      .. _admin-guide:maintain-app-registry:test:
 
    .. grid-item-card:: Test the new registry
 
