@@ -46,8 +46,13 @@ Once Docker is installed, you can create and launch the container by using the f
    :margin: 0
    :padding: 0
 
-   .. grid-item-card:: AiiDAlab Launch CLI (recommended)
+   .. grid-item-card:: AiiDAlab Launch CLI
       :text-align: center
+
+      .. raw:: html
+
+         <span style="color: #459db9;"><b>Linux/Mac users</b></span>
+         <hr>
 
       Automate container setup with our handy *aiidalab-launch* CLI.
 
@@ -62,14 +67,19 @@ Once Docker is installed, you can create and launch the container by using the f
 
          Instructions
 
-   .. grid-item-card:: Docker CLI (advanced)
+   .. grid-item-card:: Docker Desktop GUI
       :text-align: center
 
-      Manually set up a container using the Docker CLI. Most flexible, but requires knowledge of Docker principles and commands.
+      .. raw:: html
+
+         <span style="color: #459db9;"><b>Windows users</b></span>
+         <hr>
+
+      Use the graphical interface to configure the container, including ports, mounts, environment variable, etc.
 
       ++++
 
-      .. button-ref:: direct
+      .. button-ref:: desktop
          :ref-type: doc
          :click-parent:
          :expand:
@@ -78,14 +88,19 @@ Once Docker is installed, you can create and launch the container by using the f
 
          Instructions
 
-   .. grid-item-card:: Docker Desktop GUI
+   .. grid-item-card:: Docker CLI
       :text-align: center
 
-      Use the graphical interface to configure the container, including ports, mounts, environment variable, etc.
+      .. raw:: html
+
+         <span style="color: #459db9;"><b>Advanced users</b></span>
+         <hr>
+
+      Manually set up a container using the Docker CLI. Most flexible, but requires prior knowledge of Docker.
 
       ++++
 
-      .. button-ref:: desktop
+      .. button-ref:: direct
          :ref-type: doc
          :click-parent:
          :expand:
