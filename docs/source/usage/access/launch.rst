@@ -23,6 +23,10 @@ To use AiiDAlab launch, make sure to first **install Python** (if not already av
 
       pip install aiidalab-launch
 
+   .. note::
+
+      If you install via `pipx` and run into issues using `aiidalab-launch`, try using `pip` directly.
+
 #. Set up a new `QE` profile with
 
    .. code-block:: console
