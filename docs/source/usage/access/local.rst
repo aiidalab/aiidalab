@@ -14,11 +14,10 @@ AiiDAlab is available as a Docker container, a self-contained, pre-configured en
 Installing Docker
 *****************
 
-We recommend for all operating systems to `install Docker Desktop <https://docs.docker.com/get-docker>`_, a convenient graphical user interface (GUI) for Docker, which simplifies the process of managing containers.
+Windows/Mac
+-----------
 
-.. important::
-
-   **For Linux users**, if you chose to `install only the Docker Engine <https://docs.docker.com/engine/install/ubuntu/>`_ for use via a terminal, you will need `root` privileges to perform the `post-installation steps for Docker Engine <https://docs.docker.com/engine/install/linux-postinstall/>`_.
+We recommend to install `Docker Desktop <https://docs.docker.com/get-docker>`_, a convenient graphical user interface (GUI) for Docker, which simplifies the process of managing containers.
 
 .. important::
 
@@ -36,10 +35,23 @@ We recommend for all operating systems to `install Docker Desktop <https://docs.
 
       sudo usermod -aG docker <username>
 
+Linux
+-----
+
+Though Docker Desktop is available for Linux, we recommend the simpler option of installing the `Docker Engine <https://docs.docker.com/engine/install/>`_.
+
+.. important::
+
+   **For Linux users**, please follow the `post-installation steps for Docker Engine <https://docs.docker.com/engine/install/linux-postinstall/>`_.
+
 Launching AiiDAlab
 ******************
 
 Once Docker is installed, you can create and launch the container by using the following options:
+
+.. tip::
+
+   Regardless of the option chosen here to create the AiiDAlab container, you can always use the Docker Desktop GUI to conveniently view and manage all images, containers, and volumes.
 
 .. grid:: 1 1 3 3
    :gutter: 3
@@ -108,10 +120,6 @@ Once Docker is installed, you can create and launch the container by using the f
          :outline:
 
          Instructions
-
-.. tip::
-
-   Regardless of the option used to construct the AiiDAlab container, you can always use the Docker Desktop GUI to conveniently view and manage all images, containers, and volumes.
 
 .. toctree::
    :maxdepth: 1
