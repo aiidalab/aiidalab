@@ -59,6 +59,7 @@ Create a persistent volume
          :align: center
          :alt: New volume
 
+#. Repeat the process to create a second volume (e.g. ``aiidalab_conda``) for the conda environment
 #. Return to the **Images** panel
 
 Create an AiiDAlab container
@@ -80,9 +81,10 @@ Create an AiiDAlab container
 
 #. You may choose to name the container for easy reference (randomly generated otherwise)
 #. Choose a local port from which to communicate with the container's 8888 port (e.g. ``8888``)
-#. Associate your new volume with the container's user directory
+#. Associate your new volumes with the corresponding container directories
 
    #. ``aiidalab_home`` --> ``/home/jovyan``
+   #. ``aiidalab_conda`` --> ``/home/jovyan/.conda``
 
 #. Click **Run** to start the container
 
