@@ -1,2 +1,3 @@
 build/
 apps_meta.sqlite
+**/reference/apidoc
