@@ -19,7 +19,10 @@ Fetch the AiiDAlab image
          :align: center
          :alt: Docker images
 
-#. In the search bar at the top of the app, type ``aiidalab/full-stack``
+#. In the search bar at the top of the app, type one of the following images: ``aiidalab/full-stack``
+
+   * ``aiidalab/qe`` - AiiDAlab pre-configured with the `Quantum ESPRESSO app <https://aiidalab-qe.readthedocs.io/index.html>`_ (**recommended**)
+   * ``aiidalab/full-stack`` - Bare AiiDAlab
 
       .. image:: include/image-search.png
          :width: 100%

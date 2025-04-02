@@ -27,9 +27,17 @@ To use AiiDAlab launch, make sure to first **install Python** (if not already av
 
       If you install via `pipx` and run into issues using `aiidalab-launch`, try using `pip` directly.
 
-#. Set up a new `QE` profile with
+#. Set up a new profile using one of the following images:
 
-   .. code-block:: console
+   * AiiDAlab pre-configured with the `Quantum ESPRESSO app <https://aiidalab-qe.readthedocs.io/index.html>`_ (**recommended**)
+
+     .. code-block:: console
+
+      aiidalab-launch profile add --image ghcr.io/aiidalab/qe:latest aiidalab
+
+   * Bare AiiDAlab
+
+     .. code-block:: console
 
       aiidalab-launch profile add --image aiidalab/full-stack:latest aiidalab
 
