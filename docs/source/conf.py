@@ -17,7 +17,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
-    "sphinx_panels",
+    "sphinx_design",
 ]
 
 # The pydata-sphinx-theme already loads the bootstrap css.
