@@ -13,7 +13,7 @@ from functools import wraps
 from pathlib import Path
 from subprocess import run
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any, Iterable, Union
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
@@ -51,7 +51,7 @@ except ImportError:
         "The requests_cache package is missing. "
         "Requests made to the app registry will not be cached."
     )
-    _session = requests.Session()
+    _session = requests.Session() # type: ignore
 
 
 def load_app_registry_index() -> Any:
