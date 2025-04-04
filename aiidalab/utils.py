@@ -51,7 +51,7 @@ except ImportError:
         "The requests_cache package is missing. "
         "Requests made to the app registry will not be cached."
     )
-    _session = requests.Session() # type: ignore
+    _session = requests.Session()
 
 
 def load_app_registry_index() -> Any:

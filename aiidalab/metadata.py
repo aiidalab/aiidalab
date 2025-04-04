@@ -69,12 +69,12 @@ def _parse_setup_cfg(
         "documentation_url",
         aiidalab.get(
             "documentation_url",
-            project_urls.get("Documentation", []) or project_urls.get("documentation", []),
+            project_urls.get("Documentation", "") or project_urls.get("documentation", ""),
         ),
     )
     yield (
         "logo",
-        aiidalab.get("logo", project_urls.get("Logo", []) or project_urls.get("logo", [])),
+        aiidalab.get("logo", project_urls.get("Logo", "") or project_urls.get("logo", "")),
     )
     yield (
         "state",
