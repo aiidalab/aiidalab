@@ -40,7 +40,7 @@ class GitManagedAppRepo(Repo):
 
     def list_branches(self) -> Any:
         """List all repository branches."""
-        return branch_list(self) #type: ignore[no-untyped-call]
+        return branch_list(self) 
 
     def branch(self) -> bytes:
         """Return the current branch.
@@ -70,7 +70,7 @@ class GitManagedAppRepo(Repo):
 
     def dirty(self) -> bool:
         """Check if there are likely local user modifications to the app repository."""
-        status_ = status(self) #type: ignore
+        status_ = status(self)
         return bool(any(bool(_) for _ in status_.staged.values()) or status_.unstaged)
 
     def update_available(self) -> bool:
