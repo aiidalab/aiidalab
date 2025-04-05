@@ -19,28 +19,21 @@ Fetch the AiiDAlab image
          :align: center
          :alt: Docker images
 
-#. Select one of the following images:
+#. In the search bar at the top of the app
 
-   * AiiDAlab pre-configured image with the `Quantum ESPRESSO app <https://aiidalab-qe.readthedocs.io/index.html>`_ (**recommended**)
-      * Open and enable the built-in terminal
-      * Type ``docker pull ghcr.io/aiidalab/qe`` to download the image
+   * Enter one of the following AiiDAlab images:
+      * ``aiidalab/qe`` - pre-configured with the `Quantum ESPRESSO app <https://aiidalab-qe.readthedocs.io/index.html>`_ (**recommended**)
+      * ``aiidalab/full-stack`` - bare image
 
-         .. image:: include/docker-terminal.png
-            :width: 100%
-            :align: center
-            :alt: Image QE
+   * Select ``latest`` from the **Tag** dropdown menu
+   * Click **Pull** to download the image
 
-   * Bare AiiDAlab image
-      * Type ``aiidalab/full-stack`` in the search bar at the top of the app
-      * Select ``latest`` from the *tag* dropdown menu
-      * Click **Pull** to download the image
+      .. image:: include/image-search.png
+         :width: 100%
+         :align: center
+         :alt: Image search
 
-         .. image:: include/image-search.png
-            :width: 100%
-            :align: center
-            :alt: Image search
-
-#. Once downloaded, the image will appear as a new line in the list of images
+   * Once downloaded, the image will appear as a new line in the list of images
 
       .. image:: include/image-row.png
          :width: 100%

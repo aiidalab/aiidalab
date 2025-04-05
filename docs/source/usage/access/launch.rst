@@ -33,7 +33,7 @@ To use AiiDAlab launch, make sure to first **install Python** (if not already av
 
      .. code-block:: console
 
-      aiidalab-launch profile add --image ghcr.io/aiidalab/qe:latest aiidalab
+      aiidalab-launch profile add --image aiidalab/qe:latest aiidalab
 
    * Bare AiiDAlab
 
