@@ -35,7 +35,7 @@ class BranchTrackingStatus(Enum):
     DIVERGED = 2
 
 
-class GitManagedAppRepo(Repo):  # type: ignore
+class GitManagedAppRepo(Repo):
     """Utility class to simplify management of git-based apps."""
 
     def list_branches(self) -> Any:
@@ -91,12 +91,12 @@ class GitManagedAppRepo(Repo):  # type: ignore
                 return BranchTrackingStatus.EQUAL
 
             # Check if local branch is behind the tracked branch:
-            for commit in self.get_walker(self.refs[tracked_branch]):
+            for commit in self.get_walker([self.refs[tracked_branch]]):
                 if commit.commit.id == self.refs[ref]:
                     return BranchTrackingStatus.BEHIND
 
             # Check if local branch is ahead of tracked branch:
-            for commit in self.get_walker(self.refs[ref]):
+            for commit in self.get_walker([self.refs[ref]]):
                 if commit.commit.id == self.refs[tracked_branch]:
                     return BranchTrackingStatus.AHEAD
 
@@ -218,7 +218,7 @@ class GitPath(os.PathLike):  # type: ignore
         return self.read_bytes().decode(encoding=encoding, errors=errors)
 
 
-class GitRepo(Repo):  # type: ignore
+class GitRepo(Repo):
     def get_current_branch(self) -> str | None:
         try:
             branch = run(
