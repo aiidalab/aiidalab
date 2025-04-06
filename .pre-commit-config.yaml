@@ -1,6 +1,7 @@
 ---
 ci:
     autoupdate_schedule: quarterly
+    skip: [mypy, generate-conda-environmen, validate-conda-environment, verdi-autodocs]
 
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
