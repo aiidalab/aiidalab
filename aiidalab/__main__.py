@@ -252,7 +252,7 @@ def show_environment(app_requirement: list[str], indent: int) -> None:
             for requirement in map(_parse_requirement, app_requirement)
         }
 
-    if not len(apps_and_releases):
+    if not apps_and_releases:
         # We show a warning if no apps are selected, but we still show the JSON
         # environment specification. Less potential to break scripted pipelines
         # that might operate on zero or more selected apps.
@@ -524,7 +524,7 @@ def uninstall(
             for _, name, app in apps_to_uninstall
         }
 
-    if not len(apps_to_uninstall):
+    if not apps_to_uninstall:
         click.echo("Nothing to uninstall, exiting.", err=True)
         return
 
