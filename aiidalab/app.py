@@ -274,7 +274,7 @@ class _AiidaLabApp:
 
             # Check whether the locally installed version is the latest release.
             available_versions = list(self.available_versions(prereleases=prereleases))
-            if len(available_versions) and installed_version != available_versions[0]:
+            if available_versions and installed_version != available_versions[0]:
                 return AppRemoteUpdateStatus.UPDATE_AVAILABLE
 
             # App must be up-to-date.
