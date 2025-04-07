@@ -60,7 +60,10 @@ def _parse_setup_cfg(
 
     yield "title", aiidalab.get("title", metadata_pep426.get("name", ""))
     yield "version", aiidalab.get("version", metadata_pep426.get("version", ""))
-    yield "description", aiidalab.get("description", metadata_pep426.get("description", ""))
+    yield (
+        "description",
+        aiidalab.get("description", metadata_pep426.get("description", "")),
+    )
     yield "authors", aiidalab.get("authors", metadata_pep426.get("author", ""))
     yield "external_url", aiidalab.get("external_url", metadata_pep426.get("url", ""))
 
@@ -69,12 +72,15 @@ def _parse_setup_cfg(
         "documentation_url",
         aiidalab.get(
             "documentation_url",
-            project_urls.get("Documentation", "") or project_urls.get("documentation", ""),
+            project_urls.get("Documentation", "")
+            or project_urls.get("documentation", ""),
         ),
     )
     yield (
         "logo",
-        aiidalab.get("logo", project_urls.get("Logo", "") or project_urls.get("logo", "")),
+        aiidalab.get(
+            "logo", project_urls.get("Logo", "") or project_urls.get("logo", "")
+        ),
     )
     yield (
         "state",

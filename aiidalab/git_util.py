@@ -40,7 +40,7 @@ class GitManagedAppRepo(Repo):
 
     def list_branches(self) -> Any:
         """List all repository branches."""
-        return branch_list(self) 
+        return branch_list(self)
 
     def branch(self) -> bytes:
         """Return the current branch.
