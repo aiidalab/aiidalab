@@ -13,7 +13,7 @@ from functools import wraps
 from pathlib import Path
 from subprocess import run
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Iterable, Union
+from typing import TYPE_CHECKING, Any, Iterable
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
