@@ -66,7 +66,7 @@ As shown above, you can manage multiple profiles in AiiDAlab launch, e.g., with 
 
 .. code-block:: console
 
-   aiidalab-launch profiles --help
+   aiidalab-launch profile --help
 
 You can inspect the status of all configured AiiDAlab profiles with
 
