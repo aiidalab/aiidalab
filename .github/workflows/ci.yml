@@ -52,3 +52,26 @@ jobs:
               with:
                   flags: py-${{ matrix.python-version }}
                   token: ${{ secrets.CODECOV_TOKEN }}
+
+    pre-commit:
+
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+
+        steps:
+
+            - uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: '3.11'
+
+            - name: Install uv
+              run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/astral-sh/uv/releases/download/0.2.13/uv-installer.sh | sh
+
+            - name: Install dependencies
+              run: uv pip install .[dev]
+
+            - name: Run pre-commit
+              run: pre-commit run --all-files || (git status --short; git diff; exit 1)
