@@ -35,7 +35,7 @@ class BranchTrackingStatus(Enum):
     DIVERGED = 2
 
 
-class GitManagedAppRepo(Repo):
+class GitManagedAppRepo(Repo):  # type: ignore
     """Utility class to simplify management of git-based apps."""
 
     def list_branches(self) -> Any:
@@ -218,7 +218,7 @@ class GitPath(os.PathLike):  # type: ignore
         return self.read_bytes().decode(encoding=encoding, errors=errors)
 
 
-class GitRepo(Repo):
+class GitRepo(Repo):  # type: ignore
     def get_current_branch(self) -> str | None:
         try:
             branch = run(
