@@ -35,22 +35,16 @@ repos:
       hooks:
           - id: check-github-workflows
 
-    - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.13.0
+    - repo: local
       hooks:
           - id: mypy
+            name: mypy
+            entry: mypy
             args: [--config-file=setup.cfg]
-            additional_dependencies:
-                - types-tabulate
-                - types-setuptools
-                - types-jsonschema
-                - types-cachetools
-                - types-requests
-                - types-toml
-                - types-click
-                - types-click-spinner
-                - traitlets~=5.0
-                - packaging
+            language: python
+            types: [python]
+            require_serial: true
+            pass_filenames: true
             exclude: >-
                 (?x)^(
                   docs/.*|
