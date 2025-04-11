@@ -14,6 +14,10 @@ AiiDAlab is available as a Docker image, a blueprint for a self-contained, pre-c
 Installing Docker
 *****************
 
+.. important::
+
+   If you already have Docker installed, **please ensure that your user account is part of** the ``docker`` or ``docker-users`` **group** (system-dependent). If you are unsure, please follow the instructions in the **important** box corresponding to your operating system.
+
 Windows/Mac
 -----------
 
