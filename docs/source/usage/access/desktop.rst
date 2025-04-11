@@ -22,8 +22,17 @@ Fetch the AiiDAlab image
 #. In the search bar at the top of the app
 
    * Enter one of the following AiiDAlab images:
-      * ``aiidalab/qe`` - pre-configured with the `Quantum ESPRESSO app <https://aiidalab-qe.readthedocs.io/index.html>`_ (**recommended**)
+      * ``aiidalab/qe`` - pre-configured with the Quantum ESPRESSO app (**recommended**)
       * ``aiidalab/full-stack`` - bare image
+
+        .. note::
+
+            .. raw:: html
+
+               <p>
+                  We recommend the pre-configured image, as it includes much of the mechanics necessary to run a calculation on AiiDAlab.
+                  To learn more about the app, please visit the <a href="https://aiidalab-qe.readthedocs.io/index.html" target="_blank">AiiDAlab Quantum ESPRESSO app documentations</a>.
+               </p>
 
    * Select ``latest`` from the **Tag** dropdown menu
    * Click **Pull** to download the image

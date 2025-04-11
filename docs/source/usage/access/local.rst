@@ -21,7 +21,9 @@ Installing Docker
 Windows/Mac
 -----------
 
-We recommend to install `Docker Desktop <https://docs.docker.com/get-docker>`_, a convenient graphical user interface (GUI) for Docker, which simplifies the process of managing containers.
+.. raw:: html
+
+   We recommend to install  <a href="https://docs.docker.com/get-docker" target="_blank">Docker Desktop</a>, a convenient graphical user interface (GUI) for Docker, which simplifies the process of managing containers.
 
 .. important::
 
@@ -42,11 +44,17 @@ We recommend to install `Docker Desktop <https://docs.docker.com/get-docker>`_, 
 Linux
 -----
 
-Though Docker Desktop is available for Linux, we recommend the simpler option of installing the `Docker Engine <https://docs.docker.com/engine/install/>`_.
+.. raw:: html
+
+   Though Docker Desktop is available for Linux, we recommend the simpler option of installing the <a href="https://docs.docker.com/engine/install" target="_blank">Docker Engine</a>.
 
 .. important::
 
-   **For Linux users**, please follow the `post-installation steps for Docker Engine <https://docs.docker.com/engine/install/linux-postinstall/>`_.
+   .. raw:: html
+
+      <p>
+         <b>For Linux users</b>, please follow the <a href="https://docs.docker.com/engine/install/linux-postinstall/" target="_blank">post-installation steps for Docker Engine</a>.
+      </p>
 
 Launching AiiDAlab
 ******************
