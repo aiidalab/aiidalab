@@ -7,7 +7,7 @@ Local Docker Instance
 
    If you used another method to access AiiDAlab, you may proceed to :doc:`learn about AiiDAlab's features <../home>`.
 
-AiiDAlab is available as a Docker container, a self-contained, pre-configured environment including all the necessary software to access the AiiDAlab platform. To run the container, you will first need to :ref:`install Docker <install-docker>` on your local machine.
+AiiDAlab is available as a Docker image, a blueprint for a self-contained, pre-configured environment including all the necessary software to access the AiiDAlab platform. The following sections will guide you through the necessary steps to create a local AiiDAlab instance (Docker container) from this image.
 
 .. _install-docker:
 
