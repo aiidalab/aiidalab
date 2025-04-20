@@ -19,16 +19,21 @@ Fetch the AiiDAlab image
          :align: center
          :alt: Docker images
 
-#. In the search bar at the top of the app, type ``aiidalab/full-stack``
+#. In the search bar at the top of the app
+
+   * Enter one of the following AiiDAlab images:
+      * ``aiidalab/qe`` - pre-configured with the `Quantum ESPRESSO app <https://aiidalab-qe.readthedocs.io/index.html>`_ (**recommended**)
+      * ``aiidalab/full-stack`` - bare image
+
+   * Select ``latest`` from the **Tag** dropdown menu
+   * Click **Pull** to download the image
 
       .. image:: include/image-search.png
          :width: 100%
          :align: center
          :alt: Image search
 
-#. Select ``latest`` from the *tag* dropdown menu
-#. Click **Pull** to download the image
-#. Once downloaded, the image will appear as a new line in the list of images
+   * Once downloaded, the image will appear as a new line in the list of images
 
       .. image:: include/image-row.png
          :width: 100%
@@ -83,8 +88,8 @@ Create an AiiDAlab container
 #. Choose a local port from which to communicate with the container's 8888 port (e.g. ``8888``)
 #. Associate your new volumes with the corresponding container directories
 
-   #. ``aiidalab_home`` --> ``/home/jovyan``
-   #. ``aiidalab_conda`` --> ``/home/jovyan/.conda``
+   * ``aiidalab_home`` --> ``/home/jovyan``
+   * ``aiidalab_conda`` --> ``/home/jovyan/.conda``
 
 #. Click **Run** to start the container
 
