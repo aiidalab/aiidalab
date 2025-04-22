@@ -591,7 +591,7 @@ def _mock_schemas_endpoints() -> Generator[None, None, None]:
     import requests_mock
 
     schema_paths = [
-        path.name
+        path
         for path in resources.files(f"{__package__}.registry")
         .joinpath("schemas")
         .iterdir()
@@ -600,15 +600,9 @@ def _mock_schemas_endpoints() -> Generator[None, None, None]:
 
     with requests_mock.Mocker(real_http=True) as mocker:
         for schema_path in schema_paths:
-            schema_file = (
-                resources.files(f"{__package__}.registry")
-                .joinpath("schemas")
-                .joinpath(schema_path)
-            )
-            with schema_file.open("rb") as f:
-                schema = json.loads(f.read())
+            schema = json.loads(schema_path.read_bytes())
             mocker.get(
-                schema.get("$id", f"{SCHEMAS_CANONICAL_BASE_URL}/{schema_path}"),
+                schema.get("$id", f"{SCHEMAS_CANONICAL_BASE_URL}/{schema_path.name}"),
                 text=json.dumps(schema),
             )
         yield
