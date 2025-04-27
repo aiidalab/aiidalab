@@ -5,34 +5,33 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = aiidalab
-version = "attr: aiidalab.__version__"
-authors = [{name = 'The AiiDAlab team', email = 'aiidalab@materialcloud.org}]
+dynamic = ['version']
+authors = [{name = 'The AiiDAlab team', email = 'aiidalab@materialcloud.org'}]
 classifiers = [
-    Development Status :: 5 - Production/Stable
-    Framework :: AiiDA
-    License :: OSI Approved :: MIT License
-    Programming Language :: Python :: 3
-    Programming Language :: Python :: 3 :: Only
-    Programming Language :: Python :: Implementation :: CPython
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: AiiDA",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only".
+    "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-    cachetools~=4.1
-    click>=7.0,<9
-    click-spinner~=0.1
-    dulwich~=0.20
-    packaging>=20.1
-    pip
-    requests~=2.27
-    requests-cache~=1.0
-    setuptools
-    tabulate~=0.8
-    toml~=0.10
-    traitlets~=5.0
-    watchdog~=4.0
+    "cachetools~=4.1",
+    "click>=7.0,<9",
+    "click-spinner~=0.1",
+    "dulwich~=0.20",
+    "packaging>=20.1",
+    "pip",
+    "requests~=2.27",
+    "requests-cache~=1.0",
+    "setuptools",
+    "tabulate~=0.8",
+    "toml~=0.10",
+    "traitlets~=5.0",
+    "watchdog~=4.0",
 ]
 description = "Implements core functions of AiiDAlab"
-license = {file = 'LICENCE'}
-name = 'aiidalab'
+license = {file = 'LICENSE'}
 readme = 'README.md'
 requires-python = '>=3.9'
 
@@ -89,9 +88,6 @@ strict = true
 ignore_missing_imports = true
 strict_optional = true
 show_error_codes = true
-
-[tool.mypy-aiidalab.registry.*]
-ignore_errors = true
 
 [tool.bumpver]
 current_version = "v24.09.0"
