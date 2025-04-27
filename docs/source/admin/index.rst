@@ -26,6 +26,21 @@ We provide `instructions and deployment k8s scripts <https://github.com/aiidalab
 
 .. _admin-guide:maintain-app-registry:
 
+Usage policies
+--------------
+
+Regardless of the method, when deploying AiiDAlab for multiple users, we strongly recommend defining usage policies.
+We provide templates for documents like terms of use and privacy agreements in the `aiidalab-deployment-files <https://github.com/aiidalab/aiidalab-deployment-files>`_ repo.
+Instructions are provided there on how to generate HTML documents from the templates for use in your deployment.
+For an example deployment with policies, please see the `AiiDAlab demo-server deployment <https://github.com/aiidalab/aiidalab-demo-server>`_ (`PR #33 <https://github.com/aiidalab/aiidalab-demo-server/pull/33>`_ for implementation details).
+
+.. important::
+
+   The templates are derived from documents originally prepared for a Swiss deployment in Lausanne.
+   They are provided as a starting point for your own policies and **should be adapted to your specific use case**.
+   The AiiDAlab team is not responsible for the content of these documents, and we do not provide legal advice.
+   Please consult your institution's legal department for any questions regarding the content of these documents.
+
 Maintaining an app registry
 ===========================
 

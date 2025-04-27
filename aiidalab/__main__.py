@@ -586,24 +586,23 @@ def uninstall(
 
 @contextmanager
 def _mock_schemas_endpoints() -> Generator[None, None, None]:
-    import pkg_resources
+    import importlib.resources as resources
+
     import requests_mock
 
     schema_paths = [
         path
-        for path in pkg_resources.resource_listdir(f"{__package__}.registry", "schemas")
-        if path.endswith(".schema.json")
+        for path in resources.files(f"{__package__}.registry")
+        .joinpath("schemas")
+        .iterdir()
+        if path.is_file() and path.name.endswith(".schema.json")
     ]
 
     with requests_mock.Mocker(real_http=True) as mocker:
         for schema_path in schema_paths:
-            schema = json.loads(
-                pkg_resources.resource_string(
-                    f"{__package__}.registry", f"schemas/{schema_path}"
-                )
-            )
+            schema = json.loads(schema_path.read_bytes())
             mocker.get(
-                schema.get("$id", f"{SCHEMAS_CANONICAL_BASE_URL}/{schema_path}"),
+                schema.get("$id", f"{SCHEMAS_CANONICAL_BASE_URL}/{schema_path.name}"),
                 text=json.dumps(schema),
             )
         yield
