@@ -34,8 +34,8 @@ class AppRegistrySchemas:
         return cls(
             **{
                 field.name: json.loads(
-                    resources.files("aiidalab.registry.schemas")
-                    .joinpath(f"{field.name}.schema.json")
+                    resources.files("aiidalab.registry")
+                    .joinpath(f"schemas/{field.name}.schema.json")
                     .read_bytes()
                 )
                 for field in fields(cls)
