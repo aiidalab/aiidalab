@@ -94,7 +94,8 @@ ignore_missing_imports = true
 strict_optional = true
 show_error_codes = true
 
-[tool.mypy."aiidalab.registry.*"]
+[[tool.mypy.overrides]]
+module = "aiidalab.registry.*"
 ignore_errors = true
 
 [tool.bumpver]
