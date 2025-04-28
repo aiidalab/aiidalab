@@ -24,7 +24,6 @@ dependencies = [
     "pip",
     "requests~=2.27",
     "requests-cache~=1.0",
-    "setuptools",
     "tabulate~=0.8",
     "toml~=0.10",
     "traitlets~=5.0",
@@ -137,7 +136,7 @@ select = [
 "tests/*" = ["ARG001"]
 
 [tool.pytest.ini_options]
-addopts = '--strict-config --strict-markers -ra --durations-min=1 --durations=10'
+addopts = '--strict-config --strict-markers -ra'
 markers = [
   'registry: Tests relating to AiiDAlab registry functionality',
 ]
