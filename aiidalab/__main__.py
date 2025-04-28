@@ -6,12 +6,13 @@ import json
 import logging
 import shutil
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import contextmanager, nullcontext
 from dataclasses import asdict
 from fnmatch import fnmatch
 from pathlib import Path
 from textwrap import indent, wrap
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any
 
 import click
 from click_spinner import spinner
@@ -252,7 +253,7 @@ def show_environment(app_requirement: list[str], indent: int) -> None:
             for requirement in map(_parse_requirement, app_requirement)
         }
 
-    if not len(apps_and_releases):
+    if not apps_and_releases:
         # We show a warning if no apps are selected, but we still show the JSON
         # environment specification. Less potential to break scripted pipelines
         # that might operate on zero or more selected apps.
@@ -524,7 +525,7 @@ def uninstall(
             for _, name, app in apps_to_uninstall
         }
 
-    if not len(apps_to_uninstall):
+    if not apps_to_uninstall:
         click.echo("Nothing to uninstall, exiting.", err=True)
         return
 
