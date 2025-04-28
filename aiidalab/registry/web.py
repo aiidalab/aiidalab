@@ -34,8 +34,8 @@ def copy_static_tree_from_path(base_path, static_path):
 
 
 def _walk_pkg_resources(package, root):
-    paths = list(resources.files(package).joinpath(root).iterdir())
-    for path in paths:
+    paths = resources.files(package).joinpath(root).iterdir()
+    for path in paths.name:
         dir_paths = [
             path
             for path in paths
