@@ -38,7 +38,7 @@ def _walk_pkg_resources(package, root):
     for path in paths.name:
         dir_paths = [
             path
-            for path in paths
+            for path in paths.name
             if resources.files(package).joinpath(root, path).is_dir()
         ]
         yield root, list(set(paths).difference(dir_paths))
