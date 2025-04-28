@@ -61,6 +61,11 @@ docs = [
     "sphinx-design~=0.4.0",
     "sphinxcontrib-contentui",
     "sphinxcontrib-details-directive; python_version >= '3.0'",
+    # NOTE: These need to be pinned due to incompatibility with sphinx<5.0
+    # https://github.com/sphinx-doc/sphinx/issues/11890
+    # We can't easily upgrade to sphinx v5.0 since sphinx-panels is incompatible
+    # and is deprecated, we'd need to migrate to sphinx-design.
+    # https://sphinx-design.readthedocs.io/en/latest/get_started.html#migrating-from-sphinx-panels
     "sphinxcontrib-applehelp==1.0.4",
     "sphinxcontrib-devhelp==1.0.2",
     "sphinxcontrib-htmlhelp==2.0.1",
