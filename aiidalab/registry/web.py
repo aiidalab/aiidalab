@@ -35,15 +35,12 @@ def copy_static_tree_from_path(base_path, static_path):
 
 def _walk_pkg_resources(package, root):
     paths = resources.files(package).joinpath(root).iterdir()
-    for path in paths.name:
-        dir_paths = [
-            path
-            for path in paths.name
-            if resources.files(package).joinpath(root, path).is_dir()
-        ]
-        yield root, list(set(paths).difference(dir_paths))
-        for dir_path in dir_paths:
-            yield from _walk_pkg_resources(package, os.path.join(root, dir_path))
+    path = list(paths)
+    dir_paths = [path.name for fath in paths if path.is_dir()]
+    file_path = [path.name for path in paths if not path.is_dir()]
+    yield root, file_path
+    for dir_path in dir_paths:
+        yield from _walk_pkg_resources(package, os.path.join(root, dir_path))
 
 
 def copy_static_tree_from_package(html_path, root="static"):
