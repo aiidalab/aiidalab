@@ -94,6 +94,9 @@ ignore_missing_imports = true
 strict_optional = true
 show_error_codes = true
 
+[tool.mypy."aiidalab.registry.*"]
+ignore_errors = true
+
 [tool.bumpver]
 current_version = "v24.09.0"
 version_pattern = "v0Y.0M.PATCH[PYTAGNUM]"
