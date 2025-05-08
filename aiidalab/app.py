@@ -11,6 +11,7 @@ import sys
 import tarfile
 import tempfile
 import threading
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from enum import Enum, Flag, auto
@@ -19,7 +20,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
@@ -274,7 +275,7 @@ class _AiidaLabApp:
 
             # Check whether the locally installed version is the latest release.
             available_versions = list(self.available_versions(prereleases=prereleases))
-            if len(available_versions) and installed_version != available_versions[0]:
+            if available_versions and installed_version != available_versions[0]:
                 return AppRemoteUpdateStatus.UPDATE_AVAILABLE
 
             # App must be up-to-date.
