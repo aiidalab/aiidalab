@@ -15,11 +15,12 @@ from __future__ import annotations
 import locale
 import os
 import re
+from collections.abc import Generator
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError, run
-from typing import Any, Generator
+from typing import Any
 from urllib.parse import urldefrag
 
 from dulwich.porcelain import branch_list, status

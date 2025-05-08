@@ -23,10 +23,11 @@ matching the order shown here:
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from configparser import ConfigParser
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 
 from .git_util import GitPath
 

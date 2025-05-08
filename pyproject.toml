@@ -111,7 +111,6 @@ push = true
 [tool.ruff]
 line-length = 88
 show-fixes = true
-target-version = "py38"
 
 [tool.ruff.lint]
 ignore = ["E501", "E402", "B904", "TRY003"]
