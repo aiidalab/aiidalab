@@ -76,7 +76,7 @@ jobs:
                   activate-environment: true
 
             - name: Install dependencies
-              run: uv pip install .[dev,registry]
+              run: uv pip install -e .[dev,registry]
 
             - name: Run pre-commit
               run: pre-commit run --all-files || (git status --short; git diff; exit 1)
