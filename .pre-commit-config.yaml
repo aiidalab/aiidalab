@@ -12,7 +12,7 @@ repos:
           - id: trailing-whitespace
 
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.9.3
+      rev: v0.11.7
       hooks:
           - id: ruff-format
             exclude: ^docs/.*
@@ -31,7 +31,7 @@ repos:
           - id: yamlfmt
 
     - repo: https://github.com/sirosen/check-jsonschema
-      rev: 0.31.0
+      rev: 0.33.0
       hooks:
           - id: check-github-workflows
 
@@ -39,7 +39,7 @@ repos:
       rev: v1.13.0
       hooks:
           - id: mypy
-            args: [--config-file=setup.cfg]
+            args: [--config-file=pyproject.toml]
             additional_dependencies:
                 - types-tabulate
                 - types-setuptools

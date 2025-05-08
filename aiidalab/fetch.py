@@ -4,10 +4,10 @@ import logging
 import tarfile
 import tempfile
 import zipfile
+from collections.abc import Generator
 from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
-from typing import Generator
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 
 import dulwich

@@ -8,12 +8,13 @@ import subprocess
 import sys
 import time
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import asdict
 from functools import wraps
 from pathlib import Path
 from subprocess import run
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
