@@ -41,11 +41,11 @@ repos:
           - id: mypy
             name: mypy
             entry: mypy
-            args: [--config-file=pyproject.toml]
+            args: [--config-file=pyproject.toml, aiidalab/]
             language: python
             types: [python]
             require_serial: true
-            pass_filenames: true
+            pass_filenames: false
             exclude: >-
                 (?x)^(
                   docs/.*|
