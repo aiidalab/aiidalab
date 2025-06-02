@@ -1,6 +1,7 @@
 ---
 ci:
     autoupdate_schedule: quarterly
+    skip: [mypy]
 
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -35,22 +36,16 @@ repos:
       hooks:
           - id: check-github-workflows
 
-    - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.13.0
+    - repo: local
       hooks:
           - id: mypy
-            args: [--config-file=pyproject.toml]
-            additional_dependencies:
-                - types-tabulate
-                - types-setuptools
-                - types-jsonschema
-                - types-cachetools
-                - types-requests
-                - types-toml
-                - types-click
-                - types-click-spinner
-                - traitlets~=5.0
-                - packaging
+            name: mypy
+            entry: mypy
+            args: [--config-file=pyproject.toml, aiidalab/]
+            language: python
+            types: [python]
+            require_serial: true
+            pass_filenames: false
             exclude: >-
                 (?x)^(
                   docs/.*|

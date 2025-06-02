@@ -36,12 +36,12 @@ class BranchTrackingStatus(Enum):
     DIVERGED = 2
 
 
-class GitManagedAppRepo(Repo):  # type: ignore
+class GitManagedAppRepo(Repo):
     """Utility class to simplify management of git-based apps."""
 
     def list_branches(self) -> Any:
         """List all repository branches."""
-        return branch_list(self)
+        return branch_list(self)  # type: ignore[no-untyped-call]
 
     def branch(self) -> bytes:
         """Return the current branch.
@@ -71,7 +71,7 @@ class GitManagedAppRepo(Repo):  # type: ignore
 
     def dirty(self) -> bool:
         """Check if there are likely local user modifications to the app repository."""
-        status_ = status(self)
+        status_ = status(self)  # type: ignore[no-untyped-call]
         return bool(any(bool(_) for _ in status_.staged.values()) or status_.unstaged)
 
     def update_available(self) -> bool:
@@ -92,12 +92,12 @@ class GitManagedAppRepo(Repo):  # type: ignore
                 return BranchTrackingStatus.EQUAL
 
             # Check if local branch is behind the tracked branch:
-            for commit in self.get_walker(self.refs[tracked_branch]):
+            for commit in self.get_walker([self.refs[tracked_branch]]):
                 if commit.commit.id == self.refs[ref]:
                     return BranchTrackingStatus.BEHIND
 
             # Check if local branch is ahead of tracked branch:
-            for commit in self.get_walker(self.refs[ref]):
+            for commit in self.get_walker([self.refs[ref]]):
                 if commit.commit.id == self.refs[tracked_branch]:
                     return BranchTrackingStatus.AHEAD
 
@@ -219,7 +219,7 @@ class GitPath(os.PathLike):  # type: ignore
         return self.read_bytes().decode(encoding=encoding, errors=errors)
 
 
-class GitRepo(Repo):  # type: ignore
+class GitRepo(Repo):
     def get_current_branch(self) -> str | None:
         try:
             branch = run(
