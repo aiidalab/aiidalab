@@ -92,12 +92,12 @@ class GitManagedAppRepo(Repo):
                 return BranchTrackingStatus.EQUAL
 
             # Check if local branch is behind the tracked branch:
-            for commit in self.get_walker(self.refs[tracked_branch]):
+            for commit in self.get_walker([self.refs[tracked_branch]]):
                 if commit.commit.id == self.refs[ref]:
                     return BranchTrackingStatus.BEHIND
 
             # Check if local branch is ahead of tracked branch:
-            for commit in self.get_walker(self.refs[ref]):
+            for commit in self.get_walker([self.refs[ref]]):
                 if commit.commit.id == self.refs[tracked_branch]:
                     return BranchTrackingStatus.AHEAD
 
