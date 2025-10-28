@@ -12,7 +12,7 @@ The server comes with the `Quantum ESPRESSO app <https://aiidalab-qe.readthedocs
 
 .. important::
 
-   The demo server is **reset periodically**, and any data you upload or create will be lost after a certain period.
+   The demo server is **reset periodically**, removing all user data and installed apps.
    Therefore, it is recommended to use the demo server **only for testing and exploration**, and not for storing important data.
 
 Local instance
