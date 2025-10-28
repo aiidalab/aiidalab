@@ -3,6 +3,11 @@
 Docker Desktop
 **************
 
+.. note::
+
+   If you are using Windows Subsystem for Linux (WSL), you can use **AiiDAlab launch** to automate much of the setup process described below.
+   Please refer to the :doc:`AiiDAlab launch guide <launch>` for more information.
+
 .. important::
 
    The following steps require Docker Desktop. If you have yet to install it, please follow the instructions to :ref:`install Docker Desktop <install-docker>`.
