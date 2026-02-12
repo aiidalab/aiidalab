@@ -114,7 +114,7 @@ line-length = 88
 show-fixes = true
 
 [tool.ruff.lint]
-ignore = ["E501", "E402", "B904", "TRY003"]
+ignore = ["E501", "E402", "B904", "TRY003", "PLC0415"]
 select = [
   "A",    # flake8-builtins
   "ARG",  # flake8-unused-arguments
