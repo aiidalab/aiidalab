@@ -24,7 +24,7 @@ dependencies = [
     "pip",
     "requests~=2.27",
     "requests-cache~=1.0",
-    "setuptools",
+    "setuptools<82.0",
     "tabulate~=0.8",
     "toml~=0.10",
     "traitlets~=5.0",
