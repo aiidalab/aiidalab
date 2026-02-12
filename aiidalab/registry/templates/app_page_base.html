@@ -75,6 +75,17 @@
     </div>
     {% endif %}
 
+    {%if metadata and metadata.citation %}
+    <h2>
+        Citations
+    </h2>
+    <ul id='citations'>
+    {% for citation in metadata.citations %}
+        <li>{{ citation }}</li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+
 </main>
 
 {% endblock body %}
