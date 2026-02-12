@@ -19,10 +19,10 @@ jobs:
 
         steps:
 
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
 
             - name: Set up Python 3.10
-              uses: actions/setup-python@v5
+              uses: actions/setup-python@v6
               with:
                   python-version: '3.10'
 
@@ -38,7 +38,7 @@ jobs:
                   --outdir dist/
 
             - name: Upload distribution artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v6
               with:
                   name: release
                   path: dist/
@@ -59,7 +59,7 @@ jobs:
             url: https://test.pypi.org/project/aiidalab/
 
         steps:
-            - uses: actions/download-artifact@v4
+            - uses: actions/download-artifact@v7
               name: Download distribution artifact
               with:
                   name: release
@@ -88,7 +88,7 @@ jobs:
 
         steps:
 
-            - uses: actions/download-artifact@v4
+            - uses: actions/download-artifact@v7
               name: Download distribution artifact
               with:
                   name: release
