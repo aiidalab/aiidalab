@@ -90,6 +90,10 @@ h2 .category {
     color: #333;
 }
 
+.citations {
+    margin: 0;
+}
+
 .details {
     margin-top: 12px;
 }

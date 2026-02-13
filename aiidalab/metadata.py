@@ -91,6 +91,8 @@ def _parse_setup_cfg(
         categories = [c for c in categories.split("\n") if c]
     yield "categories", categories
 
+    yield "citations", metadata_pep426.get("citation", "").splitlines()
+
 
 @dataclass
 class Metadata:
@@ -105,6 +107,7 @@ class Metadata:
     logo: None | str = None
     categories: list[str] = field(default_factory=list)
     version: None | str = None
+    citations: list[str] = field(default_factory=list)
 
     _search_dirs = (".aiidalab", "./")
 
