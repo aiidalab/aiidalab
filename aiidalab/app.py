@@ -151,6 +151,10 @@ class _AiidaLabApp:
             local_registry_entry = cls._registry_entry_from_path(app_path)
             remote_registry_entry = load_app_registry_entry(app_id)
             registry_entry = remote_registry_entry or local_registry_entry
+            # If the caller did not tell us whether the app was registered or not,
+            # we can determine that here.
+            if registered is None:
+                registered = True if remote_registry_entry else False
 
         return cls.from_registry_entry(
             path=app_path, registry_entry=registry_entry, registered=registered
@@ -785,9 +789,13 @@ class AiidaLabApp(traitlets.HasTraits):
         app_data: dict[str, Any],
         aiidalab_apps_path: str,
         watch: bool = True,
+        registered: bool | None = None,
     ):
         self._app = _AiidaLabApp.from_id(
-            name, registry_entry=app_data, apps_path=aiidalab_apps_path
+            name,
+            registry_entry=app_data,
+            apps_path=aiidalab_apps_path,
+            registered=registered,
         )
         super().__init__()
 
