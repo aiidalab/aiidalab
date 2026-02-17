@@ -87,10 +87,14 @@ class _AiidaLabApp:
     # TODO: It would be nicer to use parsed packaging.Version as a key instead of str
     # That way it could also be pre-sorted.
     releases: dict[str, Any] = field(default_factory=dict)
+    _registered: bool | None = None
 
     @classmethod
     def from_registry_entry(
-        cls, path: Path, registry_entry: dict[str, Any]
+        cls,
+        path: Path,
+        registry_entry: dict[str, Any],
+        registered: bool | None = None,
     ) -> _AiidaLabApp:
         # Filter out invalid versions
         if releases := registry_entry.get("releases"):
@@ -103,6 +107,7 @@ class _AiidaLabApp:
                     del registry_entry["releases"][version]
         return cls(
             path=path,
+            _registered=registered,
             **{
                 key: value
                 for key, value in registry_entry.items()
@@ -132,6 +137,7 @@ class _AiidaLabApp:
         app_id: str,
         registry_entry: dict[str, Any] | None = None,
         apps_path: str | None = None,
+        registered: bool | None = None,
     ) -> _AiidaLabApp:
         from .config import AIIDALAB_APPS
         from .utils import load_app_registry_entry
@@ -145,19 +151,27 @@ class _AiidaLabApp:
             local_registry_entry = cls._registry_entry_from_path(app_path)
             remote_registry_entry = load_app_registry_entry(app_id)
             registry_entry = remote_registry_entry or local_registry_entry
+            # If the caller did not tell us whether the app was registered or not,
+            # we can determine that here.
+            if registered is None:
+                registered = True if remote_registry_entry else False
 
-        return cls.from_registry_entry(path=app_path, registry_entry=registry_entry)
+        return cls.from_registry_entry(
+            path=app_path, registry_entry=registry_entry, registered=registered
+        )
 
     def is_registered(self) -> bool | None:
         from .utils import load_app_registry_index
 
-        try:
-            app_registry_index = load_app_registry_index()
-        except RuntimeError as error:
-            logger.warning(str(error))
-            return None
-        else:
-            return self.name in app_registry_index["apps"]
+        if self._registered is None:
+            try:
+                app_registry_index = load_app_registry_index()
+            except RuntimeError as error:
+                logger.warning(str(error))
+                return None
+            else:
+                self._registered = self.name in app_registry_index["apps"]
+        return self._registered
 
     @property
     def _repo(self) -> Repo | None:
@@ -775,9 +789,13 @@ class AiidaLabApp(traitlets.HasTraits):
         app_data: dict[str, Any],
         aiidalab_apps_path: str,
         watch: bool = True,
+        registered: bool | None = None,
     ):
         self._app = _AiidaLabApp.from_id(
-            name, registry_entry=app_data, apps_path=aiidalab_apps_path
+            name,
+            registry_entry=app_data,
+            apps_path=aiidalab_apps_path,
+            registered=registered,
         )
         super().__init__()
 
