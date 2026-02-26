@@ -430,14 +430,12 @@ class _AiidaLabApp:
                 raise RuntimeError(msg)
 
             # Restarting the AiiDA daemon to import newly installed plugins.
-            # TODO: Skip this if verdi is not available (useful for testing).
             process = run_verdi_daemon_restart()
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                 stdout.write(line)
             process.wait()
             if process.returncode != 0:
-                # TODO: I don't think we should fail the installation if this step fails.
-                raise RuntimeError("Failed to restart verdi daemon.")
+                logger.warning("Failed to restart verdi daemon.")
 
         for path in (self.path.joinpath(".aiidalab"), self.path):
             if path.exists():
