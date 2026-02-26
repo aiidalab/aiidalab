@@ -69,10 +69,9 @@ jobs:
               uses: pypa/gh-action-pypi-publish@release/v1
               if: startsWith(github.ref, 'refs/heads/release/')
               with:
-                  user: __token__
                   password: ${{ secrets.PYPI_API_TOKEN }}
-                  repository_url: https://test.pypi.org/legacy/
-                  skip_existing: true
+                  repository-url: https://test.pypi.org/legacy/
+                  skip-existing: true
 
     publish:
 
@@ -105,5 +104,4 @@ jobs:
             - name: Publish distribution on PyPI
               uses: pypa/gh-action-pypi-publish@release/v1
               with:
-                  user: __token__
                   password: ${{ secrets.PYPI_API_TOKEN }}
