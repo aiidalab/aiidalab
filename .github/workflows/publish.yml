@@ -57,6 +57,8 @@ jobs:
         environment:
             name: Test PyPI
             url: https://test.pypi.org/project/aiidalab/
+        permissions:
+            id-token: write
 
         steps:
             - uses: actions/download-artifact@v7
