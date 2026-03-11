@@ -28,7 +28,7 @@ dependencies = [
     "tabulate~=0.8",
     "toml~=0.10",
     "traitlets~=5.0",
-    "watchdog~=4.0",
+    "watchdog~=6.0",
 ]
 description = "Implements core functions of AiiDAlab"
 license = {file = 'LICENSE'}
