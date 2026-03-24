@@ -59,7 +59,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_CORE_PACKAGES = [Package("aiida-core"), Package("jupyter-client")]
+_CORE_PACKAGES = [
+    Package("aiida-core"),
+    Package("jupyter-client"),
+    Package("ipywidgets"),
+]
 
 
 # A version is usually of type str, but it can also be a value
