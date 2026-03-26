@@ -56,6 +56,7 @@ def generate_app(monkeypatch, app_registry_path):
 
 _MONKEYPATCHED_INSTALLED_PACKAGES = [
     {"name": "aiida-core", "version": "2.2.1"},
+    {"name": "ipywidgets", "version": "7.6.0"},
     {"name": "jupyter_client", "version": "7.3.5"},
 ]
 
