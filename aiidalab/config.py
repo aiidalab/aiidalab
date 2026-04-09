@@ -11,7 +11,8 @@ CONFIG_PATH = Path.home() / "aiidalab.toml"
 _CONFIG = toml.loads(CONFIG_PATH.read_text()) if CONFIG_PATH.is_file() else {}
 _DEVELOP_MODE = _CONFIG.get("develop", False)
 
-if _DEVELOP_MODE:  # Warn developer that the mode is enabled.
+# Warn developer that the mode is enabled.
+if _DEVELOP_MODE and not getenv("_AIIDALAB_COMPLETE"):
     lines = [f"Executing '{__name__.split('.')[0]}' in DEVELOP mode."]
     config_ = {k: v for k, v in _CONFIG.items() if k != "develop"}
     if config_:  # The config does not only contain the 'develop' key.
