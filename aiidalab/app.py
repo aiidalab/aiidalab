@@ -537,10 +537,10 @@ class _AiidaLabApp:
         post_install_triggers: bool = True,
     ) -> None:
         if version is None:
-            versions = sort_semantic(self.releases, prereleases=prereleases)
-            if len(versions) == 0:
+            try:
+                version = next(self.available_versions(prereleases=prereleases))
+            except StopIteration:
                 raise ValueError(f"No versions available for '{self}'.")
-            version = versions[0]
         if python_bin is None:
             python_bin = sys.executable
 
@@ -900,8 +900,6 @@ class AiidaLabApp(traitlets.HasTraits):
             # Installing with version=None automatically selects latest
             # available version.
             version = self.install_app(version=None, stdout=stdout)
-            FIND_INSTALLED_PACKAGES_CACHE.clear()
-            self.refresh()
             return version
 
     def uninstall_app(self) -> None:
