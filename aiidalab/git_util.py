@@ -220,7 +220,7 @@ class GitPath(os.PathLike):  # type: ignore[type-arg]
 
 
 class GitRepo(Repo):
-    def get_current_branch(self) -> str | None:
+    def get_current_branch(self) -> str:
         try:
             branch = run(
                 ["git", "branch", "--show-current"],

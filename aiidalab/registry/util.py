@@ -28,4 +28,4 @@ def get_hosted_on(url):
 
 
 def load_json(path: Path) -> dict:
-    return json.loads(path.read_text())
+    return json.loads(path.read_text())  # type: ignore[no-any-return]
