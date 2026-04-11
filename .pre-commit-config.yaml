@@ -20,12 +20,6 @@ repos:
           - id: ruff
             args: [--fix, --exit-non-zero-on-fix, --show-fixes]
 
-    #  Currently disabled due to issues with installation pre-commit.ci:
-    #- repo: https://github.com/mgedmin/check-manifest
-    #  rev: '0.47'
-    #  hooks:
-    #      - id: check-manifest
-
     - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
       rev: 0.2.3
       hooks:
@@ -42,7 +36,7 @@ repos:
             name: mypy
             entry: mypy
             args: [--pretty, --config-file=pyproject.toml, aiidalab/]
-            language: unsupported
+            language: system
             types: [python]
             require_serial: true
             pass_filenames: false
