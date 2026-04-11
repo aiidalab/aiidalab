@@ -42,7 +42,7 @@ repos:
             name: mypy
             entry: mypy
             args: [--config-file=pyproject.toml, aiidalab/]
-            language: python
+            language: unsupported
             types: [python]
             require_serial: true
             pass_filenames: false
