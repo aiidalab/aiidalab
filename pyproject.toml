@@ -153,5 +153,6 @@ markers = [
   'registry: Tests relating to AiiDAlab registry functionality',
 ]
 filterwarnings = [
+  # https://github.com/aiidalab/aiidalab/issues/432
   'ignore:pkg_resources is deprecated as an API:UserWarning:',
 ]
