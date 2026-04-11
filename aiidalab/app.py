@@ -27,7 +27,11 @@ from uuid import uuid4
 import requests
 import traitlets
 from dulwich.errors import NotGitRepository
-from watchdog.events import EVENT_TYPE_OPENED, FileSystemEventHandler
+from watchdog.events import (
+    EVENT_TYPE_CLOSED_NO_WRITE,
+    EVENT_TYPE_OPENED,
+    FileSystemEventHandler,
+)
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
@@ -59,7 +63,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_CORE_PACKAGES = [Package("aiida-core"), Package("jupyter-client")]
+_CORE_PACKAGES = [
+    Package("aiida-core"),
+    Package("jupyter-client"),
+    Package("ipywidgets"),
+]
 
 
 # A version is usually of type str, but it can also be a value
@@ -430,14 +438,12 @@ class _AiidaLabApp:
                 raise RuntimeError(msg)
 
             # Restarting the AiiDA daemon to import newly installed plugins.
-            # TODO: Skip this if verdi is not available (useful for testing).
             process = run_verdi_daemon_restart()
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                 stdout.write(line)
             process.wait()
             if process.returncode != 0:
-                # TODO: I don't think we should fail the installation if this step fails.
-                raise RuntimeError("Failed to restart verdi daemon.")
+                logger.warning("Failed to restart verdi daemon.")
 
         for path in (self.path.joinpath(".aiidalab"), self.path):
             if path.exists():
@@ -535,10 +541,10 @@ class _AiidaLabApp:
         post_install_triggers: bool = True,
     ) -> None:
         if version is None:
-            versions = sort_semantic(self.releases, prereleases=prereleases)
-            if len(versions) == 0:
+            try:
+                version = next(self.available_versions(prereleases=prereleases))
+            except StopIteration:
                 raise ValueError(f"No versions available for '{self}'.")
-            version = versions[0]
         if python_bin is None:
             python_bin = sys.executable
 
@@ -624,7 +630,7 @@ class AiidaLabAppWatch:
 
         def on_any_event(self, event: FileSystemEvent) -> None:
             """Refresh app for any event except opened."""
-            if event.event_type != EVENT_TYPE_OPENED:
+            if event.event_type not in (EVENT_TYPE_OPENED, EVENT_TYPE_CLOSED_NO_WRITE):
                 self.app.refresh_async()
 
     def __init__(self, app: AiidaLabApp):
@@ -898,8 +904,6 @@ class AiidaLabApp(traitlets.HasTraits):
             # Installing with version=None automatically selects latest
             # available version.
             version = self.install_app(version=None, stdout=stdout)
-            FIND_INSTALLED_PACKAGES_CACHE.clear()
-            self.refresh()
             return version
 
     def uninstall_app(self) -> None:

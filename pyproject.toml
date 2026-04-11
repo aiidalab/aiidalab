@@ -27,7 +27,7 @@ dependencies = [
     "tabulate~=0.8",
     "toml~=0.10",
     "traitlets~=5.0",
-    "watchdog~=4.0",
+    "watchdog~=6.0",
 ]
 description = "Implements core functions of AiiDAlab"
 license = {file = 'LICENSE'}
@@ -98,7 +98,7 @@ module = "aiidalab.registry.*"
 ignore_errors = true
 
 [tool.bumpver]
-current_version = "v24.09.0"
+current_version = "v26.02.0"
 version_pattern = "v0Y.0M.PATCH[PYTAGNUM]"
 commit_message = "Bump version {old_version} -> {new_version}"
 commit = true
