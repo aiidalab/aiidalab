@@ -20,10 +20,10 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError, run
-from typing import Any
 from urllib.parse import urldefrag
 
 from dulwich.porcelain import branch_list, status
+from dulwich.refs import Ref  # Ref = NewType(bytes)
 from dulwich.repo import Repo
 
 
@@ -39,21 +39,21 @@ class BranchTrackingStatus(Enum):
 class GitManagedAppRepo(Repo):
     """Utility class to simplify management of git-based apps."""
 
-    def list_branches(self) -> Any:
+    def list_branches(self) -> list[Ref]:
         """List all repository branches."""
-        return branch_list(self)  # type: ignore[no-untyped-call]
+        return branch_list(self)
 
     def branch(self) -> bytes:
         """Return the current branch.
 
         Raises RuntimeError if the repository is in a detached HEAD state.
         """
-        branches = self._get_branch_for_ref(b"HEAD")
+        branches = self._get_branch_for_ref(Ref(b"HEAD"))
         if branches:
             return branches[0]
         raise RuntimeError("In detached HEAD state.")
 
-    def get_tracked_branch(self, branch: bytes | None = None) -> Any:
+    def get_tracked_branch(self, branch: bytes | None = None) -> Ref | None:
         """Return the tracked branch for a given branch or None if the branch is not tracking."""
         if branch is None:
             branch = self.branch()
@@ -67,11 +67,11 @@ class GitManagedAppRepo(Repo):
         else:
             pattern = rb"refs\/heads"
             remote_ref = b"refs/remotes/" + remote + re.sub(pattern, b"", merge)
-            return remote_ref
+            return Ref(remote_ref)
 
     def dirty(self) -> bool:
         """Check if there are likely local user modifications to the app repository."""
-        status_ = status(self)  # type: ignore[no-untyped-call]
+        status_ = status(self)
         return bool(any(bool(_) for _ in status_.staged.values()) or status_.unstaged)
 
     def update_available(self) -> bool:
@@ -85,7 +85,7 @@ class GitManagedAppRepo(Repo):
         """Return the tracking status of branch."""
         tracked_branch = self.get_tracked_branch(branch)
         if tracked_branch:
-            ref = b"refs/heads/" + branch
+            ref = Ref(b"refs/heads/" + branch)
 
             # Check if local branch points to same commit as tracked branch:
             if self.refs[ref] == self.refs[tracked_branch]:
@@ -105,7 +105,7 @@ class GitManagedAppRepo(Repo):
 
         return None
 
-    def _get_branch_for_ref(self, ref: bytes) -> list[bytes]:
+    def _get_branch_for_ref(self, ref: Ref) -> list[bytes]:
         """Get the branch name for a given reference."""
         pattern = rb"refs\/heads\/"
         return [
@@ -115,7 +115,7 @@ class GitManagedAppRepo(Repo):
         ]
 
 
-def git_clone(url, commit, path: Path):  # type: ignore
+def git_clone(url: str, commit: str | None, path: Path) -> None:
     try:
         run(
             ["git", "clone", str(url), str(path)],
@@ -123,9 +123,9 @@ def git_clone(url, commit, path: Path):  # type: ignore
             encoding="utf-8",
             check=True,
         )
-        if commit is not None:
+        if commit:
             run(
-                ["git", "checkout", str(commit)],
+                ["git", "checkout", commit],
                 capture_output=True,
                 encoding="utf-8",
                 check=True,
@@ -136,7 +136,7 @@ def git_clone(url, commit, path: Path):  # type: ignore
 
 
 @dataclass
-class GitPath(os.PathLike):  # type: ignore
+class GitPath(os.PathLike):  # type: ignore[type-arg]
     """Utility class to operate on git objects like path objects."""
 
     repo: Path
@@ -239,12 +239,13 @@ class GitRepo(Repo):
             )
         return branch.strip()
 
-    def get_commit_for_tag(self, tag: str) -> Any:
-        return self.get_peeled(f"refs/tags/{tag}".encode()).decode()
+    def get_commit_for_tag(self, tag: str) -> str:
+        ref = Ref(f"refs/tags/{tag}".encode())
+        return self.get_peeled(ref).decode()
 
     def get_merged_tags(self, branch: str) -> Generator[str, None, None]:
         for branch_ref in [f"refs/heads/{branch}", f"refs/remotes/origin/{branch}"]:
-            if branch_ref.encode() in self.refs:
+            if Ref(branch_ref.encode()) in self.refs:
                 yield from run(
                     ["git", "tag", "--merged", branch_ref],
                     cwd=self.path,
@@ -272,11 +273,11 @@ class GitRepo(Repo):
         tag reference, otherwise the rev itself (assuming it is a commit id).
         """
 
-        if f"refs/heads/{rev}".encode() in self.refs:
+        if Ref(f"refs/heads/{rev}".encode()) in self.refs:
             return f"refs/heads/{rev}"
-        elif f"refs/remotes/origin/{rev}".encode() in self.refs:
+        elif Ref(f"refs/remotes/origin/{rev}".encode()) in self.refs:
             return f"refs/remotes/origin/{rev}"
-        elif f"refs/tags/{rev}".encode() in self.refs:
+        elif Ref(f"refs/tags/{rev}".encode()) in self.refs:
             return f"refs/tags/{rev}"
         else:
             return rev
