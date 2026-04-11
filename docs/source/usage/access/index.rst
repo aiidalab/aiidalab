@@ -2,9 +2,34 @@
 Access AiiDAlab
 ===============
 
-.. div:: sd-fs-5
+We provide several options for accessing AiiDAlab, depending on your needs and technical background.
 
-   Please select one of the following options for accessing AiiDAlab.
+.. grid:: 1 1 1 1
+   :gutter: 3
+   :margin: 0
+   :padding: 0
+
+   .. grid-item-card:: AiiDAlab Demo Server
+      :text-align: center
+      :shadow: md
+
+      Access the online demo server to explore AiiDAlab without any installation. The demo server is pre-configured with the `Quantum ESPRESSO app <https://aiidalab-qe.readthedocs.io/>`_, including example workflows and tutorials, to help you get started with AiiDAlab.
+
+      ++++
+
+      .. button-link:: https://demo.aiidalab.io/
+         :expand:
+         :color: primary
+         :outline:
+
+         To the demo server
+
+.. important::
+
+   The demo server is **reset periodically**, removing all user data and installed apps.
+   Therefore, it is recommended to use the demo server **only for testing and exploration**, and not for storing important data.
+
+----
 
 .. grid:: 1 1 2 2
    :gutter: 3
@@ -44,21 +69,9 @@ Access AiiDAlab
 
          To the download page
 
-   .. grid-item-card:: Materials Cloud AiiDAlab Server
-      :text-align: center
-      :shadow: md
+----
 
-      For researchers affiliated with Materials Cloud partners, log into the open AiiDAlab server hosted on the Materials Cloud.
-
-      ++++
-
-      .. button-link:: https://aiidalab.materialscloud.org/hub/login
-         :click-parent:
-         :expand:
-         :color: primary
-         :outline:
-
-         Launch the server
+You can also ask your group or institutional admin to install an AiiDAlab server for you (refer to the :doc:`deployment guide <../../admin/index>`).
 
 .. toctree::
    :maxdepth: 1
