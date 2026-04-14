@@ -275,13 +275,8 @@ def run_pip_install(*args: Any, python_bin: str) -> Any:
 
 
 def run_verdi_daemon_restart() -> Any:
-    # When installing or updating a plugin package, one needs to
-    # restart the daemon with the ``--reset`` flag for changes to take effect.
-    # Note, in the latest aiida-core branch, this is now the default.
-    # We need to remove "--reset" from the command to avoid an error
-    # in the future if the flag is removed.
     return subprocess.Popen(
-        ["verdi", "daemon", "restart", "--reset"],
+        ["verdi", "daemon", "restart"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
