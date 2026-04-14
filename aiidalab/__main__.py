@@ -715,7 +715,7 @@ def build(
 
         build --apps=apps.yaml --categories=categories.yaml --out=./build/
     """
-    from jsonref import JsonRefError
+    from jsonref import JsonRefError  # type: ignore[import-untyped]
     from jsonschema.exceptions import RefResolutionError, ValidationError
 
     from .registry import build as build_registry

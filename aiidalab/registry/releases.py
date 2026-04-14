@@ -1,8 +1,11 @@
 import logging
 import os
 import re
+from collections.abc import Generator
 from dataclasses import dataclass, replace
 from urllib.parse import urlsplit, urlunsplit
+
+from dulwich.refs import Ref
 
 from ..environment import Environment
 from ..fetch import fetch_from_url
@@ -31,7 +34,9 @@ def _split_release_line(url):
     return url, None
 
 
-def _get_tags(repo: GitRepo, branch: str, rev_selection: str):
+def _get_tags(
+    repo: GitRepo, branch: str, rev_selection: str
+) -> Generator[tuple[str, str]]:
     """Get all tags for given revision selection of a branch.
 
     :param repo: Git repository object.
@@ -52,7 +57,7 @@ def _get_tags(repo: GitRepo, branch: str, rev_selection: str):
     # `@main:v1..main`. Therefore, we first determine the branch ref for the
     # given rev:
     for ref in [f"refs/heads/{branch}", f"refs/remotes/origin/{branch}"]:
-        if ref.encode() in repo.refs:
+        if Ref(ref.encode()) in repo.refs:
             break
     else:
         raise RuntimeError(f"Revision '{branch}' not a valid branch name.")
@@ -69,7 +74,9 @@ def _get_tags(repo: GitRepo, branch: str, rev_selection: str):
             yield tag, commit
 
 
-def _get_release_commits(repo: GitRepo, release_line: str):
+def _get_release_commits(
+    repo: GitRepo, release_line: str
+) -> Generator[tuple[str, str]]:
     """Get the commits for a release line.
 
     :param repo: Git repository object.
@@ -87,7 +94,8 @@ def _get_release_commits(repo: GitRepo, release_line: str):
         # loop over all remote branches and yield the tags for the commits
 
         tags = set()
-        for branch in repo.refs.as_dict(b"refs/remotes/origin/").keys():
+        remote_ref = Ref(b"refs/remotes/origin/")
+        for branch in repo.refs.as_dict(remote_ref).keys():
             rev = branch.decode()
             rev_selection = match.groupdict()["rev_selection"]
 
@@ -102,13 +110,14 @@ def _get_release_commits(repo: GitRepo, release_line: str):
         # No rev_selection means to select this and only this specific
         # revision.  For example: '@main' means, simply checkout 'main' (could
         # be a branch or a tag, however branches have priority).
-        for ref in [
+        for r in [
             f"refs/heads/{rev}",
             f"refs/remotes/origin/{rev}",
             f"refs/tags/{rev}",
         ]:
-            if ref.encode() in repo.refs:
-                yield rev, repo.get_peeled(ref.encode()).decode()
+            ref = Ref(r.encode())
+            if ref in repo.refs:
+                yield rev, repo.get_peeled(ref).decode()
                 return
         # rev likely committish (commit)
         yield rev, rev

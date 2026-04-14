@@ -2,14 +2,14 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import cachecontrol
-import jsonref
+import jsonref  # type: ignore[import-untyped]
 import requests
 from ruamel.yaml import YAML
 
 REQUESTS = cachecontrol.CacheControl(requests.Session())
 
 
-class JsonYamlLoader(jsonref.JsonLoader):
+class JsonYamlLoader(jsonref.JsonLoader):  # type: ignore[misc]
     safe_yaml = YAML(typ="safe")
 
     def __call__(self, uri, **kwargs):
