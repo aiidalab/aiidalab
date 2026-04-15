@@ -132,7 +132,7 @@ def git_clone(url: str, commit: str | None, path: Path) -> None:
                 cwd=str(path),
             )
     except CalledProcessError as error:
-        raise RuntimeError(error.stderr) from error
+        raise RuntimeError(error.stderr)
 
 
 @dataclass
@@ -203,11 +203,11 @@ class GitPath(os.PathLike):  # type: ignore[type-arg]
                 error_message,
                 flags=re.IGNORECASE,
             ):
-                raise FileNotFoundError(f"{self.commit}:{self.path}") from error
+                raise FileNotFoundError(f"{self.commit}:{self.path}")
             elif re.match(
                 "fatal: Invalid object name", error_message, flags=re.IGNORECASE
             ):
-                raise ValueError(f"Unknown commit: {self.commit}") from error
+                raise ValueError(f"Unknown commit: {self.commit}")
             else:
                 raise  # unexpected error
 
@@ -231,13 +231,12 @@ class GitRepo(Repo):
             ).stdout
         except CalledProcessError as error:
             if error.returncode == 129:
-                raise RuntimeError(
-                    "This function equires at least git version 2.22."
-                ) from error
+                raise RuntimeError("This function equires at least git version 2.22.")
             raise
         if not branch:
-            msg = "Unable to determine current branch name, likely in detached HEAD state."
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                "Unable to determine current branch name, likely in detached HEAD state."
+            )
         return branch.strip()
 
     def get_commit_for_tag(self, tag: str) -> str:
