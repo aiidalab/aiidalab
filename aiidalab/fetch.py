@@ -32,7 +32,7 @@ def _fetch_from_path(path: Path | GitPath) -> Generator[Path | GitPath, None, No
             try:
                 data = path.read_bytes()
             except (ValueError, FileNotFoundError) as error:
-                raise RuntimeError(f"{error}")
+                raise RuntimeError(f"{error}") from error
             try:
                 with tarfile.open(fileobj=BytesIO(data)) as tar_file:
                     tar_file.extractall(path=tmp_dir)
