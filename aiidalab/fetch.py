@@ -29,10 +29,7 @@ def _fetch_from_path(path: Path | GitPath) -> Generator[Path | GitPath, None, No
         yield path
     else:
         with tempfile.TemporaryDirectory() as tmp_dir:
-            try:
-                data = path.read_bytes()
-            except (ValueError, FileNotFoundError) as error:
-                raise RuntimeError(f"{error}") from error
+            data = path.read_bytes()
             try:
                 with tarfile.open(fileobj=BytesIO(data)) as tar_file:
                     tar_file.extractall(path=tmp_dir)
