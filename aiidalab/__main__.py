@@ -301,9 +301,7 @@ def _find_version_to_install(
             "name": app_requirement.name,
             "metadata": asdict(metadata),
         }
-        app = _AiidaLabApp.from_id(
-            app_requirement.name, registry_entry=registry_entry
-        )
+        app = _AiidaLabApp.from_id(app_requirement.name, registry_entry=registry_entry)
         if not (force or (dependencies in ("install", "ignore"))):
             raise click.ClickException(
                 f"Unable to check compatibility for {app_requirement} prior to installation."
