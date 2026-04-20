@@ -295,7 +295,7 @@ def _find_version_to_install(
             with fetch_from_url(app_requirement.url) as repo:
                 metadata = Metadata.parse(repo)
         except InvalidGitRefError as e:
-            raise click.ClickException(e)
+            raise click.ClickException(str(e))
 
         registry_entry = {
             "name": app_requirement.name,
