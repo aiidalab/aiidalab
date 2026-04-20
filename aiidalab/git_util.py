@@ -211,7 +211,7 @@ class GitPath(os.PathLike):  # type: ignore[type-arg]
             elif re.match(
                 "fatal: Invalid object name", error_message, flags=re.IGNORECASE
             ):
-                raise InvalidGitRefError(f"Unknown Git reference: {self.commit}")
+                raise InvalidGitRefError(f"Unknown git reference: '{self.commit}'")
             else:
                 raise  # unexpected error
 
