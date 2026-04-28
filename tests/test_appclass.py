@@ -47,11 +47,9 @@ def test_dependencies(generate_app):
 
 @pytest.mark.usefixtures("installed_packages")
 def test_app_is_not_registered(generate_app, monkeypatch, tmp_path):
-    """test the app is not registered and the available versions are empty."""
+    """test that if app is not registered, the available versions are empty."""
 
-    app: AiidaLabApp = generate_app()
-    # monkeypatch and make the app not registered
-    monkeypatch.setattr(app._app, "is_registered", lambda: False)
+    app: AiidaLabApp = generate_app(registered=False)
     app.refresh()
 
     assert app.is_installed() is True
