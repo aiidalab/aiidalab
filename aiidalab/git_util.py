@@ -36,6 +36,10 @@ class BranchTrackingStatus(Enum):
     DIVERGED = 2
 
 
+class InvalidGitRefError(ValueError):
+    pass
+
+
 class GitManagedAppRepo(Repo):
     """Utility class to simplify management of git-based apps."""
 
@@ -207,7 +211,7 @@ class GitPath(os.PathLike):  # type: ignore[type-arg]
             elif re.match(
                 "fatal: Invalid object name", error_message, flags=re.IGNORECASE
             ):
-                raise ValueError(f"Unknown commit: {self.commit}")
+                raise InvalidGitRefError(f"Unknown git reference: '{self.commit}'")
             else:
                 raise  # unexpected error
 
