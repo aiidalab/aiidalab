@@ -21,6 +21,7 @@ from tabulate import tabulate
 from . import __version__
 from .app import AppVersion, _AiidaLabApp
 from .fetch import fetch_from_url
+from .git_util import InvalidGitRefError
 from .metadata import Metadata
 from .utils import PEP508CompliantUrl, load_app_registry_index, sort_semantic
 from .utils import parse_app_repo as _parse_app_repo
@@ -290,19 +291,21 @@ def _find_version_to_install(
     prereleases: bool,
 ) -> tuple[_AiidaLabApp, str | None]:
     if app_requirement.url is not None:
-        with fetch_from_url(app_requirement.url) as repo:
-            metadata = Metadata.parse(repo)
-            registry_entry = {
-                "name": app_requirement.name,
-                "metadata": asdict(metadata),
-            }
-            app = _AiidaLabApp.from_id(
-                app_requirement.name, registry_entry=registry_entry
+        try:
+            with fetch_from_url(app_requirement.url) as repo:
+                metadata = Metadata.parse(repo)
+        except InvalidGitRefError as e:
+            raise click.ClickException(str(e))
+
+        registry_entry = {
+            "name": app_requirement.name,
+            "metadata": asdict(metadata),
+        }
+        app = _AiidaLabApp.from_id(app_requirement.name, registry_entry=registry_entry)
+        if not (force or (dependencies in ("install", "ignore"))):
+            raise click.ClickException(
+                f"Unable to check compatibility for {app_requirement} prior to installation."
             )
-            if not (force or (dependencies in ("install", "ignore"))):
-                raise click.ClickException(
-                    f"Unable to check compatibility for {app_requirement} prior to installation."
-                )
 
         if force or not app.is_installed():
             return app, PEP508CompliantUrl(app_requirement.url)
@@ -715,7 +718,7 @@ def build(
 
         build --apps=apps.yaml --categories=categories.yaml --out=./build/
     """
-    from jsonref import JsonRefError
+    from jsonref import JsonRefError  # type: ignore[import-untyped]
     from jsonschema.exceptions import RefResolutionError, ValidationError
 
     from .registry import build as build_registry

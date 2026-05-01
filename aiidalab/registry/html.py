@@ -1,5 +1,7 @@
 """Generate the app registry website HTML pages."""
 
+from __future__ import annotations
+
 from collections import defaultdict
 
 from jinja2 import (
@@ -20,9 +22,10 @@ def build_html(base_path, apps_index, apps_data, templates_path):
     base_path.mkdir(parents=True, exist_ok=True)
 
     # Setup template environment
-    loaders = [PackageLoader(__name__)]
+    loaders: list[FileSystemLoader | PackageLoader] = []
     if templates_path:
-        loaders.insert(0, FileSystemLoader(templates_path))
+        loaders.append(FileSystemLoader(templates_path))
+    loaders.append(PackageLoader(__name__))
 
     env = Environment(
         loader=ChoiceLoader(loaders),
@@ -35,7 +38,7 @@ def build_html(base_path, apps_index, apps_data, templates_path):
 
     # Make single-entry pages based on app_page.html
     base_path.joinpath("apps").mkdir()
-    html_template_data = defaultdict(dict)
+    html_template_data: dict[str, dict] = defaultdict(dict)
 
     for app_id in apps_index["apps"]:
         subpage = base_path.joinpath("apps", app_id, "index.html")

@@ -41,10 +41,17 @@ aiidalab = "aiidalab.__main__:cli"
 [project.optional-dependencies]
 dev = [
     "bumpver>=2021.1114",
-    "pre-commit>=3.5",
-    "pytest~=8.2.0",
-    "pytest-cov~=5.0",
+    "pre-commit>=3.4",
+    "pytest~=8.4.0",
+    "pytest-cov~=7.0",
     "ruamel.yaml~=0.16",
+    "mypy~=1.19.0",
+    "types-tabulate~=0.8",
+    "types-jsonschema~=3.2",
+    "types-cachetools~=4.1",
+    "types-requests~=2.27",
+    "types-toml~=0.10",
+    "types-click-spinner~=0.1",
 ]
 registry = [
     "CacheControl~=0.12",
@@ -89,16 +96,21 @@ exclude = [
 
 [tool.mypy]
 strict = true
-ignore_missing_imports = true
 strict_optional = true
 show_error_codes = true
+exclude = [
+    'tests/*',
+    'docs/*',
+]
 
 [[tool.mypy.overrides]]
 module = "aiidalab.registry.*"
-ignore_errors = true
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+disallow_any_generics = false
 
 [tool.bumpver]
-current_version = "v26.02.0"
+current_version = "v26.05.0"
 version_pattern = "v0Y.0M.PATCH[PYTAGNUM]"
 commit_message = "Bump version {old_version} -> {new_version}"
 commit = true
@@ -138,4 +150,8 @@ select = [
 addopts = '--strict-config --strict-markers -ra'
 markers = [
   'registry: Tests relating to AiiDAlab registry functionality',
+]
+filterwarnings = [
+  # https://github.com/aiidalab/aiidalab/issues/432
+  'ignore:pkg_resources is deprecated as an API:UserWarning:',
 ]

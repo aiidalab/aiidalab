@@ -29,14 +29,15 @@ def _fetch_from_path(path: Path | GitPath) -> Generator[Path | GitPath, None, No
         yield path
     else:
         with tempfile.TemporaryDirectory() as tmp_dir:
+            data = path.read_bytes()
             try:
-                with tarfile.open(fileobj=BytesIO(path.read_bytes())) as tar_file:
+                with tarfile.open(fileobj=BytesIO(data)) as tar_file:
                     tar_file.extractall(path=tmp_dir)
                     yield _this_or_only_subdir(Path(tmp_dir))
             except tarfile.ReadError as error:
                 logger.debug(str(error))
                 try:
-                    with zipfile.ZipFile(BytesIO(path.read_bytes())) as zip_file:
+                    with zipfile.ZipFile(BytesIO(data)) as zip_file:
                         zip_file.extractall(path=tmp_dir)
                         yield _this_or_only_subdir(Path(tmp_dir))
                 except zipfile.BadZipFile as error:
@@ -74,7 +75,7 @@ def _fetch_from_git_https(git_url: str) -> Generator[Path | GitPath, None, None]
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         repo = GitRepo.clone_from_url(url, tmp_dir)
-        git_path = GitPath(repo.path, repo.ref_from_rev(rev)).joinpath(path)
+        git_path = GitPath(Path(repo.path), repo.ref_from_rev(rev)).joinpath(path)
         with _fetch_from_path(git_path) as tmp_path:
             yield tmp_path
 
@@ -91,7 +92,7 @@ def _fetch_from_git_local(git_url: str) -> Generator[Path | GitPath, None, None]
             + (" Did you use a relative path?" if urlsplit(url).netloc else "")
         )
 
-    git_path = GitPath(repo.path, repo.ref_from_rev(rev)).joinpath(path)
+    git_path = GitPath(Path(repo.path), repo.ref_from_rev(rev)).joinpath(path)
     with _fetch_from_path(git_path) as tmp_path:
         yield tmp_path
 

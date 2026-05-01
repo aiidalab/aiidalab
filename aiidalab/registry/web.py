@@ -64,7 +64,7 @@ def build(
     templates_path: Optional[Path] = None,
     validate_output: bool = True,
     validate_input: bool = False,
-):
+) -> None:
     """Build the app registry website (including schema files)."""
     # Parse the schemas shipped with the package.
     schemas = AppRegistrySchemas.from_package()

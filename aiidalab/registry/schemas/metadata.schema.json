@@ -60,6 +60,12 @@
                 },
                 "version": {
                     "type": "string"
+                },
+                "citations": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "additionalProperties": false,
