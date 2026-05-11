@@ -95,7 +95,7 @@ def _parse_setup_cfg(
     yield "categories", categories
 
     citations = aiidalab.get("citations", metadata_pep426.get("citations", ""))
-    yield "citations", citations.splitlines()
+    yield "citations", [c for c in citations.splitlines() if c]
 
 
 @dataclass
