@@ -49,6 +49,8 @@ def _parse_setup_cfg(
     setup_cfg: str,
 ) -> Generator[tuple[str, str | list[str]], None, None]:
     "Parse a setup.cfg configuration file string for metadata."
+    import json
+
     cfg = ConfigParser()
     cfg.read_string(setup_cfg)
 
@@ -94,8 +96,21 @@ def _parse_setup_cfg(
         categories = [c for c in categories.split("\n") if c]
     yield "categories", categories
 
-    citations = aiidalab.get("citations", metadata_pep426.get("citations", ""))
-    yield "citations", [c for c in citations.splitlines() if c]
+    citations = aiidalab.get("citations", metadata_pep426.get("citations", []))
+    yield "citations", json.loads(citations)
+
+
+@dataclass
+class Citation:
+    """App citation specification."""
+
+    authors: list[str]
+    title: str
+    journal: str
+    year: str
+    doi: str
+    issue: str | None = None
+    volume: str | None = None
 
 
 @dataclass
@@ -111,7 +126,7 @@ class Metadata:
     logo: None | str = None
     categories: list[str] = field(default_factory=list)
     version: None | str = None
-    citations: list[str] = field(default_factory=list)
+    citations: list[Citation] = field(default_factory=list)
 
     _search_dirs = (".aiidalab", "./")
 

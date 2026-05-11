@@ -81,7 +81,15 @@
     </h2>
     <ul id='citations'>
     {% for citation in metadata.citations %}
-        <li>{{ citation }}</li>
+        <li>
+            {{ citation.authors | join(", ") }},
+            "{{ citation.title }}".
+            <em>{{ citation.journal }}</em>
+            {% if citation.volume %} <b>{{ citation.volume }}</b>{% endif %}
+            {% if citation.issue %}, {{ citation.issue }}{% endif %}
+            ({{ citation.year }}).
+            <a href="https://doi.org/{{ citation.doi }}" target="_blank" noreferrer noopener>https://doi.org/{{ citation.doi }}</a>
+        </li>
     {% endfor %}
     </ul>
     {% endif %}

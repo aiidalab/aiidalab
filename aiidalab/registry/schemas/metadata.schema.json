@@ -64,7 +64,7 @@
                 "citations": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/Citation"
                     }
                 }
             },
@@ -74,6 +74,41 @@
                 "title"
             ],
             "title": "Welcome"
+        },
+        "Citation": {
+            "type": "object",
+            "properties": {
+                "authors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "journal": {
+                    "type": "string"
+                },
+                "volume": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "string"
+                },
+                "doi": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "authors",
+                "title",
+                "journal",
+                "year",
+                "doi"
+            ],
+            "title": "Citation"
         }
     }
 }
