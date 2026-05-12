@@ -64,7 +64,10 @@
                 "citations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Citation"
+                        "oneOf": [
+                            {"$ref": "#/definitions/CitationSimple"},
+                            {"$ref": "#/definitions/CitationStandard"}
+                        ]
                     }
                 }
             },
@@ -75,7 +78,24 @@
             ],
             "title": "Welcome"
         },
-        "Citation": {
+        "CitationSimple": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string",
+                    "format": "uri"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "text"
+            ],
+            "title": "CitationSimple"
+        },
+        "CitationStandard": {
             "type": "object",
             "properties": {
                 "authors": {
@@ -84,13 +104,7 @@
                         "type": "string"
                     }
                 },
-                "title": {
-                    "type": "string"
-                },
                 "journal": {
-                    "type": "string"
-                },
-                "volume": {
                     "type": "string"
                 },
                 "year": {
@@ -98,17 +112,25 @@
                 },
                 "doi": {
                     "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "volume": {
+                    "type": "string"
+                },
+                "issue": {
+                    "type": "string"
                 }
             },
             "additionalProperties": false,
             "required": [
                 "authors",
-                "title",
                 "journal",
                 "year",
                 "doi"
             ],
-            "title": "Citation"
+            "title": "CitationStandard"
         }
     }
 }

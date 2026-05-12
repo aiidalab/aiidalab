@@ -82,13 +82,27 @@
     <ul id='citations'>
     {% for citation in metadata.citations %}
         <li>
-            {{ citation.authors | join(", ") }},
-            "{{ citation.title }}".
-            <em>{{ citation.journal }}</em>
-            {% if citation.volume %} <b>{{ citation.volume }}</b>{% endif %}
-            {% if citation.issue %}, {{ citation.issue }}{% endif %}
-            ({{ citation.year }}).
-            <a href="https://doi.org/{{ citation.doi }}" target="_blank" noreferrer noopener>https://doi.org/{{ citation.doi }}</a>
+            {% if citation.text %}
+                {% if citation.link %}
+                    <a href="{{ citation.link }}" target="_blank" noreferrer noopener>{{ citation.text }}</a>
+                {% else %}
+                    {{ citation.text }}
+                {% endif %}
+            {% else %}
+                {{ citation.authors | join(", ") }},
+                {% if citation.title %}
+                    "{{ citation.title }}".
+                {% endif %}
+                <em>{{ citation.journal }}</em>
+                {% if citation.volume %}
+                    , <b>{{ citation.volume }}</b>
+                {% endif %}
+                {% if citation.issue %}
+                    , {{ citation.issue }}
+                {% endif %}
+                ({{ citation.year }}).
+                <a href="https://doi.org/{{ citation.doi }}" target="_blank" noreferrer noopener>https://doi.org/{{ citation.doi }}</a>
+            {% endif %}
         </li>
     {% endfor %}
     </ul>

@@ -101,14 +101,22 @@ def _parse_setup_cfg(
 
 
 @dataclass
-class Citation:
-    """App citation specification."""
+class SimpleCitation:
+    """App citation specification for free-form text with an optional link."""
+
+    text: str
+    link: str | None = None
+
+
+@dataclass
+class StandardCitation:
+    """App citation specification for structured metadata."""
 
     authors: list[str]
-    title: str
     journal: str
     year: str
     doi: str
+    title: str | None = None
     issue: str | None = None
     volume: str | None = None
 
@@ -126,7 +134,7 @@ class Metadata:
     logo: None | str = None
     categories: list[str] = field(default_factory=list)
     version: None | str = None
-    citations: list[Citation] = field(default_factory=list)
+    citations: list[SimpleCitation | StandardCitation] = field(default_factory=list)
 
     _search_dirs = (".aiidalab", "./")
 
