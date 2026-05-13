@@ -96,8 +96,11 @@ def _parse_setup_cfg(
         categories = [c for c in categories.split("\n") if c]
     yield "categories", categories
 
-    citations = aiidalab.get("citations", metadata_pep426.get("citations", "[]"))
-    yield "citations", json.loads(citations)
+    citations = aiidalab.get("citations", metadata_pep426.get("citations"))
+    try:
+        yield "citations", json.loads(str(citations))
+    except json.JSONDecodeError:
+        yield "citations", []
 
 
 @dataclass
