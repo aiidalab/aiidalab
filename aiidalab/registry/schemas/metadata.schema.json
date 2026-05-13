@@ -64,7 +64,10 @@
                 "citations": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "oneOf": [
+                            {"$ref": "#/definitions/CitationSimple"},
+                            {"$ref": "#/definitions/CitationStandard"}
+                        ]
                     }
                 }
             },
@@ -74,6 +77,60 @@
                 "title"
             ],
             "title": "Welcome"
+        },
+        "CitationSimple": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string",
+                    "format": "uri"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "text"
+            ],
+            "title": "CitationSimple"
+        },
+        "CitationStandard": {
+            "type": "object",
+            "properties": {
+                "authors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "journal": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "string"
+                },
+                "doi": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "volume": {
+                    "type": "string"
+                },
+                "issue": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "authors",
+                "journal",
+                "year",
+                "doi"
+            ],
+            "title": "CitationStandard"
         }
     }
 }
