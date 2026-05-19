@@ -58,7 +58,7 @@ registry = [
     "CacheControl~=0.12",
     "jsonref~=0.2",
     "jsonschema[format]~=3.2",
-    "Jinja2~=3.0",
+    "Jinja2~=3.1",
     "requests-mock~=1.8",
     "ruamel.yaml~=0.16",
 ]
