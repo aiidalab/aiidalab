@@ -34,6 +34,7 @@ def generate_app(monkeypatch, app_registry_path):
         aiidalab_apps_path="/tmp/apps",
         app_data=None,
         watch=False,
+        registered=True,
     ):
         from aiidalab.app import AiidaLabApp, _AiidaLabApp
 
@@ -46,8 +47,9 @@ def generate_app(monkeypatch, app_registry_path):
         # it is a installed app. Following monkeypatch make it more close
         # to the real scenario for test.
         monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
-        monkeypatch.setattr(_AiidaLabApp, "is_registered", lambda _: True)
-        app = AiidaLabApp(name, app_data, aiidalab_apps_path, watch=watch)
+        app = AiidaLabApp(
+            name, app_data, aiidalab_apps_path, watch=watch, registered=registered
+        )
 
         return app
 
