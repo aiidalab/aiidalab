@@ -31,7 +31,8 @@ How to cite
 
 Users of AiiDAlab are kindly asked to cite the following publication in their own work:
 
-A. V. Yakutovich et al., Comp. Mat. Sci. 188, 110165 (2021). 	`DOI:10.1016/j.commatsci.2020.110165 <https://doi.org/10.1016/j.commatsci.2020.110165>`__
+- A\. V. Yakutovich, D. Hollas, E. Bainglass, J. Yu et al., Digit. Discov. 5, 2310-2324 (2026). `DOI:10.1039/D5DD00567A <https://doi.org/10.1039/D5DD00567A>`__
+- A\. V. Yakutovich, K. Eimre, O. Schütt et al., Comp. Mat. Sci. 188, 110165 (2021). `DOI:10.1016/j.commatsci.2020.110165 <https://doi.org/10.1016/j.commatsci.2020.110165>`__
 
 ****************
 Acknowledgements
