@@ -1030,6 +1030,10 @@ class AiidaLabApp(traitlets.HasTraits):
         return self._get_from_metadata("external_url")
 
     @property
+    def citations(self) -> str:
+        return self._get_from_metadata("citations")
+
+    @property
     def more(self) -> str:
         return f"""<a href=./single_app.ipynb?app={self.name}>Manage App</a>"""
 
