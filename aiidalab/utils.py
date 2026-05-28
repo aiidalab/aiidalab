@@ -14,7 +14,7 @@ from functools import wraps
 from pathlib import Path
 from subprocess import run
 from threading import Lock
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
@@ -29,8 +29,10 @@ from .metadata import Metadata
 if TYPE_CHECKING:
     from packaging.requirements import Requirement
 
+    R = TypeVar("R")
+
 logger = logging.getLogger(__name__)
-FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)  # type: ignore
+FIND_INSTALLED_PACKAGES_CACHE = TTLCache(maxsize=32, ttl=60)  # type: ignore[var-annotated]
 
 # NOTE: try-except is a fix for Quantum Mobile release v19.03.0 where
 # requests_cache is not installed.
@@ -78,9 +80,12 @@ class PEP508CompliantUrl(str):
     pass
 
 
+_ParseAppCallable = Callable[[str], dict[str, Any]]
+
+
 def parse_app_repo(
     url: str, metadata_fallback: dict[str, Any] | None = None
-) -> dict[str, Any] | None:
+) -> dict[str, Any]:
     """Parse an app repo for metadata and other information.
 
     Use this function to parse a local or remote app repository for the app
@@ -101,7 +106,7 @@ def parse_app_repo(
             metadata = asdict(Metadata.parse(repo))
         except TypeError as error:
             logger.debug(f"Failed to parse metadata for '{url}': {error}")
-            metadata = metadata_fallback  # type: ignore
+            metadata = metadata_fallback  # type: ignore[assignment]
 
         return {
             "metadata": metadata,
@@ -122,14 +127,14 @@ class throttled:  # noqa: N801
 
     def __init__(self, calls_per_second: int = 1):
         self.calls_per_second = calls_per_second
-        self.last_start = defaultdict(lambda: -1)  # type: ignore
-        self.locks = defaultdict(Lock)  # type: ignore
+        self.last_start: dict[int, float] = defaultdict(lambda: -1.0)
+        self.locks: dict[int, Lock] = defaultdict(Lock)
 
-    def __call__(self, func):  # type: ignore
+    def __call__(self, func: Callable[..., R]) -> Callable[..., R | None]:
         """Return decorator function."""
 
         @wraps(func)
-        def wrapped(instance, *args, **kwargs):  # type: ignore
+        def wrapped(instance, *args, **kwargs):  # type: ignore[no-untyped-def]
             if self.last_start[hash(instance)] >= 0:
                 elapsed = time.perf_counter() - self.last_start[hash(instance)]
                 to_wait = 1.0 / self.calls_per_second - elapsed

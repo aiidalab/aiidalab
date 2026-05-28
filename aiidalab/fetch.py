@@ -10,7 +10,7 @@ from io import BytesIO
 from pathlib import Path
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 
-import dulwich
+import dulwich.errors
 import requests
 
 from .git_util import GitPath, GitRepo

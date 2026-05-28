@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Generator
+from pathlib import Path
 
 from jinja2 import (
     ChoiceLoader,
@@ -15,7 +17,9 @@ from jinja2 import (
 from ..utils import sort_semantic
 
 
-def build_html(base_path, apps_index, apps_data, templates_path):
+def build_html(
+    base_path: Path, apps_index: dict, apps_data: dict, templates_path: Path | None
+) -> Generator[Path]:
     """Generate the app registry website at the base_path path."""
 
     # Create base_path directory if needed

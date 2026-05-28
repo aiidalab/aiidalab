@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 
-def get_html_app_fname(app_name):
+def get_html_app_fname(app_name: str) -> str:
     valid_characters = set(string.ascii_letters + string.digits + "_-")
 
     simple_string = "".join(c for c in app_name if c in valid_characters)
@@ -14,7 +14,7 @@ def get_html_app_fname(app_name):
     return f"{simple_string}.html"
 
 
-def get_hosted_on(url):
+def get_hosted_on(url: str) -> str:
     netloc = urlparse(url).netloc
 
     # Remove port (if any)

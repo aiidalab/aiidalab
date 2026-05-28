@@ -106,8 +106,6 @@ exclude = [
 
 [[tool.mypy.overrides]]
 module = "aiidalab.registry.*"
-disallow_untyped_calls = false
-disallow_untyped_defs = false
 disallow_any_generics = false
 
 [tool.bumpver]

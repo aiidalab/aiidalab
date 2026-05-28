@@ -970,7 +970,7 @@ class AiidaLabApp(traitlets.HasTraits):
         else:
             self.dependencies_to_install = []
 
-    @throttled(calls_per_second=1)  # type: ignore
+    @throttled(calls_per_second=1)
     def refresh(self) -> None:
         """Refresh app state."""
         with self._show_busy():
