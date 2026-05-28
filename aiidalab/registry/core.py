@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import dataclass, fields
+from pathlib import Path
 
 import jsonschema
 import pkg_resources
@@ -21,7 +22,7 @@ class AppRegistrySchemas:
     metadata: dict
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path: Path) -> "AppRegistrySchemas":
         return cls(
             **{
                 field.name: load_json(path.joinpath(f"{field.name}.schema.json"))
@@ -30,7 +31,7 @@ class AppRegistrySchemas:
         )
 
     @classmethod
-    def from_package(cls):
+    def from_package(cls) -> "AppRegistrySchemas":
         return cls(
             **{
                 field.name: json.loads(

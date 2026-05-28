@@ -14,7 +14,7 @@ from functools import wraps
 from pathlib import Path
 from subprocess import run
 from threading import Lock
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
@@ -78,9 +78,12 @@ class PEP508CompliantUrl(str):
     pass
 
 
+_ParseAppCallable = Callable[[str], dict[str, Any]]
+
+
 def parse_app_repo(
     url: str, metadata_fallback: dict[str, Any] | None = None
-) -> dict[str, Any] | None:
+) -> dict[str, Any]:
     """Parse an app repo for metadata and other information.
 
     Use this function to parse a local or remote app repository for the app
@@ -122,7 +125,7 @@ class throttled:  # noqa: N801
 
     def __init__(self, calls_per_second: int = 1):
         self.calls_per_second = calls_per_second
-        self.last_start = defaultdict(lambda: -1)  # type: ignore
+        self.last_start = defaultdict(lambda: -1.0)  # type: ignore
         self.locks = defaultdict(Lock)  # type: ignore
 
     def __call__(self, func):  # type: ignore

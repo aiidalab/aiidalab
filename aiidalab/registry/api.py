@@ -1,11 +1,14 @@
 """Generate API endpoints."""
 
 import json
+from collections.abc import Generator
+from pathlib import Path
 
 from .apps_index import validate_apps_index_and_apps
+from .core import AppRegistrySchemas
 
 
-def build_api_v1(api_path, apps_index, apps_data):
+def build_api_v1(api_path: Path, apps_index: dict, apps_data: dict) -> Generator[Path]:
     """Build tree for API endpoint v1."""
 
     # Create base path if necessary.
@@ -26,7 +29,7 @@ def build_api_v1(api_path, apps_index, apps_data):
         yield outfile
 
 
-def validate_api_v1(api_path, schemas):
+def validate_api_v1(api_path: Path, schemas: AppRegistrySchemas) -> None:
     """Validate tree for API endpoint v1."""
     apps_index = json.loads(api_path.joinpath("apps_index.json").read_text())
     apps = [

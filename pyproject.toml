@@ -46,7 +46,7 @@ dev = [
     "pytest~=8.4.0",
     "pytest-cov~=7.0",
     "ruamel.yaml~=0.16",
-    "mypy~=1.19.0",
+    "mypy~=2.1.0",
     "types-tabulate~=0.8",
     "types-jsonschema~=3.2",
     "types-cachetools~=4.1",
@@ -106,8 +106,6 @@ exclude = [
 
 [[tool.mypy.overrides]]
 module = "aiidalab.registry.*"
-disallow_untyped_calls = false
-disallow_untyped_defs = false
 disallow_any_generics = false
 
 [tool.bumpver]
