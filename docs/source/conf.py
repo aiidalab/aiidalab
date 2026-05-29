@@ -175,7 +175,6 @@ def setup(app):
 nitpick_ignore = [
     ("py:class", "Exception"),
     ("py:class", "traitlets.traitlets.HasTraits"),
-    ("py:class", "watchdog.events.FileSystemEventHandler"),
     ("py:class", "enum.Enum"),
     ("py:class", "dulwich.repo.Repo"),
 ]

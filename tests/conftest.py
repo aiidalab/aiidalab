@@ -34,7 +34,7 @@ def generate_app(monkeypatch, app_registry_path):
         name="quantum-espresso",
         aiidalab_apps_path="/tmp/apps",
         app_data=None,
-        watch=False,
+        watch=None,
     ):
         from aiidalab.app import AiidaLabApp, _AiidaLabApp
 

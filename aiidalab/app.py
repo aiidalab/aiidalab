@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import errno
 import io
 import logging
 import os
@@ -19,7 +18,6 @@ from itertools import repeat
 from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Thread
-from time import sleep
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
@@ -27,13 +25,6 @@ from uuid import uuid4
 import requests
 import traitlets
 from dulwich.errors import NotGitRepository
-from watchdog.events import (
-    EVENT_TYPE_CLOSED_NO_WRITE,
-    EVENT_TYPE_OPENED,
-    FileSystemEventHandler,
-)
-from watchdog.observers import Observer
-from watchdog.observers.polling import PollingObserver
 
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
@@ -58,8 +49,6 @@ from .utils import (
 if TYPE_CHECKING:
     from packaging.requirements import Requirement
     from packaging.specifiers import SpecifierSet
-    from watchdog.events import FileSystemEvent
-    from watchdog.observers.api import BaseObserver
 
 logger = logging.getLogger(__name__)
 
@@ -608,138 +597,6 @@ class AppNotInstalledException(Exception):  # noqa: N818
     pass
 
 
-class AiidaLabAppWatch:
-    """Watch to monitor the app installation status.
-
-    Create a watch instance to monitor the installation status of an
-    AiiDAlab app. This is achieved by monitoring the app repository
-    for existance and changes.
-
-    If there is a change in the app repository, the app is refreshed.
-
-    Arguments:
-        app (AiidaLabApp):
-            The AiidaLab app to monitor.
-    """
-
-    class AppPathFileSystemEventHandler(FileSystemEventHandler):
-        """Internal event handeler for app path file system events."""
-
-        def __init__(self, app: AiidaLabApp):
-            self.app = app
-
-        def on_any_event(self, event: FileSystemEvent) -> None:
-            """Refresh app for any event except opened."""
-            if event.event_type not in (EVENT_TYPE_OPENED, EVENT_TYPE_CLOSED_NO_WRITE):
-                self.app.refresh_async()
-
-    def __init__(self, app: AiidaLabApp):
-        self.app = app
-
-        self._started = False
-        self._monitor_thread: Thread | None = None
-        self._observer: BaseObserver | None = None
-        self._monitor_thread_stop = threading.Event()
-
-    def __repr__(self) -> str:
-        return f"<{type(self).__name__}(app={self.app!r})>"
-
-    def _start_observer(self) -> None:
-        """Start the directory observer thread.
-
-        The ._observer thread is controlled by the ._monitor_thread.
-        """
-        if not self.app.path:
-            return
-        assert os.path.isdir(self.app.path)
-        assert self._observer is None or not self._observer.is_alive()
-
-        event_handler = self.AppPathFileSystemEventHandler(self.app)
-
-        self._observer = Observer()
-        self._observer.schedule(event_handler, self.app.path, recursive=True)
-        try:
-            self._observer.start()
-        except OSError as error:
-            if error.errno in (errno.ENOSPC, errno.EMFILE) and "inotify" in str(error):
-                # We reached the inotify watch limit, using polling-based fallback observer.
-                self._observer = PollingObserver()
-                self._observer.schedule(event_handler, self.app.path, recursive=True)
-                self._observer.start()
-            else:  # reraise unrelated error
-                raise
-
-    def _stop_observer(self) -> None:
-        """Stop the directory observer thread.
-
-        The ._observer thread is controlled by the ._monitor_thread.
-        """
-        assert self._observer is not None
-        self._observer.stop()
-
-    def start(self) -> None:
-        """Watch the app repository for file system events.
-
-        The app state is refreshed automatically for all events.
-        """
-        if self._started:
-            raise RuntimeError(
-                f"Instances of {type(self).__name__} can only be started once."
-            )
-
-        if self._monitor_thread is None:
-
-            def check_path_exists_changed() -> None:
-                if not self.app.path:
-                    return
-                is_dir = os.path.isdir(self.app.path)
-                while not self._monitor_thread_stop.is_set():
-                    switched = is_dir != os.path.isdir(self.app.path)
-                    if switched:
-                        # this is for when the app folder first time create or deleted
-                        is_dir = not is_dir
-                        self.app.refresh()
-
-                    if is_dir:
-                        if self._observer is None or not self._observer.is_alive():
-                            self._start_observer()
-                    elif self._observer and self._observer.is_alive():
-                        self._stop_observer()
-
-                    sleep(1)
-
-                # stop-flag set, stopping observer...
-                if self._observer:
-                    self._observer.stop()
-
-            self._monitor_thread = Thread(target=check_path_exists_changed)
-            self._monitor_thread_stop.clear()
-            self._monitor_thread.start()
-
-        self._started = True
-
-    def stop(self) -> None:
-        """Stop watching the app repository for file system events."""
-        if self._monitor_thread is not None:
-            self._monitor_thread_stop.set()
-
-    def is_alive(self) -> bool | None | Thread:
-        """Return True if this watch is still alive."""
-        return self._monitor_thread and self._monitor_thread.is_alive()
-
-    def join(self, timeout: float | None = None) -> None:
-        """Join the watch and observer after stopping.
-
-        This function will timeout if a timeout argument is provided. Use the
-        is_alive() function to determien whether the watch was stopped within
-        the given timout.
-        """
-        if self._monitor_thread is not None:
-            self._monitor_thread.join(timeout=timeout)
-        if self._observer is not None:
-            self._observer.join(timeout=timeout)
-
-
 class AiidaLabApp(traitlets.HasTraits):
     """Manage installation status of an AiiDAlab app.
 
@@ -752,7 +609,7 @@ class AiidaLabApp(traitlets.HasTraits):
         aiidalab_apps_path (str):
             Path to directory at which the app is expected to be installed.
         watch (bool):
-            If true (default), automatically watch the repository for changes.
+            (Deprecated) Has no effect anymore.
     """
 
     path = traitlets.Unicode(allow_none=True).tag(readonly=True)
@@ -780,7 +637,7 @@ class AiidaLabApp(traitlets.HasTraits):
         name: str,
         app_data: dict[str, Any],
         aiidalab_apps_path: str,
-        watch: bool = True,
+        watch: bool | None = None,
     ):
         self._app = _AiidaLabApp.from_id(
             name, registry_entry=app_data, apps_path=aiidalab_apps_path
@@ -803,12 +660,13 @@ class AiidaLabApp(traitlets.HasTraits):
 
         self.is_installed = self._app.is_installed
         self.path = str(self._app.path)
-        self.refresh_async()
+        if watch is not None:
+            import warnings
 
-        self._watch = None
-        if watch:
-            self._watch = AiidaLabAppWatch(self)
-            self._watch.start()
+            msg = "'watch' parameter is deprecated and has no effect"
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+        self.refresh_async()
 
     def __str__(self) -> str:
         return f"<AiidaLabApp name='{self._app.name}'>"
