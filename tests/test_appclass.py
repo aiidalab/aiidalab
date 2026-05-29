@@ -11,9 +11,8 @@ from aiidalab.app import AiidaLabApp, AiidaLabAppWatch
 
 def test_init_refresh(generate_app):
     app = generate_app()
-    assert len(app.available_versions) == 0
-    # After refresh the available_versions traitlet is updated
-    app.refresh()
+
+    # App is being refreshed already in the `generate_app` fixture
     assert len(app.available_versions) != 0
 
     # Test that invalid versions are skipped
@@ -23,21 +22,21 @@ def test_init_refresh(generate_app):
 def test_prereleases(generate_app):
     app = generate_app()
 
-    # without prereleases tick
-    app.refresh()
+    # without prereleases (which is the default)
     assert app.has_prereleases
     assert app.include_prereleases is False
     assert "v23.01.0b1" not in app.available_versions
+    assert len(app.available_versions) == 2
 
-    # tick prereleases tick
+    # with prereleases
     app.include_prereleases = True
     assert "v23.01.0b1" in app.available_versions
+    assert len(app.available_versions) == 3
 
 
 @pytest.mark.usefixtures("installed_packages")
 def test_dependencies(generate_app):
     app: AiidaLabApp = generate_app()
-    app.refresh()
 
     # The version `v22.11.0` is incompatible while `v22.11.1` is compatible
     with pytest.raises(traitlets.TraitError):
@@ -49,7 +48,7 @@ def test_dependencies(generate_app):
 def test_app_is_not_registered(generate_app, monkeypatch, tmp_path):
     """test the app is not registered and the available versions are empty."""
 
-    app: AiidaLabApp = generate_app()
+    app = generate_app()
     # monkeypatch and make the app not registered
     monkeypatch.setattr(app._app, "is_registered", lambda: False)
     app.refresh()
