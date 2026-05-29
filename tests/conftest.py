@@ -1,4 +1,5 @@
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -48,6 +49,11 @@ def generate_app(monkeypatch, app_registry_path):
         monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
         monkeypatch.setattr(_AiidaLabApp, "is_registered", lambda _: True)
         app = AiidaLabApp(name, app_data, aiidalab_apps_path, watch=watch)
+
+        # The app refresh is running in a background thread
+        # let's wait till it finishes
+        while app.busy or threading.active_count() > 1:
+            pass
 
         return app
 
