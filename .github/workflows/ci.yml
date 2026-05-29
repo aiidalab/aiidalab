@@ -53,6 +53,29 @@ jobs:
                   flags: py-${{ matrix.python-version }}
                   token: ${{ secrets.CODECOV_TOKEN }}
 
+    registry-build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v7
+              with:
+                  python-version: 3.12
+                  activate-environment: true
+
+            - name: Install aiidalab package with registry extras
+              run: uv pip install -e .[registry]
+
+            - uses: actions/checkout@v6
+              with:
+                  repository: aiidalab/aiidalab-registry
+                  ref: main
+                  path: aiidalab-registry
+
+            - name: Build AiiDAlab registry
+              run: cd aiidalab-registry && ./build.sh
+
     pre-commit:
 
         runs-on: ubuntu-latest
