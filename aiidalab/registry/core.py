@@ -1,11 +1,11 @@
 """Core data classes for the app registry."""
 
+import importlib.resources as resources
 import json
 from dataclasses import dataclass, fields
 from pathlib import Path
 
 import jsonschema
-import pkg_resources
 
 from .util import load_json
 
@@ -35,9 +35,9 @@ class AppRegistrySchemas:
         return cls(
             **{
                 field.name: json.loads(
-                    pkg_resources.resource_string(
-                        "aiidalab.registry", f"schemas/{field.name}.schema.json"
-                    )
+                    resources.files("aiidalab.registry")
+                    .joinpath(f"schemas/{field.name}.schema.json")
+                    .read_bytes()
                 )
                 for field in fields(cls)
             }
