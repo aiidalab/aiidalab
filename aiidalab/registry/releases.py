@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import re
@@ -11,7 +13,7 @@ from ..environment import Environment
 from ..fetch import fetch_from_url
 from ..git_util import GitRepo
 from ..metadata import Metadata
-from ..utils import is_valid_version
+from ..utils import _ParseAppCallable, is_valid_version
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ class Release:
 RELEASE_LINE_PATTERN = r"^(?P<rev>[^:]*?)(:(?P<rev_selection>.*))?$"
 
 
-def _split_release_line(url):
+def _split_release_line(url: str) -> tuple[str, str | None]:
     parsed_url = urlsplit(url)
     if "@" in parsed_url.path:
         path, release_line = parsed_url.path.rsplit("@", 1)
@@ -140,7 +142,11 @@ def _get_release_commits(
             yield tag, repo.get_commit_for_tag(tag)
 
 
-def _gather_releases(release_specs, scan_app_repository, app_metadata):
+def _gather_releases(
+    release_specs: list[str | dict],
+    scan_app_repository: _ParseAppCallable,
+    app_metadata: dict | None,
+) -> Generator[tuple[str | None, Release]]:
     for release_spec in release_specs:
         if isinstance(release_spec, str):
             url = release_spec
@@ -153,7 +159,9 @@ def _gather_releases(release_specs, scan_app_repository, app_metadata):
             metadata_override = release_spec.get("metadata", app_metadata)
             version_override = release_spec.get("version")
 
-        def _set_overrides(version, release):
+        def _set_overrides(
+            version: str | None, release: Release
+        ) -> tuple[str | None, Release]:
             return version_override or version, replace(  # noqa: B023
                 release,
                 environment=environment_override or release.environment,  # noqa: B023
@@ -201,7 +209,9 @@ def _gather_releases(release_specs, scan_app_repository, app_metadata):
                 yield _set_overrides(None, release)
 
 
-def gather_releases(app_data, scan_app_repository):
+def gather_releases(
+    app_data: dict, scan_app_repository: _ParseAppCallable
+) -> Generator[tuple[str, Release]]:
     for version, release in _gather_releases(
         app_data.get("releases", []),
         scan_app_repository,

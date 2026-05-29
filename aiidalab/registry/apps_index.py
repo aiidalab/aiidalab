@@ -1,26 +1,30 @@
 """Generate the apps index including all aggregated metadata."""
 
+from __future__ import annotations
+
 import logging
 from collections import OrderedDict
 from copy import deepcopy
 from dataclasses import asdict
+from typing import Any
 
 import jsonschema
 
-from ..utils import sort_semantic
+from ..utils import _ParseAppCallable, sort_semantic
 from . import util
+from .core import AppRegistryData
 from .releases import gather_releases
 
 logger = logging.getLogger(__name__)
 
 
-def _determine_app_name(app_id):
+def _determine_app_name(app_id: str) -> str:
     """Currently the app name is identical to its id."""
     assert util.get_html_app_fname(app_id) == f"{app_id}.html"
     return app_id
 
 
-def _migrate_app_data(app_data):
+def _migrate_app_data(app_data: dict[str, Any]) -> None:
     if "metadata" in app_data:
         # Set defaults
         app_data["metadata"].setdefault("categories", app_data.pop("categories", []))
@@ -35,7 +39,9 @@ def _migrate_app_data(app_data):
                 del app_data["metadata"][key]
 
 
-def _fetch_app_data(app_id, app_data, scan_app_repository):
+def _fetch_app_data(
+    app_id: str, app_data: dict, scan_app_repository: _ParseAppCallable
+) -> dict | None:
     # Gather all release data.
     _migrate_app_data(app_data)
 
@@ -50,9 +56,13 @@ def _fetch_app_data(app_id, app_data, scan_app_repository):
         # The metadata of the latest release is considered authoritative for the whole app.
         app_data["metadata"] = app_data["releases"][latest_version]["metadata"]
         return app_data
+    else:
+        return None
 
 
-def generate_apps_index(data, scan_app_repository):
+def generate_apps_index(
+    data: AppRegistryData, scan_app_repository: _ParseAppCallable
+) -> tuple[dict, dict]:
     """Generate the comprehensive app index.
 
     This index is built from the apps data and includes additional information
@@ -81,7 +91,9 @@ def generate_apps_index(data, scan_app_repository):
     return index, apps_data
 
 
-def validate_apps_index_and_apps(apps_index, apps_index_schema, apps, app_schema):
+def validate_apps_index_and_apps(
+    apps_index: dict, apps_index_schema: dict, apps: list[dict], app_schema: dict
+) -> None:
     """Validate the apps_index file."""
 
     # Validate apps index against schema

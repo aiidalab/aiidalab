@@ -5,6 +5,7 @@ import logging
 import os
 import os.path
 import shutil
+from collections.abc import Generator
 from itertools import chain
 from pathlib import Path
 from typing import Optional
@@ -18,7 +19,7 @@ from .html import build_html
 logger = logging.getLogger(__name__)
 
 
-def copy_static_tree_from_path(base_path, static_path):
+def copy_static_tree_from_path(base_path: Path, static_path: Path) -> Generator[Path]:
     for root, _, files in os.walk(static_path):
         # Create directory
         base_path.joinpath(Path(root).relative_to(static_path)).mkdir(
@@ -33,7 +34,7 @@ def copy_static_tree_from_path(base_path, static_path):
             yield dst
 
 
-def _walk_pkg_resources(package, root):
+def _walk_pkg_resources(package: str, root: str) -> Generator[tuple[str, list]]:
     paths = list(resources.files(package).joinpath(root).iterdir())
     dir_paths = [path.name for path in paths if path.is_dir()]
     file_path = [path.name for path in paths if not path.is_dir()]
@@ -42,7 +43,10 @@ def _walk_pkg_resources(package, root):
         yield from _walk_pkg_resources(package, os.path.join(root, dir_path))
 
 
-def copy_static_tree_from_package(html_path, root="static"):
+def copy_static_tree_from_package(
+    html_path: Path, root: str = "static"
+) -> Generator[Path]:
+    assert __package__ is not None
     for directory, files in _walk_pkg_resources(__package__, root):
         stem = html_path.joinpath(Path(directory).relative_to(root))
         stem.mkdir(parents=True, exist_ok=True)

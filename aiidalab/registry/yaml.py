@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlsplit
 
 import cachecontrol
@@ -12,7 +15,7 @@ REQUESTS = cachecontrol.CacheControl(requests.Session())
 class JsonYamlLoader(jsonref.JsonLoader):  # type: ignore[misc]
     safe_yaml = YAML(typ="safe")
 
-    def __call__(self, uri, **kwargs):
+    def __call__(self, uri: str, **kwargs: Any) -> Any:
         uri_split = urlsplit(uri)
         if Path(uri_split.path).suffix in (".yml", ".yaml"):
             if uri_split.scheme == "file":
@@ -29,7 +32,7 @@ class JsonYamlLoader(jsonref.JsonLoader):  # type: ignore[misc]
 json_yaml_loader = JsonYamlLoader()
 
 
-def replace_refs(obj):
+def replace_refs(obj: Any) -> Any:
     """Dereference all references in obj.
 
     References may point to JSON or YAML files.
@@ -37,12 +40,12 @@ def replace_refs(obj):
     return jsonref.JsonRef.replace_refs(obj, loader=json_yaml_loader)
 
 
-def loads(s):
+def loads(s: str) -> Any:
     """Deserialize YAML string to a Python object and dereference all references."""
     return replace_refs(YAML(typ="safe").load(s))
 
 
-def load(path):
+def load(path: str | Path) -> Any:
     """Deserialize YAML file at path to a Python object and dereference all references."""
     return loads(Path(path).read_text())
 
