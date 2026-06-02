@@ -323,11 +323,13 @@ class _AiidaLabApp:
             self.path.joinpath("setup.py").is_file()
             or self.path.joinpath("pyproject.toml").is_file()
         ):
-            logger.info(f"Running 'pip uninstall --user {self.path}'")
+            logger.info(f"Running 'pip uninstall --user {self.name}'")
             process = run_pip_uninstall(str(self.path), python_bin=python_bin)
+            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                logger.warning(line)
             process.wait()
             if process.returncode != 0:
-                msg = "pip failed to uninstall app python package"
+                msg = f"pip failed to uninstall python package {self.name}"
                 logger.warning(msg)
 
     def find_matching_releases(
