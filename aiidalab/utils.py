@@ -281,7 +281,7 @@ def run_pip_install(*args: Any, python_bin: str) -> Any:
 
 def run_pip_uninstall(*args: Any, python_bin: str) -> Any:
     return subprocess.Popen(
-        [python_bin, "-m", "pip", "uninstall", "--user", *args],
+        [python_bin, "-m", "pip", "uninstall", "--yes", *args],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
