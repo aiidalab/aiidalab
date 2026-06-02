@@ -47,6 +47,7 @@ from .utils import (
     get_package_by_name,
     is_valid_version,
     run_pip_install,
+    run_pip_uninstall,
     run_post_install_script,
     run_verdi_daemon_restart,
     sort_semantic,
@@ -303,11 +304,31 @@ class _AiidaLabApp:
         self._move_to_trash()
         trash_path.rename(self.path)
 
-    def uninstall(self, move_to_trash: bool = True) -> None:
+    def uninstall(
+        self, move_to_trash: bool = True, python_bin: str | None = None
+    ) -> None:
+        if python_bin is None:
+            python_bin = sys.executable
+        # Uninstall the app python package first
+        # (this will not uninstall its dependencies!)
+        self._uninstall_python_package(python_bin)
+
         if move_to_trash:
             self._move_to_trash()
         else:
             shutil.rmtree(self.path)
+
+    def _uninstall_python_package(self, python_bin: str) -> None:
+        if (
+            self.path.joinpath("setup.py").is_file()
+            or self.path.joinpath("pyproject.toml").is_file()
+        ):
+            logger.info(f"Running 'pip uninstall --user {self.path}'")
+            process = run_pip_uninstall(str(self.path), python_bin=python_bin)
+            process.wait()
+            if process.returncode != 0:
+                msg = "pip failed to uninstall app python package"
+                logger.warning(msg)
 
     def find_matching_releases(
         self, specifier: SpecifierSet, prereleases: bool | None = None
