@@ -327,13 +327,9 @@ class _AiidaLabApp:
             process = run_pip_uninstall(str(self.name), python_bin=python_bin)
             process.wait()
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
-                if process.returncode == 0:
-                    logger.info(line)
-                else:
-                    logger.warning(line)
+                logger.info(line)
             if process.returncode != 0:
-                msg = f"pip failed to uninstall python package {self.name}"
-                logger.warning(msg)
+                logger.info(f"pip failed to uninstall python package {self.name}")
 
     def find_matching_releases(
         self, specifier: SpecifierSet, prereleases: bool | None = None
