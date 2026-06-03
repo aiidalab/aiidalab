@@ -324,10 +324,13 @@ class _AiidaLabApp:
             or self.path.joinpath("pyproject.toml").is_file()
         ):
             logger.info(f"Running 'pip uninstall --user {self.name}'")
-            process = run_pip_uninstall(str(self.path), python_bin=python_bin)
-            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
-                logger.warning(line)
+            process = run_pip_uninstall(str(self.name), python_bin=python_bin)
             process.wait()
+            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                if process.returncode == 0:
+                    logger.info(line)
+                else:
+                    logger.warning(line)
             if process.returncode != 0:
                 msg = f"pip failed to uninstall python package {self.name}"
                 logger.warning(msg)
