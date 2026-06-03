@@ -54,7 +54,7 @@ dev = [
     "types-click-spinner~=0.1",
 ]
 registry = [
-    "setuptools>=68.0,<82.0",
+    "setuptools>=65.0,<82.0",
     "CacheControl~=0.12",
     "jsonref~=0.2",
     "jsonschema[format]~=3.2",
