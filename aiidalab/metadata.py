@@ -122,6 +122,7 @@ class StandardCitation:
     title: str | None = None
     issue: str | None = None
     volume: str | None = None
+    pages: str | None = None
 
 
 @dataclass
