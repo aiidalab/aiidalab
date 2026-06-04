@@ -64,7 +64,7 @@
                 "citations": {
                     "type": "array",
                     "items": {
-                        "oneOf": [
+                        "anyOf": [
                             {"$ref": "#/definitions/CitationSimple"},
                             {"$ref": "#/definitions/CitationStandard"}
                         ]
@@ -120,6 +120,9 @@
                     "type": "string"
                 },
                 "issue": {
+                    "type": "string"
+                },
+                "pages": {
                     "type": "string"
                 }
             },
