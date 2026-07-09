@@ -1,5 +1,6 @@
 """Generate the app registry website."""
 
+import importlib.resources as resources
 import logging
 import os
 import os.path
@@ -8,8 +9,6 @@ from collections.abc import Generator
 from itertools import chain
 from pathlib import Path
 from typing import Optional
-
-import pkg_resources
 
 from ..utils import parse_app_repo
 from . import api, yaml
@@ -36,16 +35,12 @@ def copy_static_tree_from_path(base_path: Path, static_path: Path) -> Generator[
 
 
 def _walk_pkg_resources(package: str, root: str) -> Generator[tuple[str, list]]:
-    paths = pkg_resources.resource_listdir(package, root)
-    for path in paths:
-        dir_paths = [
-            path
-            for path in paths
-            if pkg_resources.resource_isdir(package, os.path.join(root, path))
-        ]
-        yield root, list(set(paths).difference(dir_paths))
-        for dir_path in dir_paths:
-            yield from _walk_pkg_resources(package, os.path.join(root, dir_path))
+    paths = list(resources.files(package).joinpath(root).iterdir())
+    dir_paths = [path.name for path in paths if path.is_dir()]
+    file_path = [path.name for path in paths if not path.is_dir()]
+    yield root, file_path
+    for dir_path in dir_paths:
+        yield from _walk_pkg_resources(package, os.path.join(root, dir_path))
 
 
 def copy_static_tree_from_package(
@@ -56,11 +51,9 @@ def copy_static_tree_from_package(
         stem = html_path.joinpath(Path(directory).relative_to(root))
         stem.mkdir(parents=True, exist_ok=True)
         for fn in files:
-            src = pkg_resources.resource_stream(
-                __package__, os.path.join(directory, fn)
-            )
+            src = resources.files(__package__).joinpath(directory, fn)
             dst = stem.joinpath(fn)
-            dst.write_bytes(src.read())
+            dst.write_bytes(src.read_bytes())
             yield dst
 
 
