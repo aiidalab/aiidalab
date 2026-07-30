@@ -55,10 +55,10 @@ def _parse_setup_cfg(
     cfg.read_string(setup_cfg)
 
     metadata_pep426: SectionProxy | dict[Any, Any] = (
-        cfg["metadata"] if "metadata" in cfg else {}
+        cfg["metadata"] if "metadata" in cfg else {}  # noqa: SIM401
     )
     aiidalab: SectionProxy | dict[Any, Any] = (
-        cfg["aiidalab"] if "aiidalab" in cfg else {}
+        cfg["aiidalab"] if "aiidalab" in cfg else {}  # noqa: SIM401
     )
 
     yield "title", aiidalab.get("title", metadata_pep426.get("name", ""))

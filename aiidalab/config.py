@@ -1,8 +1,10 @@
 """Module to manage AiiDAlab configuration."""
 
+from __future__ import annotations
+
 from os import getenv
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import click
 import toml
@@ -25,7 +27,7 @@ def _as_env_var_name(key: str) -> str:
     return "AIIDALAB_" + key.upper()
 
 
-def _get_config_value(key: str, default: Optional[str] = None) -> Any:
+def _get_config_value(key: str, default: str | None = None) -> Any:
     """Return config value from configuration source.
 
     The standard configuration source order is:
