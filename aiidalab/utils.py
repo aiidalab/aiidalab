@@ -77,8 +77,6 @@ def load_app_registry_entry(app_id: str) -> Any:
 class PEP508CompliantUrl(str):
     """Represents a PEP 508 compliant URL."""
 
-    pass
-
 
 _ParseAppCallable = Callable[[str], dict[str, Any]]
 

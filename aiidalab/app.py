@@ -218,7 +218,7 @@ class _AiidaLabApp:
                     if urlsplit(release["url"]).scheme.startswith("git+")
                 }
             # TODO: Use less-broad Exception here!
-            except Exception as error:
+            except Exception as error:  # noqa: BLE001
                 logger.warning(f"Encountered error while determining version: {error}")
                 return AppVersion.UNKNOWN
 
@@ -350,9 +350,7 @@ class _AiidaLabApp:
         packages = find_installed_packages(python_bin)
         for requirement in requirements:
             pkg = get_package_by_name(packages, requirement.name)
-            if pkg is None:
-                yield requirement
-            elif not pkg.fulfills(requirement):
+            if pkg is None or not pkg.fulfills(requirement):
                 yield requirement
 
     def is_detached(self) -> bool:
@@ -490,28 +488,28 @@ class _AiidaLabApp:
     def _install_from_path(self, path: Path) -> None:
         if path.is_dir():
             shutil.copytree(this_or_only_subdir(path), self.path)
-        else:
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                with tarfile.open(path) as tar_file:
+            return
 
-                    def is_within_directory(directory: str, target: str) -> bool:
-                        abs_directory = os.path.abspath(directory)
-                        abs_target = os.path.abspath(target)
+        with tempfile.TemporaryDirectory() as tmp_dir, tarfile.open(path) as tar_file:
 
-                        prefix = os.path.commonprefix([abs_directory, abs_target])
+            def is_within_directory(directory: str, target: str) -> bool:
+                abs_directory = os.path.abspath(directory)
+                abs_target = os.path.abspath(target)
 
-                        return prefix == abs_directory
+                prefix = os.path.commonprefix([abs_directory, abs_target])
 
-                    def safe_extract(tar: tarfile.TarFile, path: str) -> None:
-                        for member in tar.getmembers():
-                            member_path = os.path.join(path, member.name)
-                            if not is_within_directory(path, member_path):
-                                raise Exception("Attempted Path Traversal in Tar File")  # noqa: TRY002
+                return prefix == abs_directory
 
-                        tar.extractall(path)
+            def safe_extract(tar: tarfile.TarFile, path: str) -> None:
+                for member in tar.getmembers():
+                    member_path = os.path.join(path, member.name)
+                    if not is_within_directory(path, member_path):
+                        raise Exception("Attempted Path Traversal in Tar File")  # noqa: TRY002
 
-                    safe_extract(tar_file, path=tmp_dir)
-                    self._install_from_path(Path(tmp_dir))
+                tar.extractall(path)
+
+            safe_extract(tar_file, path=tmp_dir)
+            self._install_from_path(Path(tmp_dir))
 
     def _install_from_https(self, url: str) -> None:
         response = requests.get(url, stream=True)
@@ -584,7 +582,7 @@ class _AiidaLabApp:
 
         # NOTE: We want to catch everything, including keyboard interrupt,
         # so we can rollback incomplete installation.
-        except BaseException as error:
+        except BaseException as error:  # noqa: BLE001
             try:
                 if trash_path is None:
                     # App, was not previously installed, just remove it.
@@ -973,27 +971,22 @@ class AiidaLabApp(traitlets.HasTraits):
     @throttled(calls_per_second=1)
     def refresh(self) -> None:
         """Refresh app state."""
-        with self._show_busy():
-            with self.hold_trait_notifications():
-                self._refresh_versions()
-                self._refresh_dependencies_to_install()
-                self.set_trait(
-                    "compatible", self._is_compatible(self.installed_version)
-                )
-                self.set_trait(
-                    "remote_update_status",
-                    self._app.remote_update_status(
-                        prereleases=self.include_prereleases
-                    ),
-                )
-                self.set_trait(
-                    "detached",
-                    (
-                        (self.installed_version is AppVersion.UNKNOWN)
-                        if (self._has_git_repo() and self._app.is_registered())
-                        else None
-                    ),
-                )
+        with self._show_busy(), self.hold_trait_notifications():
+            self._refresh_versions()
+            self._refresh_dependencies_to_install()
+            self.set_trait("compatible", self._is_compatible(self.installed_version))
+            self.set_trait(
+                "remote_update_status",
+                self._app.remote_update_status(prereleases=self.include_prereleases),
+            )
+            self.set_trait(
+                "detached",
+                (
+                    (self.installed_version is AppVersion.UNKNOWN)
+                    if (self._has_git_repo() and self._app.is_registered())
+                    else None
+                ),
+            )
 
     def refresh_async(self) -> None:
         """Asynchronized (non-blocking) refresh of the app state."""
