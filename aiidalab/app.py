@@ -778,8 +778,8 @@ class AiidaLabApp(traitlets.HasTraits):
     def __init__(
         self,
         name: str,
-        app_data: dict[str, Any],
-        aiidalab_apps_path: str,
+        app_data: dict[str, Any] | None,
+        aiidalab_apps_path: str | None,
         watch: bool = True,
     ):
         self._app = _AiidaLabApp.from_id(
