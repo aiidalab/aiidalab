@@ -131,13 +131,13 @@ class Metadata:
 
     title: str
     description: str
-    authors: None | str = None
-    state: None | str = None
-    documentation_url: None | str = None
-    external_url: None | str = None
-    logo: None | str = None
+    authors: str | None = None
+    state: str | None = None
+    documentation_url: str | None = None
+    external_url: str | None = None
+    logo: str | None = None
     categories: list[str] = field(default_factory=list)
-    version: None | str = None
+    version: str | None = None
     citations: list[SimpleCitation | StandardCitation] = field(default_factory=list)
 
     _search_dirs = (".aiidalab", "./")
