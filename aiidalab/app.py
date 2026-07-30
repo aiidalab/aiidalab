@@ -568,7 +568,7 @@ class _AiidaLabApp:
                     urlunsplit(split_url._replace(scheme="https"))
                 )
             else:
-                raise NotImplementedError(  # noqa: TRY301
+                raise NotImplementedError(
                     f"Unsupported scheme: {split_url.scheme} ({url})"
                 )
 
@@ -602,7 +602,7 @@ class _AiidaLabApp:
                 raise RuntimeError(msg) from error
 
 
-class AppNotInstalledException(Exception):  # noqa: N818
+class AppNotInstalledException(Exception):
     pass
 
 

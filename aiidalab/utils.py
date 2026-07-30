@@ -112,7 +112,7 @@ def parse_app_repo(
         }
 
 
-class throttled:  # noqa: N801
+class throttled:
     """Decorator to throttle calls to a function to a specified rate.
 
     The throttle is specific to the first argument of the wrapped
