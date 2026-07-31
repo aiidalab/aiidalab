@@ -1,5 +1,7 @@
 """Generate the app registry website."""
 
+from __future__ import annotations
+
 import logging
 import os
 import os.path
@@ -7,7 +9,6 @@ import shutil
 from collections.abc import Generator
 from itertools import chain
 from pathlib import Path
-from typing import Optional
 
 import pkg_resources
 
@@ -68,10 +69,10 @@ def build(
     apps_path: Path,
     categories_path: Path,
     base_path: Path,
-    html_path: Optional[Path] = None,
-    api_path: Optional[Path] = None,
-    static_path: Optional[Path] = None,
-    templates_path: Optional[Path] = None,
+    html_path: Path | None = None,
+    api_path: Path | None = None,
+    static_path: Path | None = None,
+    templates_path: Path | None = None,
     validate_output: bool = True,
     validate_input: bool = False,
 ) -> None:
@@ -133,6 +134,5 @@ def build(
     ):
         logger.info(f"  - {outfile.relative_to(base_path)}")
 
-    if validate_output:
-        if api_path:
-            api.validate_api_v1(api_path=base_path / api_path, schemas=schemas)
+    if validate_output and api_path:
+        api.validate_api_v1(api_path=base_path / api_path, schemas=schemas)
