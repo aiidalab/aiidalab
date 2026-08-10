@@ -82,7 +82,7 @@ def forbid_external_commands(monkeypatch):
 
     monkeypatch.setattr(
         "aiidalab.utils.run_pip_install",
-        lambda python_bin: raise_exc("Running `pip install` not allowed in tests!"),  # noqa: ARG005
+        lambda python_bin: raise_exc("Running `pip install` not allowed in tests!"),
     )
 
     monkeypatch.setattr(

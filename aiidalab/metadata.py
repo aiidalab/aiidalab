@@ -55,10 +55,10 @@ def _parse_setup_cfg(
     cfg.read_string(setup_cfg)
 
     metadata_pep426: SectionProxy | dict[Any, Any] = (
-        cfg["metadata"] if "metadata" in cfg else {}
+        cfg["metadata"] if "metadata" in cfg else {}  # noqa: SIM401
     )
     aiidalab: SectionProxy | dict[Any, Any] = (
-        cfg["aiidalab"] if "aiidalab" in cfg else {}
+        cfg["aiidalab"] if "aiidalab" in cfg else {}  # noqa: SIM401
     )
 
     yield "title", aiidalab.get("title", metadata_pep426.get("name", ""))
@@ -122,6 +122,7 @@ class StandardCitation:
     title: str | None = None
     issue: str | None = None
     volume: str | None = None
+    pages: str | None = None
 
 
 @dataclass
@@ -130,13 +131,13 @@ class Metadata:
 
     title: str
     description: str
-    authors: None | str = None
-    state: None | str = None
-    documentation_url: None | str = None
-    external_url: None | str = None
-    logo: None | str = None
+    authors: str | None = None
+    state: str | None = None
+    documentation_url: str | None = None
+    external_url: str | None = None
+    logo: str | None = None
     categories: list[str] = field(default_factory=list)
-    version: None | str = None
+    version: str | None = None
     citations: list[SimpleCitation | StandardCitation] = field(default_factory=list)
 
     _search_dirs = (".aiidalab", "./")

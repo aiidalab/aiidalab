@@ -24,7 +24,6 @@ dependencies = [
     "pip>=25.2",
     "requests~=2.27",
     "requests-cache~=1.0",
-    "setuptools>=68.0,<82.0",
     "tabulate~=0.9",
     "toml~=0.10",
     "traitlets~=5.0",
@@ -54,6 +53,7 @@ dev = [
     "types-click-spinner~=0.1",
 ]
 registry = [
+    "setuptools>=68.0,<82.0",
     "CacheControl~=0.12",
     "jsonref~=0.2",
     "jsonschema[format]~=3.2",
@@ -108,7 +108,7 @@ module = "aiidalab.registry.*"
 disallow_any_generics = false
 
 [tool.bumpver]
-current_version = "v26.05.2"
+current_version = "v26.07.0"
 version_pattern = "v0Y.0M.PATCH[PYTAGNUM]"
 commit_message = "Bump version {old_version} -> {new_version}"
 commit = true
@@ -121,28 +121,6 @@ push = true
 [tool.ruff]
 line-length = 88
 show-fixes = true
-
-[tool.ruff.lint]
-ignore = ["E501", "E402", "B904", "TRY003", "PLC0415"]
-select = [
-  "A",    # flake8-builtins
-  "ARG",  # flake8-unused-arguments
-  "B",    # flake8-bugbear
-  "C4",   # flake8-comprehensions
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "N",    # pep8-naming
-  "PLE",  # pylint error rules
-  "PLW",  # pylint warning rules
-  "PLC",  # pylint convention rules
-  "RUF",  # ruff-specific rules
-  "TRY",  # Tryceratops
-  "UP"    # pyupgrade
-]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ARG001"]
 
 [tool.pytest.ini_options]
 addopts = '--strict-config --strict-markers -ra --durations-min=1 --durations=10'

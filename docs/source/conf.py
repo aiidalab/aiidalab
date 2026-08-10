@@ -48,7 +48,7 @@ copyright_year_string = (
     if current_year == copyright_first_year
     else f"{copyright_first_year}-{current_year}"
 )
-copyright = f"{copyright_year_string}, {copyright_owners}. All rights reserved"  # noqa: A001
+copyright = f"{copyright_year_string}, {copyright_owners}. All rights reserved"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

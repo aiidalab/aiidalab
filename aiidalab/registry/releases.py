@@ -97,7 +97,7 @@ def _get_release_commits(
 
         tags = set()
         remote_ref = Ref(b"refs/remotes/origin/")
-        for branch in repo.refs.as_dict(remote_ref).keys():
+        for branch in repo.refs.as_dict(remote_ref).keys():  # noqa: SIM118
             rev = branch.decode()
             rev_selection = match.groupdict()["rev_selection"]
 

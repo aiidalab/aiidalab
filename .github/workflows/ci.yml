@@ -25,7 +25,7 @@ jobs:
 
         steps:
 
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
               with:
                   fetch-depth: 0
 
@@ -48,7 +48,7 @@ jobs:
               run: pytest -s --cov=aiidalab tests/
 
             - name: Upload coverage reports to Codecov
-              uses: codecov/codecov-action@v6
+              uses: codecov/codecov-action@v7
               with:
                   flags: py-${{ matrix.python-version }}
                   token: ${{ secrets.CODECOV_TOKEN }}
@@ -58,7 +58,7 @@ jobs:
         timeout-minutes: 10
         steps:
 
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - uses: astral-sh/setup-uv@v7
               with:
                   python-version: 3.12
@@ -67,7 +67,7 @@ jobs:
             - name: Install aiidalab package with registry extras
               run: uv pip install -e .[registry]
 
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
               with:
                   repository: aiidalab/aiidalab-registry
                   ref: main
@@ -83,7 +83,7 @@ jobs:
 
         steps:
 
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
 
             - name: Set up uv
               uses: astral-sh/setup-uv@v7

@@ -132,7 +132,7 @@ def search(app_query: str, prereleases: bool) -> None:
                 raise click.ClickException(str(error))
             app_requirements = [
                 Requirement(app_name)
-                for app_name in registry["apps"].keys()
+                for app_name in registry["apps"]
                 if fnmatch(app_name, app_query)
             ]
 
@@ -590,7 +590,7 @@ def uninstall(
 
 @contextmanager
 def _mock_schemas_endpoints() -> Generator[None, None, None]:
-    import importlib.resources as resources
+    from importlib import resources
 
     import requests_mock
 

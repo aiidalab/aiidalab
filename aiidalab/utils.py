@@ -77,8 +77,6 @@ def load_app_registry_entry(app_id: str) -> Any:
 class PEP508CompliantUrl(str):
     """Represents a PEP 508 compliant URL."""
 
-    pass
-
 
 _ParseAppCallable = Callable[[str], dict[str, Any]]
 
@@ -114,7 +112,7 @@ def parse_app_repo(
         }
 
 
-class throttled:  # noqa: N801
+class throttled:
     """Decorator to throttle calls to a function to a specified rate.
 
     The throttle is specific to the first argument of the wrapped
