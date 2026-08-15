@@ -20,7 +20,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Thread
 from time import sleep
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
@@ -38,7 +38,7 @@ from watchdog.observers.polling import PollingObserver
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
-from .metadata import Metadata
+from .metadata import Metadata, MetadataType
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     Package,
@@ -776,7 +776,7 @@ class AiidaLabApp(traitlets.HasTraits):
     def __init__(
         self,
         name: str,
-        app_data: dict[str, Any] | None,
+        app_data: dict[str, MetadataType] | None,
         aiidalab_apps_path: str | None,
         watch: bool = True,
     ):
@@ -998,33 +998,33 @@ class AiidaLabApp(traitlets.HasTraits):
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
         return self._app.metadata
 
-    def _get_from_metadata(self, what: str) -> Any:
+    def _get_from_metadata(self, what: str) -> MetadataType:
         """Get information from metadata."""
         try:
-            return self._app.metadata[what]
+            return cast(MetadataType, self._app.metadata[what])
         except KeyError:
             return f'Field "{what}" is not present in app metadata.'
 
     @property
     def authors(self) -> str:
-        return self._get_from_metadata("authors")
+        return cast(str, self._get_from_metadata("authors"))
 
     @property
     def description(self) -> str:
-        return self._get_from_metadata("description")
+        return cast(str, self._get_from_metadata("description"))
 
     @property
     def title(self) -> str:
-        return self._get_from_metadata("title")
+        return cast(str, self._get_from_metadata("title"))
 
     @property
     def url(self) -> str:
         """Provide explicit link to Git repository."""
-        return self._get_from_metadata("external_url")
+        return cast(str, self._get_from_metadata("external_url"))
 
     @property
     def citations(self) -> list[dict[str, Any]]:
-        return self._get_from_metadata("citations")
+        return cast(list[dict[str, Any]], self._get_from_metadata("citations"))
 
     @property
     def more(self) -> str:

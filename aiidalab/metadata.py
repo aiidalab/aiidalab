@@ -6,7 +6,9 @@ from collections.abc import Generator
 from configparser import ConfigParser
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
+
+from typing_extensions import TypeAlias
 
 if TYPE_CHECKING:
     from configparser import SectionProxy
@@ -168,3 +170,6 @@ class Metadata:
                 return cls(**dict(cls._parse(path)))
 
         raise ValueError(f"Directory '{root}' does not exist.")
+
+
+MetadataType: TypeAlias = Union[str, list[str], list[dict[str, Any]]]
