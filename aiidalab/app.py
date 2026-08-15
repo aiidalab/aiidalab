@@ -998,10 +998,10 @@ class AiidaLabApp(traitlets.HasTraits):
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
         return self._app.metadata
 
-    def _get_from_metadata(self, what: str) -> str:
+    def _get_from_metadata(self, what: str) -> Any:
         """Get information from metadata."""
         try:
-            return f"{self._app.metadata[what]}"
+            return self._app.metadata[what]
         except KeyError:
             return f'Field "{what}" is not present in app metadata.'
 
@@ -1023,7 +1023,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return self._get_from_metadata("external_url")
 
     @property
-    def citations(self) -> str:
+    def citations(self) -> list[dict[str, Any]]:
         return self._get_from_metadata("citations")
 
     @property
