@@ -129,7 +129,10 @@ class StandardCitation:
 
 @dataclass
 class Metadata:
-    """App metadata specification."""
+    """App metadata specification.
+
+    If you add any fields here, also update them in MetadataDict below.
+    """
 
     title: str
     description: str
@@ -172,8 +175,8 @@ class Metadata:
         raise ValueError(f"Directory '{root}' does not exist.")
 
 
-class MetadataDict(TypedDict, total=False, closed=True):
-    """TypedDict for app metadata."""
+class MetadataDict(TypedDict, total=False):
+    """TypedDict for app metadata, basically a copy of Metadata dataclass."""
 
     title: Required[str]
     description: Required[str]
