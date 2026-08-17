@@ -28,6 +28,7 @@ dependencies = [
     "toml~=0.10",
     "traitlets~=5.0",
     "watchdog~=6.0",
+    "typing-extensions~=4.13",
 ]
 description = "Implements core functions of AiiDAlab"
 license = {file = 'LICENSE'}
