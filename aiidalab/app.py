@@ -39,7 +39,7 @@ from watchdog.observers.polling import PollingObserver
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
-from .metadata import Metadata, MetadataDict
+from .metadata import Metadata, MetadataDict, SimpleCitation, StandardCitation
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     Package,
@@ -124,10 +124,10 @@ class _AiidaLabApp:
         try:
             return {
                 "name": path.stem,
-                "metadata": asdict(Metadata.parse(path)),
+                "metadata": asdict(Metadata.from_path(path)),
                 "releases": None,
             }
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, FileNotFoundError):
             logger.debug(f"Unable to parse metadata from '{path}'")
             return {
                 "name": path.stem,
@@ -1038,7 +1038,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return self._app.metadata.get("external_url")
 
     @property
-    def citations(self) -> list[dict[str, Any]]:
+    def citations(self) -> list[SimpleCitation | StandardCitation]:
         return self._app.metadata.get("citations") or []
 
     @property

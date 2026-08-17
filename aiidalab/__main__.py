@@ -293,7 +293,7 @@ def _find_version_to_install(
     if app_requirement.url is not None:
         try:
             with fetch_from_url(app_requirement.url) as repo:
-                metadata = Metadata.parse(repo)
+                metadata = Metadata.from_path(repo)
         except InvalidGitRefError as e:
             raise click.ClickException(str(e))
 
