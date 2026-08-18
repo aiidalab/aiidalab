@@ -24,7 +24,7 @@ from packaging.utils import NormalizedName, canonicalize_name
 from .config import AIIDALAB_REGISTRY
 from .environment import Environment
 from .fetch import fetch_from_url
-from .metadata import Metadata
+from .metadata import Metadata, MetadataDict
 
 if TYPE_CHECKING:
     from packaging.requirements import Requirement
@@ -82,7 +82,7 @@ _ParseAppCallable = Callable[[str], dict[str, Any]]
 
 
 def parse_app_repo(
-    url: str, metadata_fallback: dict[str, Any] | None = None
+    url: str, metadata_fallback: MetadataDict | None = None
 ) -> dict[str, Any]:
     """Parse an app repo for metadata and other information.
 
@@ -101,7 +101,7 @@ def parse_app_repo(
     """
     with fetch_from_url(url) as repo:
         try:
-            metadata = asdict(Metadata.parse(repo))
+            metadata = asdict(Metadata.from_path(repo))
         except TypeError as error:
             logger.debug(f"Failed to parse metadata for '{url}': {error}")
             metadata = metadata_fallback  # type: ignore[assignment]

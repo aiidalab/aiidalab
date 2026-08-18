@@ -6,7 +6,9 @@ from collections.abc import Generator
 from configparser import ConfigParser
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, cast
+
+from typing_extensions import Required, TypedDict
 
 if TYPE_CHECKING:
     from configparser import SectionProxy
@@ -125,9 +127,27 @@ class StandardCitation:
     pages: str | None = None
 
 
+class MetadataDict(TypedDict, total=False):
+    """TypedDict for app metadata, basically a copy of Metadata dataclass."""
+
+    title: Required[str]
+    description: Required[str]
+    authors: str | None
+    state: str | None
+    documentation_url: str | None
+    external_url: str | None
+    logo: str | None
+    categories: list[str]
+    version: str | None
+    citations: list[SimpleCitation | StandardCitation]
+
+
 @dataclass
 class Metadata:
-    """App metadata specification."""
+    """App metadata specification.
+
+    If you add any fields here, also update them in MetadataDict below.
+    """
 
     title: str
     description: str
@@ -143,43 +163,27 @@ class Metadata:
     _search_dirs = (".aiidalab", "./")
 
     @staticmethod
-    def _parse(path: Path | GitPath) -> dict[str, Any]:
-        try:
-            return {
-                key: value
-                for key, value in _parse_setup_cfg(
-                    path.joinpath("setup.cfg").read_text()
-                )
-                if value is not None
-            }
-        except FileNotFoundError:
-            return {}
+    def _parse_setup_cfg(setup_cfg_string: str) -> MetadataDict:
+        return cast(
+            MetadataDict,
+            {key: value for key, value in _parse_setup_cfg(setup_cfg_string)},
+        )
 
     @classmethod
-    def parse(cls, root: Path | GitPath) -> Metadata:
+    def from_setup_cfg(cls, content: str) -> Metadata:
         """Parse the app metadata from a setup.cfg within the app repository.
 
         This function will parse metadata fields from a possible "aiidalab"
         section, but falls back to the standard fields defined as part of the
         PEP 426-compliant metadata section for any missing values.
         """
+        return cls(**cls._parse_setup_cfg(content))
+
+    @classmethod
+    def from_path(cls, root: Path | GitPath) -> Metadata:
         for path in (root.joinpath(dir_) for dir_ in cls._search_dirs):
-            if path.is_dir():
-                return cls(**dict(cls._parse(path)))
-
+            if path.is_dir() and path.joinpath("setup.cfg").is_file():
+                setup_cfg = path.joinpath("setup.cfg").read_text()
+                return cls.from_setup_cfg(setup_cfg)
+                return cls(**cls._parse_setup_cfg(setup_cfg))
         raise ValueError(f"Directory '{root}' does not exist.")
-
-
-class MetadataDict(TypedDict):
-    """TypedDict for app metadata."""
-
-    title: str
-    description: str
-    authors: str | None
-    state: str | None
-    documentation_url: str | None
-    external_url: str | None
-    logo: str | None
-    categories: list[str]
-    version: str | None
-    citations: list[dict[str, Any]] | None
