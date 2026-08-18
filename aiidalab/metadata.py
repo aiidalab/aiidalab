@@ -6,7 +6,7 @@ from collections.abc import Generator
 from configparser import ConfigParser
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
 if TYPE_CHECKING:
     from configparser import SectionProxy
@@ -168,3 +168,18 @@ class Metadata:
                 return cls(**dict(cls._parse(path)))
 
         raise ValueError(f"Directory '{root}' does not exist.")
+
+
+class MetadataDict(TypedDict):
+    """TypedDict for app metadata."""
+
+    title: str
+    description: str
+    authors: str | None
+    state: str | None
+    documentation_url: str | None
+    external_url: str | None
+    logo: str | None
+    categories: list[str]
+    version: str | None
+    citations: list[dict[str, Any]] | None

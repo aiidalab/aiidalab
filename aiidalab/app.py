@@ -38,7 +38,7 @@ from watchdog.observers.polling import PollingObserver
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
-from .metadata import Metadata
+from .metadata import Metadata, MetadataDict
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     Package,
@@ -89,7 +89,7 @@ class AppRemoteUpdateStatus(Flag):
 
 @dataclass
 class _AiidaLabApp:
-    metadata: dict[str, Any]
+    metadata: MetadataDict
     name: str
     path: Path
     # TODO: It would be nicer to use parsed packaging.Version as a key instead of str
@@ -994,37 +994,29 @@ class AiidaLabApp(traitlets.HasTraits):
         refresh_thread.start()
 
     @property
-    def metadata(self) -> dict[str, Any]:
+    def metadata(self) -> MetadataDict:
         """Return metadata dictionary. Give the priority to the local copy (better for the developers)."""
         return self._app.metadata
 
-    def _get_from_metadata(self, what: str) -> str:
-        """Get information from metadata."""
-        try:
-            return f"{self._app.metadata[what]}"
-        except KeyError:
-            return f'Field "{what}" is not present in app metadata.'
-
     @property
     def authors(self) -> str:
-        return self._get_from_metadata("authors")
+        return self._app.metadata.get("authors") or "No authors provided"
 
     @property
     def description(self) -> str:
-        return self._get_from_metadata("description")
+        return self._app.metadata.get("description") or "No description provided"
 
     @property
     def title(self) -> str:
-        return self._get_from_metadata("title")
+        return self._app.metadata.get("title") or "No title provided"
 
     @property
-    def url(self) -> str:
-        """Provide explicit link to Git repository."""
-        return self._get_from_metadata("external_url")
+    def url(self) -> str | None:
+        return self._app.metadata.get("external_url")
 
     @property
-    def citations(self) -> str:
-        return self._get_from_metadata("citations")
+    def citations(self) -> list[dict[str, Any]]:
+        return self._app.metadata.get("citations") or []
 
     @property
     def more(self) -> str:
