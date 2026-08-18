@@ -61,6 +61,11 @@ def test_app_is_not_registered(generate_app, monkeypatch, tmp_path):
     assert len(app.available_versions) == 0
 
 
+def test_empty_app_citations(generate_app):
+    app = generate_app()
+    assert app.citations == []
+
+
 def test_app_watch(tmp_path):
     """Test the aiidalab app watch responsive to the app path changes."""
 
