@@ -139,7 +139,7 @@ class MetadataDict(TypedDict, total=False):
     logo: str | None
     categories: list[str]
     version: str | None
-    citations: list[SimpleCitation | StandardCitation]
+    citations: list[dict[str, str | list[str] | None]]
 
 
 @dataclass
@@ -158,7 +158,7 @@ class Metadata:
     logo: str | None = None
     categories: list[str] = field(default_factory=list)
     version: str | None = None
-    citations: list[SimpleCitation | StandardCitation] = field(default_factory=list)
+    citations: list[dict[str, str | list[str] | None]] = field(default_factory=list)
 
     _search_dirs = (".aiidalab", "./")
 
