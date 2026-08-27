@@ -65,7 +65,7 @@ def load_app_registry_index() -> Any:
         raise RuntimeError("Unable to load registry index") from error
 
 
-def load_app_registry_entry(app_id: str) -> Any:
+def load_app_registry_entry(app_id: str) -> Any | None:
     """Load registry entry for app with app_id."""
     try:
         return _session.get(f"{AIIDALAB_REGISTRY}/apps/{app_id}.json").json()
