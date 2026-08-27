@@ -45,64 +45,6 @@ def _parse_config_dict(dict_: str) -> Generator[tuple[str, str], None, None]:
             yield key.strip(), value.strip()
 
 
-def _parse_setup_cfg(
-    setup_cfg: str,
-) -> Generator[tuple[str, str | list[str]], None, None]:
-    "Parse a setup.cfg configuration file string for metadata."
-    import json
-
-    cfg = ConfigParser()
-    cfg.read_string(setup_cfg)
-
-    metadata_pep426: SectionProxy | dict[Any, Any] = (
-        cfg["metadata"] if "metadata" in cfg else {}  # noqa: SIM401
-    )
-    aiidalab: SectionProxy | dict[Any, Any] = (
-        cfg["aiidalab"] if "aiidalab" in cfg else {}  # noqa: SIM401
-    )
-
-    yield "title", aiidalab.get("title", metadata_pep426.get("name", ""))
-    yield "version", aiidalab.get("version", metadata_pep426.get("version", ""))
-    yield (
-        "description",
-        aiidalab.get("description", metadata_pep426.get("description", "")),
-    )
-    yield "authors", aiidalab.get("authors", metadata_pep426.get("author", ""))
-    yield "external_url", aiidalab.get("external_url", metadata_pep426.get("url", ""))
-
-    project_urls = dict(_parse_config_dict(metadata_pep426.get("project_urls", "")))
-    yield (
-        "documentation_url",
-        aiidalab.get(
-            "documentation_url",
-            project_urls.get("Documentation") or project_urls.get("documentation", ""),
-        ),
-    )
-    yield (
-        "logo",
-        aiidalab.get("logo", project_urls.get("Logo") or project_urls.get("logo", "")),
-    )
-    yield (
-        "state",
-        aiidalab.get(
-            "state", _map_development_state(metadata_pep426.get("classifiers", ""))
-        ),
-    )
-
-    # Allow passing single category and convert to list
-    # and allow parse line separated string as list
-    categories = aiidalab.get("categories", "")
-    if isinstance(categories, str):
-        categories = [c for c in categories.split("\n") if c]
-    yield "categories", categories
-
-    citations = aiidalab.get("citations", metadata_pep426.get("citations"))
-    try:
-        yield "citations", json.loads(str(citations))
-    except json.JSONDecodeError:
-        yield "citations", []
-
-
 @dataclass
 class SimpleCitation:
     """App citation specification for free-form text with an optional link."""
@@ -125,53 +67,8 @@ class StandardCitation:
     pages: str | None = None
 
 
-@dataclass
-class Metadata:
-    """App metadata specification."""
-
-    title: str
-    description: str
-    authors: str | None = None
-    state: str | None = None
-    documentation_url: str | None = None
-    external_url: str | None = None
-    logo: str | None = None
-    categories: list[str] = field(default_factory=list)
-    version: str | None = None
-    citations: list[SimpleCitation | StandardCitation] = field(default_factory=list)
-
-    _search_dirs = (".aiidalab", "./")
-
-    @staticmethod
-    def _parse(path: Path | GitPath) -> dict[str, Any]:
-        try:
-            return {
-                key: value
-                for key, value in _parse_setup_cfg(
-                    path.joinpath("setup.cfg").read_text()
-                )
-                if value is not None
-            }
-        except FileNotFoundError:
-            return {}
-
-    @classmethod
-    def parse(cls, root: Path | GitPath) -> Metadata:
-        """Parse the app metadata from a setup.cfg within the app repository.
-
-        This function will parse metadata fields from a possible "aiidalab"
-        section, but falls back to the standard fields defined as part of the
-        PEP 426-compliant metadata section for any missing values.
-        """
-        for path in (root.joinpath(dir_) for dir_ in cls._search_dirs):
-            if path.is_dir():
-                return cls(**dict(cls._parse(path)))
-
-        raise ValueError(f"Directory '{root}' does not exist.")
-
-
 class MetadataDict(TypedDict):
-    """TypedDict for app metadata."""
+    """TypedDict for app metadata, basically a copy of Metadata dataclass."""
 
     title: str
     description: str
@@ -182,4 +79,103 @@ class MetadataDict(TypedDict):
     logo: str | None
     categories: list[str]
     version: str | None
-    citations: list[dict[str, Any]] | None
+    citations: list[dict[str, str | list[str] | None]]
+
+
+def _parse_setup_cfg(
+    setup_cfg: str,
+) -> MetadataDict:
+    "Parse a setup.cfg configuration file string for metadata."
+    import json
+
+    cfg = ConfigParser()
+    cfg.read_string(setup_cfg)
+
+    metadata_pep426: SectionProxy | dict[Any, Any] = (
+        cfg["metadata"] if "metadata" in cfg else {}  # noqa: SIM401
+    )
+    aiidalab: SectionProxy | dict[Any, Any] = (
+        cfg["aiidalab"] if "aiidalab" in cfg else {}  # noqa: SIM401
+    )
+
+    title = aiidalab.get("title", metadata_pep426.get("name", ""))
+    version = aiidalab.get("version", metadata_pep426.get("version", ""))
+    description = aiidalab.get("description", metadata_pep426.get("description", ""))
+    authors = aiidalab.get("authors", metadata_pep426.get("author", ""))
+    external_url = aiidalab.get("external_url", metadata_pep426.get("url", ""))
+
+    project_urls = dict(_parse_config_dict(metadata_pep426.get("project_urls", "")))
+    documentation_url = aiidalab.get(
+        "documentation_url",
+        project_urls.get("Documentation") or project_urls.get("documentation", ""),
+    )
+    logo = aiidalab.get(
+        "logo", project_urls.get("Logo") or project_urls.get("logo", "")
+    )
+    state = aiidalab.get(
+        "state", _map_development_state(metadata_pep426.get("classifiers", ""))
+    )
+
+    # Allow passing single category and convert to list
+    # and allow parse line separated string as list
+    categories = aiidalab.get("categories", "")
+    if isinstance(categories, str):
+        categories = [c for c in categories.split("\n") if c]
+
+    citation_string = aiidalab.get("citations", metadata_pep426.get("citations"))
+    try:
+        citations = json.loads(str(citation_string))
+    except json.JSONDecodeError:
+        citations = []
+
+    return MetadataDict(
+        title=title,
+        description=description,
+        authors=authors,
+        state=state,
+        documentation_url=documentation_url,
+        external_url=external_url,
+        logo=logo,
+        categories=categories,
+        version=version,
+        citations=citations,
+    )
+
+
+@dataclass
+class Metadata:
+    """App metadata specification.
+
+    If you add any fields here, also update them in MetadataDict above.
+    """
+
+    title: str
+    description: str
+    authors: str | None = None
+    state: str | None = None
+    documentation_url: str | None = None
+    external_url: str | None = None
+    logo: str | None = None
+    categories: list[str] = field(default_factory=list)
+    version: str | None = None
+    citations: list[dict[str, str | list[str] | None]] = field(default_factory=list)
+
+    _search_dirs = (".aiidalab", "./")
+
+    @classmethod
+    def from_setup_cfg(cls, content: str) -> Metadata:
+        """Parse the app metadata from a setup.cfg within the app repository.
+
+        This function will parse metadata fields from a possible "aiidalab"
+        section, but falls back to the standard fields defined as part of the
+        PEP 426-compliant metadata section for any missing values.
+        """
+        return cls(**_parse_setup_cfg(content))
+
+    @classmethod
+    def from_path(cls, root: Path | GitPath) -> Metadata:
+        for path in (root.joinpath(dir_) for dir_ in cls._search_dirs):
+            if path.is_dir() and path.joinpath("setup.cfg").is_file():
+                setup_cfg = path.joinpath("setup.cfg").read_text()
+                return cls.from_setup_cfg(setup_cfg)
+        raise ValueError(f"Directory '{root}' does not exist.")
