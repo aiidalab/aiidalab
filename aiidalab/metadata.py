@@ -146,7 +146,7 @@ class MetadataDict(TypedDict, total=False):
 class Metadata:
     """App metadata specification.
 
-    If you add any fields here, also update them in MetadataDict below.
+    If you add any fields here, also update them in MetadataDict above.
     """
 
     title: str
@@ -185,5 +185,4 @@ class Metadata:
             if path.is_dir() and path.joinpath("setup.cfg").is_file():
                 setup_cfg = path.joinpath("setup.cfg").read_text()
                 return cls.from_setup_cfg(setup_cfg)
-                return cls(**cls._parse_setup_cfg(setup_cfg))
         raise ValueError(f"Directory '{root}' does not exist.")
