@@ -127,7 +127,7 @@ class _AiidaLabApp:
                 "releases": None,
             }
         except (TypeError, ValueError, FileNotFoundError):
-            logger.debug(f"Unable to parse metadata from '{path}'")
+            logger.warning(f"Unable to parse metadata from '{path}'")
             return {
                 "name": path.stem,
                 "metadata": {"title": path.stem, "description": ""},
