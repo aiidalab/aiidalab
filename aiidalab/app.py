@@ -423,12 +423,15 @@ class _AiidaLabApp:
             for name, requirement in unmatched_dependencies.items()
         ]
 
-    def _versions_equal(self, v1: str, v2: str) -> bool:
+    def _versions_equal(self, left: str | AppVersion, right: str | AppVersion) -> bool:
         """Check if two versions are equal, considering PEP 440."""
+        if not isinstance(left, str) or not isinstance(right, str):
+            return left is right
+
         try:
-            return Version(v1) == Version(v2)
+            return Version(left) == Version(right)
         except InvalidVersion:
-            return v1 == v2
+            return left == right
 
     def _get_release(self, version: str) -> dict[str, Any]:
         """Return the registry release matching the given PEP 440 version."""

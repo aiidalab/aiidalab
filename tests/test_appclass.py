@@ -6,7 +6,7 @@ from time import sleep
 import pytest
 import traitlets
 
-from aiidalab.app import AiidaLabApp, AiidaLabAppWatch
+from aiidalab.app import AiidaLabApp, AiidaLabAppWatch, AppVersion
 
 
 def test_init_refresh(generate_app):
@@ -131,3 +131,10 @@ def test_app_version_compatibility(generate_app):
     assert app._app._versions_equal("my-release-1", "my-release-1")
     assert not app._app._versions_equal("my-release-1", "my-release-2")
     assert not app._app._versions_equal("my-release-1", "26.6.11")
+
+    assert app._app._versions_equal(AppVersion.UNKNOWN, AppVersion.UNKNOWN)
+    assert app._app._versions_equal(AppVersion.NOT_INSTALLED, AppVersion.NOT_INSTALLED)
+
+    assert not app._app._versions_equal(AppVersion.UNKNOWN, AppVersion.NOT_INSTALLED)
+    assert not app._app._versions_equal(AppVersion.UNKNOWN, "26.6.11")
+    assert not app._app._versions_equal("26.6.11", AppVersion.UNKNOWN)
