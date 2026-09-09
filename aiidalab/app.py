@@ -287,7 +287,7 @@ class _AiidaLabApp:
             if (
                 available_versions
                 and isinstance(installed_version, str)
-                and not self._version_equal(installed_version, available_versions[0])
+                and not self._versions_equal(installed_version, available_versions[0])
             ):
                 return AppRemoteUpdateStatus.UPDATE_AVAILABLE
 
@@ -423,7 +423,7 @@ class _AiidaLabApp:
             for name, requirement in unmatched_dependencies.items()
         ]
 
-    def _version_equal(self, v1: str, v2: str) -> bool:
+    def _versions_equal(self, v1: str, v2: str) -> bool:
         """Check if two versions are equal, considering PEP 440."""
         try:
             return Version(v1) == Version(v2)
@@ -433,7 +433,7 @@ class _AiidaLabApp:
     def _get_release(self, version: str) -> dict[str, Any]:
         """Return the registry release matching the given PEP 440 version."""
         for release_version, release in self.releases.items():
-            if self._version_equal(release_version, version):
+            if self._versions_equal(release_version, version):
                 return release  # type: ignore[no-any-return]
 
         raise KeyError(version)
