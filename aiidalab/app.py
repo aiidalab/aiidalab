@@ -27,7 +27,7 @@ from uuid import uuid4
 import requests
 import traitlets
 from dulwich.errors import NotGitRepository
-from packaging.version import Version
+from packaging.version import InvalidVersion, Version
 from watchdog.events import (
     EVENT_TYPE_CLOSED_NO_WRITE,
     EVENT_TYPE_OPENED,
@@ -287,7 +287,7 @@ class _AiidaLabApp:
             if (
                 available_versions
                 and isinstance(installed_version, str)
-                and Version(installed_version) != Version(available_versions[0])
+                and not self._version_equal(installed_version, available_versions[0])
             ):
                 return AppRemoteUpdateStatus.UPDATE_AVAILABLE
 
@@ -423,12 +423,17 @@ class _AiidaLabApp:
             for name, requirement in unmatched_dependencies.items()
         ]
 
+    def _version_equal(self, v1: str, v2: str) -> bool:
+        """Check if two versions are equal, considering PEP 440."""
+        try:
+            return Version(v1) == Version(v2)
+        except InvalidVersion:
+            return v1 == v2
+
     def _get_release(self, version: str) -> dict[str, Any]:
         """Return the registry release matching the given PEP 440 version."""
-        parsed_version = Version(version)
-
         for release_version, release in self.releases.items():
-            if Version(release_version) == parsed_version:
+            if self._version_equal(release_version, version):
                 return release  # type: ignore[no-any-return]
 
         raise KeyError(version)
