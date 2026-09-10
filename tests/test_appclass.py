@@ -6,7 +6,7 @@ from time import sleep
 import pytest
 import traitlets
 
-from aiidalab.app import AiidaLabApp, AiidaLabAppWatch
+from aiidalab.app import AiidaLabApp, AiidaLabAppWatch, AppVersion
 
 
 def test_init_refresh(generate_app):
@@ -109,3 +109,32 @@ def test_app_watch(tmp_path):
     testfile.touch()
 
     assert app.x == 4
+
+
+def test_app_version_compatibility(generate_app):
+    """Test the version compatibility check.
+
+    The registered versions are tag format (e.g., "v26.06.11"), whereas the app metadata version
+    is of format 26.6.11. This leads to failed version comparisons. This is resolved by using the
+    `packaging.version.Version` class to parse and compare versions correctly. However, since Git
+    tags can be anything (e.g., "my-release-1"), we try/except the use of `Version`, defaulting to
+    the raw string comparison if parsing fails.
+
+    This test checks the various scenarios.
+    """
+    app = generate_app()
+
+    assert app._app._versions_equal("v26.06.11", "26.6.11")
+    assert app._app._versions_equal("26.06.11", "26.6.11")
+    assert not app._app._versions_equal("v26.06.11", "26.6.12")
+
+    assert app._app._versions_equal("my-release-1", "my-release-1")
+    assert not app._app._versions_equal("my-release-1", "my-release-2")
+    assert not app._app._versions_equal("my-release-1", "26.6.11")
+
+    assert app._app._versions_equal(AppVersion.UNKNOWN, AppVersion.UNKNOWN)
+    assert app._app._versions_equal(AppVersion.NOT_INSTALLED, AppVersion.NOT_INSTALLED)
+
+    assert not app._app._versions_equal(AppVersion.UNKNOWN, AppVersion.NOT_INSTALLED)
+    assert not app._app._versions_equal(AppVersion.UNKNOWN, "26.6.11")
+    assert not app._app._versions_equal("26.6.11", AppVersion.UNKNOWN)

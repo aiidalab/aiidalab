@@ -27,6 +27,7 @@ from uuid import uuid4
 import requests
 import traitlets
 from dulwich.errors import NotGitRepository
+from packaging.version import InvalidVersion, Version
 from watchdog.events import (
     EVENT_TYPE_CLOSED_NO_WRITE,
     EVENT_TYPE_OPENED,
@@ -283,7 +284,11 @@ class _AiidaLabApp:
 
             # Check whether the locally installed version is the latest release.
             available_versions = list(self.available_versions(prereleases=prereleases))
-            if available_versions and installed_version != available_versions[0]:
+            if (
+                available_versions
+                and isinstance(installed_version, str)
+                and not self._versions_equal(installed_version, available_versions[0])
+            ):
                 return AppRemoteUpdateStatus.UPDATE_AVAILABLE
 
             # App must be up-to-date.
@@ -373,7 +378,7 @@ class _AiidaLabApp:
         if not self.is_registered() or self.is_detached():
             environment = asdict(Environment.scan(self.path))
         else:
-            environment = self.releases[version].get("environment", {})
+            environment = self._get_release(version).get("environment", {})
 
         for key, spec in environment.items():
             if key == "python_requirements":
@@ -417,6 +422,24 @@ class _AiidaLabApp:
             }
             for name, requirement in unmatched_dependencies.items()
         ]
+
+    def _versions_equal(self, left: str | AppVersion, right: str | AppVersion) -> bool:
+        """Check if two versions are equal, considering PEP 440."""
+        if not isinstance(left, str) or not isinstance(right, str):
+            return left is right
+
+        try:
+            return Version(left) == Version(right)
+        except InvalidVersion:
+            return left == right
+
+    def _get_release(self, version: str) -> dict[str, Any]:
+        """Return the registry release matching the given PEP 440 version."""
+        for release_version, release in self.releases.items():
+            if self._versions_equal(release_version, version):
+                return release  # type: ignore[no-any-return]
+
+        raise KeyError(version)
 
     def _install_dependencies(self, python_bin: str, stdout: Any) -> None:
         """Try to install the app dependencies with pip (if specified)."""
