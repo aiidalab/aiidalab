@@ -1,10 +1,14 @@
 import threading
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep
+from typing import ClassVar
 
 import pytest
 import traitlets
+from inline_snapshot import HasRepr, snapshot
+from packaging.requirements import Requirement
 
 from aiidalab.app import AiidaLabApp, AiidaLabAppWatch, AppVersion
 
@@ -32,6 +36,74 @@ def test_prereleases(generate_app):
     app.include_prereleases = True
     assert "v23.01.0b1" in app.available_versions
     assert len(app.available_versions) == 3
+
+
+class TestAppCompatibility:
+    app_data: ClassVar[dict] = {
+        "metadata": {
+            "authors": "Who Cares, Lorem von Ipsum et al",
+            "categories": ["crazy_stuff"],
+            "logo": "whatever.png",
+            "title": "TestApp",
+            "version": "1.0",
+        },
+        "name": "test-app",
+        "releases": {
+            "1.0": {
+                "environment": {"python_requirements": []},
+            },
+        },
+    }
+
+    def set_python_requirements(self, python_reqs: list[str]) -> dict:
+        app_data = deepcopy(self.app_data)
+        app_data["releases"]["1.0"]["environment"]["python_requirements"] = python_reqs
+        return app_data
+
+    def test_app_without_python_reqs_is_compatible(self, generate_app):
+        app = generate_app(app_data=self.app_data)
+        assert list(app._app.available_versions()) == snapshot(["1.0"])
+        assert app.compatibility_info == snapshot({"1.0": []})
+        assert app.compatible
+
+    def test_compatible_app(self, generate_app, installed_packages):
+        # The installed packages fixture mocks the python environemnt to already "contain"
+        # aiida-core and ipywidgets so the following reqs should be compatible
+        app_data = self.set_python_requirements(["ipywidgets~=7.4", "aiida-core>=2.0"])
+
+        app = generate_app(app_data=app_data)
+
+        assert app.compatibility_info == snapshot({"1.0": []})
+        assert list(app._app.find_dependencies_to_install("1.0")) == snapshot([])
+        assert app.compatible
+
+    def test_incompatible_app(self, generate_app):
+        app_data = self.set_python_requirements(
+            ["nonexistent-pkg==2.0", "another-invalid-pkg"]
+        )
+
+        app = generate_app(app_data=app_data)
+
+        assert app.compatibility_info == snapshot(
+            {"1.0": ["(python) nonexistent-pkg==2.0", "(python) another-invalid-pkg"]}
+        )
+        assert list(app._app.find_dependencies_to_install("1.0")) == snapshot(
+            [
+                {
+                    "installed": None,
+                    "required": HasRepr(
+                        Requirement, "<Requirement('nonexistent-pkg==2.0')>"
+                    ),
+                },
+                {
+                    "installed": None,
+                    "required": HasRepr(
+                        Requirement, "<Requirement('another-invalid-pkg')>"
+                    ),
+                },
+            ]
+        )
+        assert not app.compatible
 
 
 @pytest.mark.usefixtures("installed_packages")
