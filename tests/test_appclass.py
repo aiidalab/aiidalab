@@ -66,7 +66,7 @@ class TestAppCompatibility:
         assert app.compatibility_info == snapshot({"1.0": []})
         assert app.compatible
 
-    def test_compatible_app(self, generate_app):
+    def test_compatible_app(self, generate_app, installed_packages):
         # The installed packages fixture mocks the python environemnt to already "contain"
         # aiida-core and ipywidgets so the following reqs should be compatible
         app_data = self.set_python_requirements(["ipywidgets~=7.4", "aiida-core>=2.0"])
