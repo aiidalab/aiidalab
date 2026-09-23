@@ -174,6 +174,11 @@ class Package:
 
     def fulfills(self, requirement: Requirement) -> bool:
         """Returns True if this entry fulfills the requirement."""
+        # Filter out requirements with environment markers that do not apply to current environment.
+        # For instance, if the requirement is for Python 3.9 (`package==1.0;python_version==3.9`)
+        # but we're running on Python 3.10, we report it as satisfied.
+        if requirement.marker and not requirement.marker.evaluate():
+            return True
         return self.canonical_name == canonicalize_name(requirement.name) and (
             self.version is None or self.version in requirement.specifier
         )
