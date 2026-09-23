@@ -947,16 +947,18 @@ class AiidaLabApp(traitlets.HasTraits):
     def _is_compatible(self, app_version: str) -> bool:
         """Determine whether the specified version is compatible."""
         try:
-            incompatibilities = list(self._app.find_incompatibilities(version=app_version))
+            incompatibilities = list(
+                self._app.find_incompatibilities(version=app_version)
+            )
             self.compatibility_info = {
                 app_version: [
                     f"({eco_system}) {requirement}"
                     for eco_system, requirement in incompatibilities
                 ]
             }
-
             return not any(incompatibilities)
         except KeyError:
+            logger.warning(f"{self.name} compatibility could not be determined")
             return False  # compatibility indetermined for given version
 
     def _refresh_versions(self) -> None:
