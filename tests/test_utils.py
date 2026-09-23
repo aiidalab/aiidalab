@@ -168,6 +168,13 @@ class TestPackageFulfills:
         req = Requirement("requests")
         assert pkg.fulfills(req) is True
 
+    def test_prerelease_fulfills_when_requirement_has_git_url(self):
+        pkg = Package("aiidalab-widgets-base", "3.0.0a3")
+        req = Requirement(
+            "aiidalab_widgets_base@git+https://github.com/aiidalab/aiidalab-widgets-base@master"
+        )
+        assert pkg.fulfills(req) is True
+
     def test_name_matching_is_canonicalized_on_both_sides(self):
         pkg = Package("Flask_SQLAlchemy", "3.0.0")
         req = Requirement("flask-sqlalchemy>=2.0")
