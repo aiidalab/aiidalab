@@ -124,6 +124,9 @@ push = true
 line-length = 88
 show-fixes = true
 
+[tool.inline-snapshot]
+format-command="ruff format --stdin-filename {filename}"
+
 [tool.pytest.ini_options]
 addopts = '--strict-config --strict-markers -ra --durations-min=1 --durations=10'
 markers = [
