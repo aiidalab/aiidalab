@@ -1,12 +1,16 @@
 import threading
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep
+from typing import ClassVar
 
 import pytest
 import traitlets
+from inline_snapshot import HasRepr, snapshot
+from packaging.requirements import Requirement
 
-from aiidalab.app import AiidaLabApp, AiidaLabAppWatch
+from aiidalab.app import AiidaLabApp, AiidaLabAppWatch, AppVersion
 
 
 def test_init_refresh(generate_app):
@@ -34,6 +38,74 @@ def test_prereleases(generate_app):
     assert len(app.available_versions) == 3
 
 
+class TestAppCompatibility:
+    app_data: ClassVar[dict] = {
+        "metadata": {
+            "authors": "Who Cares, Lorem von Ipsum et al",
+            "categories": ["crazy_stuff"],
+            "logo": "whatever.png",
+            "title": "TestApp",
+            "version": "1.0",
+        },
+        "name": "test-app",
+        "releases": {
+            "1.0": {
+                "environment": {"python_requirements": []},
+            },
+        },
+    }
+
+    def set_python_requirements(self, python_reqs: list[str]) -> dict:
+        app_data = deepcopy(self.app_data)
+        app_data["releases"]["1.0"]["environment"]["python_requirements"] = python_reqs
+        return app_data
+
+    def test_app_without_python_reqs_is_compatible(self, generate_app):
+        app = generate_app(app_data=self.app_data)
+        assert list(app._app.available_versions()) == snapshot(["1.0"])
+        assert app.compatibility_info == snapshot({"1.0": []})
+        assert app.compatible
+
+    def test_compatible_app(self, generate_app, installed_packages):
+        # The installed packages fixture mocks the python environemnt to already "contain"
+        # aiida-core and ipywidgets so the following reqs should be compatible
+        app_data = self.set_python_requirements(["ipywidgets~=7.4", "aiida-core>=2.0"])
+
+        app = generate_app(app_data=app_data)
+
+        assert app.compatibility_info == snapshot({"1.0": []})
+        assert list(app._app.find_dependencies_to_install("1.0")) == snapshot([])
+        assert app.compatible
+
+    def test_incompatible_app(self, generate_app):
+        app_data = self.set_python_requirements(
+            ["nonexistent-pkg==2.0", "another-invalid-pkg"]
+        )
+
+        app = generate_app(app_data=app_data)
+
+        assert app.compatibility_info == snapshot(
+            {"1.0": ["(python) nonexistent-pkg==2.0", "(python) another-invalid-pkg"]}
+        )
+        assert list(app._app.find_dependencies_to_install("1.0")) == snapshot(
+            [
+                {
+                    "installed": None,
+                    "required": HasRepr(
+                        Requirement, "<Requirement('nonexistent-pkg==2.0')>"
+                    ),
+                },
+                {
+                    "installed": None,
+                    "required": HasRepr(
+                        Requirement, "<Requirement('another-invalid-pkg')>"
+                    ),
+                },
+            ]
+        )
+        assert not app.compatible
+
+
 @pytest.mark.usefixtures("installed_packages")
 def test_dependencies(generate_app):
     app: AiidaLabApp = generate_app()
@@ -59,6 +131,11 @@ def test_app_is_not_registered(generate_app, monkeypatch, tmp_path):
     # the available versions will be empty since the app is not registered
     assert app.installed_version == "23.1.0"
     assert len(app.available_versions) == 0
+
+
+def test_empty_app_citations(generate_app):
+    app = generate_app()
+    assert app.citations == []
 
 
 def test_app_watch(tmp_path):
@@ -104,3 +181,32 @@ def test_app_watch(tmp_path):
     testfile.touch()
 
     assert app.x == 4
+
+
+def test_app_version_compatibility(generate_app):
+    """Test the version compatibility check.
+
+    The registered versions are tag format (e.g., "v26.06.11"), whereas the app metadata version
+    is of format 26.6.11. This leads to failed version comparisons. This is resolved by using the
+    `packaging.version.Version` class to parse and compare versions correctly. However, since Git
+    tags can be anything (e.g., "my-release-1"), we try/except the use of `Version`, defaulting to
+    the raw string comparison if parsing fails.
+
+    This test checks the various scenarios.
+    """
+    app = generate_app()
+
+    assert app._app._versions_equal("v26.06.11", "26.6.11")
+    assert app._app._versions_equal("26.06.11", "26.6.11")
+    assert not app._app._versions_equal("v26.06.11", "26.6.12")
+
+    assert app._app._versions_equal("my-release-1", "my-release-1")
+    assert not app._app._versions_equal("my-release-1", "my-release-2")
+    assert not app._app._versions_equal("my-release-1", "26.6.11")
+
+    assert app._app._versions_equal(AppVersion.UNKNOWN, AppVersion.UNKNOWN)
+    assert app._app._versions_equal(AppVersion.NOT_INSTALLED, AppVersion.NOT_INSTALLED)
+
+    assert not app._app._versions_equal(AppVersion.UNKNOWN, AppVersion.NOT_INSTALLED)
+    assert not app._app._versions_equal(AppVersion.UNKNOWN, "26.6.11")
+    assert not app._app._versions_equal("26.6.11", AppVersion.UNKNOWN)
