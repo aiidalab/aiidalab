@@ -39,7 +39,7 @@ from watchdog.observers.polling import PollingObserver
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
-from .metadata import Metadata, MetadataDict
+from .metadata import Metadata, MetadataDict, package_name_from_setup_cfg
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     Package,
@@ -324,14 +324,19 @@ class _AiidaLabApp:
             shutil.rmtree(self.path)
 
     def _get_python_pkg_name(self) -> str:
+        from packaging.utils import canonicalize_name
+
         if not self._has_python_package():
             return ""
-        # TODO: Determine the pkg name from the setup.cfg metadata table
-        pkg_name = str(self.name)
-        # TODO: Need to make sure we're comparing canonicalized names here
-        if self.name == "quantum-espresso":
-            pkg_name = "aiidalab-qe"
-        return pkg_name
+
+        # TODO: Once we support pyproject.toml, we should try reading package name from it first!
+        setup_cfg = self.path.joinpath("setup_cfg")
+        if setup_cfg.is_file():
+            pkg_name = package_name_from_setup_cfg(setup_cfg.read_text())
+        else:
+            pkg_name = str(self.name)
+
+        return canonicalize_name(pkg_name)
 
     def _has_python_package(self) -> bool:
         return (
@@ -340,11 +345,14 @@ class _AiidaLabApp:
         )
 
     def _uninstall_python_package(self, python_bin: str) -> None:
+        from packaging.utils import canonicalize_name
+
         if not self._has_python_package():
             return
 
-        if self.name == "aiidalab-widgets-base":
-            # We mustn't uninstall AWB package!
+        if canonicalize_name(self.name) == canonicalize_name("aiidalab-widgets-base"):
+            # We mustn't uninstall AWB package since other apps may depend on it!
+            logger.info("Keeping aiidalab-widgets-base python package installed")
             return
 
         pkg_name = self._get_python_pkg_name()

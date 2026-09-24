@@ -45,6 +45,18 @@ def _parse_config_dict(dict_: str) -> Generator[tuple[str, str], None, None]:
             yield key.strip(), value.strip()
 
 
+def package_name_from_setup_cfg(setup_cfg: str) -> str:
+    cfg = ConfigParser()
+    cfg.read_string(setup_cfg)
+
+    # This really shouldn't happen, setuptools would probably not be happy
+    if not "metadata" in cfg:
+        return ""
+
+    metadata_pep426 = cfg["metadata"]
+    return metadata_pep426.get("name", "")
+
+
 def _parse_setup_cfg(
     setup_cfg: str,
 ) -> Generator[tuple[str, str | list[str]], None, None]:
