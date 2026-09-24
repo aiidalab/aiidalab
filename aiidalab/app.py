@@ -323,25 +323,39 @@ class _AiidaLabApp:
         else:
             shutil.rmtree(self.path)
 
-    def _uninstall_python_package(self, python_bin: str) -> None:
-        if (
+    def _get_python_pkg_name(self) -> str:
+        if not self._has_python_package():
+            return ""
+        # TODO: Determine the pkg name from the setup.cfg metadata table
+        pkg_name = str(self.name)
+        # TODO: Need to make sure we're comparing canonicalized names here
+        if self.name == "quantum-espresso":
+            pkg_name = "aiidalab-qe"
+        return pkg_name
+
+    def _has_python_package(self) -> bool:
+        return (
             self.path.joinpath("setup.py").is_file()
             or self.path.joinpath("pyproject.toml").is_file()
-        ):
-            pkg_name = str(self.name)
-            # TODO: Need to make sure we're comparing canonicalized names here
-            if self.name == "aiidalab-widgets-base":
-                # We mustn't uninstall AWB package!
-                return
-            elif self.name == "quantum-espresso":
-                pkg_name = "aiidalab-qe"
-            logger.info(f"Running 'pip uninstall --user {pkg_name}'")
-            process = run_pip_uninstall(pkg_name, python_bin=python_bin)
-            process.wait()
-            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
-                logger.info(line)
-            if process.returncode != 0:
-                logger.info(f"pip failed to uninstall python package {pkg_name}")
+        )
+
+    def _uninstall_python_package(self, python_bin: str) -> None:
+        if not self._has_python_package():
+            return
+
+        if self.name == "aiidalab-widgets-base":
+            # We mustn't uninstall AWB package!
+            return
+
+        pkg_name = self._get_python_pkg_name()
+
+        logger.info(f"Running 'pip uninstall --user {pkg_name}'")
+        process = run_pip_uninstall(pkg_name, python_bin=python_bin)
+        process.wait()
+        for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+            logger.info(line)
+        if process.returncode != 0:
+            logger.info(f"pip failed to uninstall python package {pkg_name}")
 
     def find_matching_releases(
         self, specifier: SpecifierSet, prereleases: bool | None = None
@@ -498,10 +512,7 @@ class _AiidaLabApp:
         for path in (self.path.joinpath(".aiidalab"), self.path):
             if path.exists():
                 try:
-                    if (
-                        path.joinpath("setup.py").is_file()
-                        or path.joinpath("pyproject.toml").is_file()
-                    ):
+                    if self._has_python_package():
                         _pip_install(str(path), stdout=stdout)
                     elif path.joinpath("requirements.txt").is_file():
                         _pip_install(
