@@ -329,11 +329,14 @@ class _AiidaLabApp:
         if not self._has_python_package():
             return ""
 
+        pkg_name = ""
+
         # TODO: Once we support pyproject.toml, we should try reading package name from it first!
         setup_cfg = self.path.joinpath("setup_cfg")
         if setup_cfg.is_file():
             pkg_name = package_name_from_setup_cfg(setup_cfg.read_text())
-        else:
+
+        if not pkg_name:
             pkg_name = str(self.name)
 
         return canonicalize_name(pkg_name)
