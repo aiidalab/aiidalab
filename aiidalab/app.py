@@ -328,13 +328,20 @@ class _AiidaLabApp:
             self.path.joinpath("setup.py").is_file()
             or self.path.joinpath("pyproject.toml").is_file()
         ):
-            logger.info(f"Running 'pip uninstall --user {self.name}'")
-            process = run_pip_uninstall(str(self.name), python_bin=python_bin)
+            pkg_name = str(self.name)
+            # TODO: Need to make sure we're comparing canonicalized names here
+            if self.name == "aiidalab-widgets-base":
+                # We mustn't uninstall AWB package!
+                return
+            elif self.name == "quantum-espresso":
+                pkg_name = "aiidalab-qe"
+            logger.info(f"Running 'pip uninstall --user {pkg_name}'")
+            process = run_pip_uninstall(pkg_name, python_bin=python_bin)
             process.wait()
             for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
                 logger.info(line)
             if process.returncode != 0:
-                logger.info(f"pip failed to uninstall python package {self.name}")
+                logger.info(f"pip failed to uninstall python package {pkg_name}")
 
     def find_matching_releases(
         self, specifier: SpecifierSet, prereleases: bool | None = None
