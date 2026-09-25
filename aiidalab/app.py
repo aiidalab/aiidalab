@@ -48,7 +48,6 @@ from .utils import (
     get_package_by_name,
     is_valid_version,
     run_pip_install,
-    run_pip_uninstall,
     run_post_install_script,
     run_verdi_daemon_restart,
     sort_semantic,
@@ -349,6 +348,8 @@ class _AiidaLabApp:
 
     def _uninstall_python_package(self, python_bin: str) -> None:
         from packaging.utils import canonicalize_name
+
+        from .utils import run_pip_uninstall
 
         if not self._has_python_package():
             return
