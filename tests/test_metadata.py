@@ -12,7 +12,7 @@ class TestPackageNameFromSetupCfg:
         [metadata]
         name = my-package
         version = 2.3.4
-        author = AiidaLab crew
+        author = AiiDAlab crew
         description = A test package
 
         [options]
