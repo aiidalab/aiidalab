@@ -173,9 +173,13 @@ class Metadata:
         return cls(**_parse_setup_cfg(content))
 
     @classmethod
-    def from_path(cls, root: Path | GitPath) -> Metadata:
+    def from_path(cls, root: Path | GitPath) -> Metadata | None:
         for path in (root.joinpath(dir_) for dir_ in cls._search_dirs):
-            if path.is_dir() and path.joinpath("setup.cfg").is_file():
-                setup_cfg = path.joinpath("setup.cfg").read_text()
-                return cls.from_setup_cfg(setup_cfg)
+            if path.is_dir():
+                try:
+                    setup_cfg = path.joinpath("setup.cfg").read_text()
+                except FileNotFoundError:
+                    return None
+                else:
+                    return cls.from_setup_cfg(setup_cfg)
         raise ValueError(f"Directory '{root}' does not exist.")

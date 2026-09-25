@@ -101,9 +101,9 @@ def parse_app_repo(
     """
     with fetch_from_url(url) as repo:
         try:
-            metadata = asdict(Metadata.from_path(repo))
+            metadata = asdict(Metadata.from_path(repo))  # type: ignore[arg-type]
         except TypeError as error:
-            logger.debug(f"Failed to parse metadata for '{url}': {error}")
+            logger.warning(f"Failed to parse metadata for '{url}': {error}")
             metadata = metadata_fallback  # type: ignore[assignment]
 
         return {
