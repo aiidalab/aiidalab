@@ -1,3 +1,4 @@
+import sys
 import threading
 from copy import deepcopy
 from dataclasses import dataclass
@@ -36,6 +37,27 @@ def test_prereleases(generate_app):
     app.include_prereleases = True
     assert "v23.01.0b1" in app.available_versions
     assert len(app.available_versions) == 3
+
+
+def test_reinstall_app(generate_app, monkeypatch):
+    app = generate_app()
+    calls = []
+
+    monkeypatch.setattr(
+        app._app,
+        "_install_dependencies",
+        lambda python_bin, stdout: calls.append(("install", python_bin, stdout)),
+    )
+    monkeypatch.setattr(
+        app._app,
+        "_post_install_triggers",
+        lambda: calls.append(("post_install",)),
+    )
+    stdout = object()
+
+    app.reinstall_app(stdout=stdout)
+
+    assert calls == [("install", sys.executable, stdout), ("post_install",)]
 
 
 class TestAppCompatibility:
