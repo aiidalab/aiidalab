@@ -982,6 +982,16 @@ class AiidaLabApp(traitlets.HasTraits):
             version = self.install_app(version=None, stdout=stdout)
             return version
 
+    def reinstall_app(self, stdout: str | None = None) -> None:
+        """Reinstall dependencies and run the post-install hook in place."""
+        with self._show_busy():
+            if not self.is_installed():
+                raise RuntimeError(f"The app '{self.name}' is not installed.")
+            self._app._install_dependencies(sys.executable, stdout or sys.stdout)
+            self._app._post_install_triggers()
+            FIND_INSTALLED_PACKAGES_CACHE.clear()
+            self.refresh()
+
     def uninstall_app(self) -> None:
         """Uninstall application."""
         # Perform uninstall process.
