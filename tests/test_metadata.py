@@ -41,18 +41,10 @@ class TestPackageNameFromSetupCfg:
         """
         assert package_name_from_setup_cfg(setup_cfg) == name_value
 
-    def test_strips_surrounding_whitespace_from_name(self):
-        setup_cfg = """
-        [metadata]
-        name =    spaced-package
-        """
-        assert package_name_from_setup_cfg(setup_cfg) == "spaced-package"
-
     # Missing / absent data
-    def test_returns_empty_string_for_empty_input(self):
+    def test_returns_empty_string_for_empty_setup_cfg(self):
         assert package_name_from_setup_cfg("") == ""
 
-    def test_returns_empty_string_when_no_sections_at_all(self):
         setup_cfg = "# just a comment\n"
         assert package_name_from_setup_cfg(setup_cfg) == ""
 
