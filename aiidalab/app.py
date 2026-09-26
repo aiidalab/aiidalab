@@ -404,6 +404,17 @@ class _AiidaLabApp:
                 return False
         return True
 
+    def core_dependencies_met(self, python_bin: str | None = None) -> bool:
+        """Return whether the local app requirements preserve core packages."""
+        for path in (self.path.joinpath(".aiidalab"), self.path):
+            if path.exists():
+                environment = Environment.scan(path)
+                break
+        else:
+            environment = Environment()
+        requirements = self.parse_python_requirements(environment.python_requirements)
+        return self._strict_dependencies_met(requirements, python_bin)
+
     @staticmethod
     def _find_incompatibilities_python(
         requirements: list[Requirement], python_bin: str
@@ -847,6 +858,7 @@ class AiidaLabApp(traitlets.HasTraits):
     busy = traitlets.Bool().tag(readonly=True)
     detached = traitlets.Bool(allow_none=True).tag(readonly=True)
     compatible = traitlets.Bool(allow_none=True).tag(readonly=True)
+    core_compatible = traitlets.Bool(allow_none=True).tag(readonly=True)
     compatibility_info = traitlets.Dict()
 
     def __init__(
@@ -982,6 +994,31 @@ class AiidaLabApp(traitlets.HasTraits):
             version = self.install_app(version=None, stdout=stdout)
             return version
 
+    def reinstall_app(self, stdout: str | None = None) -> None:
+        """Reinstall dependencies and run the post-install hook in place."""
+        with self._show_busy():
+            if not self.is_installed():
+                raise RuntimeError(f"The app '{self.name}' is not installed.")
+            if not self._app.core_dependencies_met():
+                raise RuntimeError(
+                    "The app requirements are incompatible with the core packages."
+                )
+            try:
+                self._app._install_dependencies(sys.executable, stdout or sys.stdout)
+                self._app._post_install_triggers()
+            except BaseException:
+                FIND_INSTALLED_PACKAGES_CACHE.clear()
+                try:
+                    self.refresh()
+                except BaseException:
+                    logger.exception(
+                        "Failed to refresh app state after reinstall failure."
+                    )
+                raise
+            else:
+                FIND_INSTALLED_PACKAGES_CACHE.clear()
+                self.refresh()
+
     def uninstall_app(self) -> None:
         """Uninstall application."""
         # Perform uninstall process.
@@ -1051,6 +1088,10 @@ class AiidaLabApp(traitlets.HasTraits):
             self._refresh_versions()
             self._refresh_dependencies_to_install()
             self.set_trait("compatible", self._is_compatible(self.installed_version))
+            self.set_trait(
+                "core_compatible",
+                self._app.core_dependencies_met() if self.is_installed() else None,
+            )
             self.set_trait(
                 "remote_update_status",
                 self._app.remote_update_status(prereleases=self.include_prereleases),

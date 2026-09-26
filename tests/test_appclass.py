@@ -1,7 +1,9 @@
+import sys
 import threading
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
+from subprocess import CalledProcessError
 from time import sleep
 from typing import ClassVar
 
@@ -36,6 +38,57 @@ def test_prereleases(generate_app):
     app.include_prereleases = True
     assert "v23.01.0b1" in app.available_versions
     assert len(app.available_versions) == 3
+
+
+def test_reinstall_app(generate_app, monkeypatch):
+    app = generate_app()
+    calls = []
+
+    monkeypatch.setattr(
+        app._app,
+        "_install_dependencies",
+        lambda python_bin, stdout: calls.append(("install", python_bin, stdout)),
+    )
+    monkeypatch.setattr(
+        app._app,
+        "_post_install_triggers",
+        lambda: calls.append(("post_install",)),
+    )
+    stdout = object()
+
+    app.reinstall_app(stdout=stdout)
+
+    assert calls == [("install", sys.executable, stdout), ("post_install",)]
+
+
+def test_reinstall_app_rejects_core_dependency_conflict(generate_app, monkeypatch):
+    app = generate_app()
+    monkeypatch.setattr(app._app, "core_dependencies_met", lambda: False)
+    monkeypatch.setattr(
+        app._app,
+        "_install_dependencies",
+        lambda *args: pytest.fail("Dependencies must not be installed."),
+    )
+
+    with pytest.raises(RuntimeError, match="core packages"):
+        app.reinstall_app()
+
+
+def test_reinstall_app_refreshes_after_post_install_failure(generate_app, monkeypatch):
+    app = generate_app()
+    refresh_calls = []
+
+    def fail_post_install():
+        raise CalledProcessError(1, "post_install")
+
+    monkeypatch.setattr(app._app, "_install_dependencies", lambda *args: None)
+    monkeypatch.setattr(app._app, "_post_install_triggers", fail_post_install)
+    monkeypatch.setattr(app, "refresh", lambda: refresh_calls.append(True))
+
+    with pytest.raises(CalledProcessError):
+        app.reinstall_app()
+
+    assert refresh_calls == [True]
 
 
 class TestAppCompatibility:
