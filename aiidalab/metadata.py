@@ -82,6 +82,18 @@ class MetadataDict(TypedDict):
     citations: list[dict[str, str | list[str] | None]]
 
 
+def package_name_from_setup_cfg(setup_cfg: str) -> str:
+    cfg = ConfigParser()
+    cfg.read_string(setup_cfg)
+
+    # This really shouldn't happen, setuptools would probably not be happy
+    if not "metadata" in cfg:
+        return ""
+
+    metadata_pep426 = cfg["metadata"]
+    return metadata_pep426.get("name", "")
+
+
 def _parse_setup_cfg(
     setup_cfg: str,
 ) -> MetadataDict:

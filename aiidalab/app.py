@@ -39,7 +39,7 @@ from watchdog.observers.polling import PollingObserver
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
-from .metadata import Metadata, MetadataDict
+from .metadata import Metadata, MetadataDict, package_name_from_setup_cfg
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     Package,
@@ -308,11 +308,67 @@ class _AiidaLabApp:
         self._move_to_trash()
         trash_path.rename(self.path)
 
-    def uninstall(self, move_to_trash: bool = True) -> None:
+    def uninstall(
+        self, move_to_trash: bool = True, python_bin: str | None = None
+    ) -> None:
+        if python_bin is None:
+            python_bin = sys.executable
+        # Uninstall the app python package first
+        # (this will not uninstall its dependencies!)
+        self._uninstall_python_package(python_bin)
+
         if move_to_trash:
             self._move_to_trash()
         else:
             shutil.rmtree(self.path)
+
+    def _get_python_pkg_name(self) -> str:
+        from packaging.utils import canonicalize_name
+
+        if not self._has_python_package():
+            return ""
+
+        pkg_name = ""
+
+        # TODO: Once we support pyproject.toml, we should try reading package name from it first!
+        setup_cfg = self.path.joinpath("setup.cfg")
+        if setup_cfg.is_file():
+            pkg_name = package_name_from_setup_cfg(setup_cfg.read_text())
+
+        if not pkg_name:
+            pkg_name = str(self.name)
+
+        return canonicalize_name(pkg_name)
+
+    def _has_python_package(self) -> bool:
+        return (
+            self.path.joinpath("setup.py").is_file()
+            or self.path.joinpath("pyproject.toml").is_file()
+        )
+
+    def _uninstall_python_package(self, python_bin: str) -> None:
+        from packaging.utils import canonicalize_name
+
+        from .utils import run_pip_uninstall
+
+        if not self._has_python_package():
+            return
+
+        if canonicalize_name(self.name) == canonicalize_name("aiidalab-widgets-base"):
+            # We mustn't uninstall AWB package since other apps may depend on it!
+            logger.info("Keeping aiidalab-widgets-base python package installed")
+            return
+
+        pkg_name = self._get_python_pkg_name()
+
+        logger.info(f"Running 'pip uninstall {pkg_name}'")
+        process = run_pip_uninstall(pkg_name, python_bin=python_bin)
+        if process.stdout:
+            for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
+                logger.info(line.rstrip())
+        process.wait()
+        if process.returncode != 0:
+            logger.warning(f"pip failed to uninstall python package {pkg_name}")
 
     def find_matching_releases(
         self, specifier: SpecifierSet, prereleases: bool | None = None
@@ -469,10 +525,7 @@ class _AiidaLabApp:
         for path in (self.path.joinpath(".aiidalab"), self.path):
             if path.exists():
                 try:
-                    if (
-                        path.joinpath("setup.py").is_file()
-                        or path.joinpath("pyproject.toml").is_file()
-                    ):
+                    if self._has_python_package():
                         _pip_install(str(path), stdout=stdout)
                     elif path.joinpath("requirements.txt").is_file():
                         _pip_install(
