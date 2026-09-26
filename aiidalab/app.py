@@ -124,11 +124,11 @@ class _AiidaLabApp:
         try:
             return {
                 "name": path.stem,
-                "metadata": asdict(Metadata.parse(path)),
+                "metadata": asdict(Metadata.from_path(path)),  # type: ignore[arg-type]
                 "releases": None,
             }
-        except (TypeError, ValueError):
-            logger.debug(f"Unable to parse metadata from '{path}'")
+        except (TypeError, ValueError, FileNotFoundError) as e:
+            logger.warning(f"Unable to parse metadata from '{path}': {e}")
             return {
                 "name": path.stem,
                 "metadata": {"title": path.stem, "description": ""},
@@ -1091,7 +1091,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return self._app.metadata.get("external_url")
 
     @property
-    def citations(self) -> list[dict[str, Any]]:
+    def citations(self) -> list[dict[str, str | list[str] | None]]:
         return self._app.metadata.get("citations") or []
 
     @property

@@ -290,12 +290,16 @@ def _find_version_to_install(
     python_bin: str,
     prereleases: bool,
 ) -> tuple[_AiidaLabApp, str | None]:
-    if app_requirement.url is not None:
+    url = app_requirement.url
+    if url is not None:
         try:
-            with fetch_from_url(app_requirement.url) as repo:
-                metadata = Metadata.parse(repo)
-        except InvalidGitRefError as e:
+            with fetch_from_url(url) as repo:
+                metadata = Metadata.from_path(repo)
+        except (InvalidGitRefError, ValueError, TypeError) as e:
             raise click.ClickException(str(e))
+
+        if metadata is None:
+            raise click.ClickException(f"{url} did not contain any App metadata.")
 
         registry_entry = {
             "name": app_requirement.name,
