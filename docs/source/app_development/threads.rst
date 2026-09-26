@@ -70,6 +70,41 @@ them to finish writes, installations, exports, or other work requiring cleanup.
 Give those tasks explicit completion and cancellation behavior, or run durable
 work outside the notebook kernel.
 
+Keep AiiDA ORM objects in the thread that loads them
+----------------------------------------------------
+
+AiiDA ORM entities are backed by database sessions. Do not load an entity in
+one thread and then pass it to another thread for database operations: its
+session may not be usable there. Avoid retaining ORM entities in frontend
+widgets or sharing them with background workers. Store a stable identifier
+instead: the UUID for a node, computer, or code, and the email address for a
+user.
+
+Load the entity in the thread that needs it, perform the operation there, and
+pass only identifiers or plain results back to the frontend. For example:
+
+.. code-block:: python
+
+	import threading
+	from queue import Queue
+
+	from aiida import orm
+
+
+	def get_node_label(node_uuid, labels):
+		node = orm.load_node(node_uuid)
+		labels.put(node.label)
+
+	labels = Queue()
+	worker = threading.Thread(
+		target=get_node_label, args=(node_uuid, labels), daemon=True
+	)
+	worker.start()
+
+For a user, load it in the worker with
+``orm.User.collection.get(email=user_email)``. Do not cache the loaded entity
+on a widget for later use from another thread.
+
 Avoid blocked and unbounded threads
 -----------------------------------
 
