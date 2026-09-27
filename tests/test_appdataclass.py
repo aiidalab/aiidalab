@@ -16,36 +16,36 @@ def python_bin():
     return sys.executable
 
 
-def test_strict_dependencies_met_default(installed_packages, python_bin):
-    """Test method _strict_dependencies_met of _AiidaLabApp.
+def test_core_dependencies_met_default(installed_packages, python_bin):
+    """Test method _core_dependencies_met of _AiidaLabApp.
     Checking the requirements of the app against the core packages."""
     # the requirements are met
     requirements = [
         Requirement("aiida-core~=2.0"),
     ]
 
-    assert _AiidaLabApp._strict_dependencies_met(requirements, python_bin)
+    assert _AiidaLabApp._core_dependencies_met(requirements, python_bin)
 
     # the requirements are not met
     requirements = [
         Requirement("aiida-core~=1.0"),
     ]
 
-    assert not _AiidaLabApp._strict_dependencies_met(requirements, python_bin)
+    assert not _AiidaLabApp._core_dependencies_met(requirements, python_bin)
 
 
-def test_strict_dependencies_met_package_name_canonicalized(
+def test_core_dependencies_met_package_name_canonicalized(
     installed_packages,
     python_bin,
 ):
-    """Test method _strict_dependencies_met of _AiidaLabApp for core packeges with
+    """Test method _core_dependencies_met of _AiidaLabApp for core packeges with
     name that is not canonicalized."""
     # the requirements are not met
     requirements = [
         Requirement("jupyter-client<6"),
     ]
 
-    assert not _AiidaLabApp._strict_dependencies_met(requirements, python_bin)
+    assert not _AiidaLabApp._core_dependencies_met(requirements, python_bin)
 
 
 def test_invalid_requirements_skipped():

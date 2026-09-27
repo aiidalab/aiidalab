@@ -247,7 +247,7 @@ class _AiidaLabApp:
                     .get("environment", {})
                     .get("python_requirements", [])
                 )
-                if self._strict_dependencies_met(version_requirements, python_bin):
+                if self._core_dependencies_met(version_requirements, python_bin):
                     yield version
 
     def dirty(self) -> bool | None:
@@ -383,10 +383,10 @@ class _AiidaLabApp:
         return sort_semantic(matching_releases, prereleases=True)
 
     @staticmethod
-    def _strict_dependencies_met(
+    def _core_dependencies_met(
         requirements: list[Requirement], python_bin: str | None
     ) -> bool:
-        """Check whether the given requirements are compatible with the core dependencies of a package."""
+        """Check whether requirements preserve the installed core packages."""
         from packaging.utils import canonicalize_name
 
         packages = find_installed_packages(python_bin)
@@ -413,7 +413,7 @@ class _AiidaLabApp:
         else:
             environment = Environment()
         requirements = self.parse_python_requirements(environment.python_requirements)
-        return self._strict_dependencies_met(requirements, python_bin)
+        return self._core_dependencies_met(requirements, python_bin)
 
     @staticmethod
     def _find_incompatibilities_python(
@@ -1003,20 +1003,23 @@ class AiidaLabApp(traitlets.HasTraits):
                 raise RuntimeError(
                     "The app requirements are incompatible with the core packages."
                 )
+            reinstall_succeeded = False
             try:
                 self._app._install_dependencies(sys.executable, stdout or sys.stdout)
                 self._app._post_install_triggers()
-            except BaseException:
+                reinstall_succeeded = True
+            finally:
                 FIND_INSTALLED_PACKAGES_CACHE.clear()
-                try:
-                    self.refresh()
-                except BaseException:
-                    logger.exception(
-                        "Failed to refresh app state after reinstall failure."
-                    )
-                raise
-            else:
-                FIND_INSTALLED_PACKAGES_CACHE.clear()
+
+                if not reinstall_succeeded:
+                    try:
+                        self.refresh()
+                    except BaseException:
+                        logger.exception(
+                            "Failed to refresh app state after reinstall failure."
+                        )
+
+            if reinstall_succeeded:
                 self.refresh()
 
     def uninstall_app(self) -> None:

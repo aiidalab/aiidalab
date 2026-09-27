@@ -40,8 +40,11 @@ def test_prereleases(generate_app):
     assert len(app.available_versions) == 3
 
 
-def test_reinstall_app(generate_app, monkeypatch):
-    app = generate_app()
+def test_reinstall_app(generate_app, installed_packages, monkeypatch, tmp_path):
+    local_app_path = tmp_path / "quantum-espresso" / ".aiidalab"
+    local_app_path.mkdir(parents=True)
+    (local_app_path / "requirements.txt").write_text("ordinary-missing-package>=1\n")
+    app = generate_app(aiidalab_apps_path=tmp_path)
     calls = []
 
     monkeypatch.setattr(
@@ -61,34 +64,45 @@ def test_reinstall_app(generate_app, monkeypatch):
     assert calls == [("install", sys.executable, stdout), ("post_install",)]
 
 
-def test_reinstall_app_rejects_core_dependency_conflict(generate_app, monkeypatch):
-    app = generate_app()
-    monkeypatch.setattr(app._app, "core_dependencies_met", lambda: False)
+def test_reinstall_app_rejects_core_dependency_conflict(
+    generate_app, installed_packages, monkeypatch, tmp_path
+):
+    local_app_path = tmp_path / "quantum-espresso" / ".aiidalab"
+    local_app_path.mkdir(parents=True)
+    (local_app_path / "requirements.txt").write_text("aiida-core~=1.0\n")
+    app = generate_app(aiidalab_apps_path=tmp_path)
+    install_calls = []
     monkeypatch.setattr(
         app._app,
         "_install_dependencies",
-        lambda *args: pytest.fail("Dependencies must not be installed."),
+        lambda *args: install_calls.append(args),
     )
 
     with pytest.raises(RuntimeError, match="core packages"):
         app.reinstall_app()
+    assert install_calls == []
 
 
 def test_reinstall_app_refreshes_after_post_install_failure(generate_app, monkeypatch):
     app = generate_app()
-    refresh_calls = []
+    from aiidalab.utils import FIND_INSTALLED_PACKAGES_CACHE
+
+    cleanup_calls = []
 
     def fail_post_install():
         raise CalledProcessError(1, "post_install")
 
     monkeypatch.setattr(app._app, "_install_dependencies", lambda *args: None)
     monkeypatch.setattr(app._app, "_post_install_triggers", fail_post_install)
-    monkeypatch.setattr(app, "refresh", lambda: refresh_calls.append(True))
+    monkeypatch.setattr(
+        FIND_INSTALLED_PACKAGES_CACHE, "clear", lambda: cleanup_calls.append("cache")
+    )
+    monkeypatch.setattr(app, "refresh", lambda: cleanup_calls.append("refresh"))
 
     with pytest.raises(CalledProcessError):
         app.reinstall_app()
 
-    assert refresh_calls == [True]
+    assert cleanup_calls == ["cache", "refresh"]
 
 
 class TestAppCompatibility:
