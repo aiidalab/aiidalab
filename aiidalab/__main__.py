@@ -298,9 +298,6 @@ def _find_version_to_install(
         except (InvalidGitRefError, ValueError, TypeError) as e:
             raise click.ClickException(str(e))
 
-        if metadata is None:
-            raise click.ClickException(f"{url} did not contain any App metadata.")
-
         registry_entry = {
             "name": app_requirement.name,
             "metadata": asdict(metadata),

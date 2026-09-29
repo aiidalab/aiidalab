@@ -334,15 +334,17 @@ class TestMetadataFromPath:
         assert meta is not None
         assert meta.title == "aiidalab"
 
-    def test_empty_aiidalab_dir_fallback_to_root(self, tmp_path):
+    def test_empty_aiidalab_dir_does_not_fallback_to_root(self, tmp_path):
         tmp_path.joinpath("setup.cfg").write_text(self.SETUP_CFG.format(title="root"))
         tmp_path.joinpath(".aiidalab").mkdir()
-        meta = Metadata.from_path(tmp_path)
-        assert meta is not None
-        assert meta.title == "root"
+        with pytest.raises(ValueError):
+            meta = Metadata.from_path(tmp_path)
+            assert meta is not None
+            assert meta.title == "root"
 
-    def test_no_setup_cfg_returns_none(self, tmp_path):
-        assert Metadata.from_path(tmp_path) is None
+    def test_no_setup_cfg_raises(self, tmp_path):
+        with pytest.raises(ValueError):
+            Metadata.from_path(tmp_path)
 
     def test_nonexistent_directory_raises(self, tmp_path):
         with pytest.raises(ValueError, match="does not exist"):

@@ -124,10 +124,10 @@ class _AiidaLabApp:
         try:
             return {
                 "name": path.stem,
-                "metadata": asdict(Metadata.from_path(path)),  # type: ignore[arg-type]
+                "metadata": asdict(Metadata.from_path(path)),
                 "releases": None,
             }
-        except (TypeError, ValueError, FileNotFoundError) as e:
+        except (TypeError, ValueError) as e:
             logger.warning(f"Unable to parse metadata from '{path}': {e}")
             return {
                 "name": path.stem,
