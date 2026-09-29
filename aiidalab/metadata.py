@@ -186,12 +186,16 @@ class Metadata:
 
     @classmethod
     def from_path(cls, root: Path | GitPath) -> Metadata | None:
+        if not root.is_dir():
+            raise ValueError(f"Directory '{root}' does not exist.")
+
         for path in (root.joinpath(dir_) for dir_ in cls._search_dirs):
             if path.is_dir():
                 try:
                     setup_cfg = path.joinpath("setup.cfg").read_text()
                 except FileNotFoundError:
-                    return None
+                    continue
                 else:
                     return cls.from_setup_cfg(setup_cfg)
-        raise ValueError(f"Directory '{root}' does not exist.")
+
+        return None
