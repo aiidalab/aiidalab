@@ -11,5 +11,6 @@ This guide explains how to get started with developing AiiDAlab apps.
 
     create.rst
     widgets.rst
+    threads.rst
     publish.rst
     examples.rst
