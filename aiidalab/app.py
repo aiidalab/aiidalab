@@ -1003,23 +1003,11 @@ class AiidaLabApp(traitlets.HasTraits):
                 raise RuntimeError(
                     "The app requirements are incompatible with the core packages."
                 )
-            reinstall_succeeded = False
             try:
                 self._app._install_dependencies(sys.executable, stdout or sys.stdout)
                 self._app._post_install_triggers()
-                reinstall_succeeded = True
             finally:
                 FIND_INSTALLED_PACKAGES_CACHE.clear()
-
-                if not reinstall_succeeded:
-                    try:
-                        self.refresh()
-                    except BaseException:
-                        logger.exception(
-                            "Failed to refresh app state after reinstall failure."
-                        )
-
-            if reinstall_succeeded:
                 self.refresh()
 
     def uninstall_app(self) -> None:
