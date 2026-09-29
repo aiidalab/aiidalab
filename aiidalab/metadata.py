@@ -137,11 +137,11 @@ def _parse_setup_cfg(
     if isinstance(categories, str):
         categories = [c for c in categories.split("\n") if c]
 
-    citation_string = aiidalab.get("citations")
+    citation_string = aiidalab.get("citations", "[]")
     try:
         citations = json.loads(str(citation_string))
     except json.JSONDecodeError as e:
-        logger.warning(f"Could not parse citations: {citation_string}\nERROR: {e}")
+        logger.error(f"Could not parse citations:\n{citation_string}\nERROR: {e}")
         citations = []
 
     return MetadataDict(

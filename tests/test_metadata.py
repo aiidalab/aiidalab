@@ -287,9 +287,10 @@ class TestMetadataFromSetupCfg:
         assert simple.link == "https://example.com"
 
     @pytest.mark.parametrize("citations", ["", "not json", "[{broken"])
-    def test_invalid_citations_are_ignored(self, citations):
+    def test_invalid_citations_are_ignored(self, caplog, citations):
         setup_cfg = f"[aiidalab]\ncitations = {citations}\n"
         assert Metadata.from_setup_cfg(setup_cfg).citations == []
+        assert "Could not parse citations" in caplog.text
 
     def test_malformed_setup_cfg_raises(self):
         with pytest.raises(configparser.MissingSectionHeaderError):
