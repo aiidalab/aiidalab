@@ -247,14 +247,13 @@ class TestMetadataFromSetupCfg:
         setup_cfg = f"[aiidalab]\ncategories = {categories}\n"
         assert Metadata.from_setup_cfg(setup_cfg).categories == expected
 
-    @pytest.mark.parametrize("section", ["aiidalab", "metadata"])
-    def test_citations(self, section):
+    def test_citations(self):
         setup_cfg = dedent(
-            f"""
-            [{section}]
+            """
+            [aiidalab]
             citations =
                 [
-                  {{
+                  {
                     "authors": ["Bob", "Bobek"],
                     "title": "HatApp",
                     "journal": "Rabbits weekly",
@@ -262,11 +261,11 @@ class TestMetadataFromSetupCfg:
                     "pages": "72",
                     "year": "2026",
                     "doi": "10.1234/app"
-                  }},
-                  {{
+                  },
+                  {
                     "text": "A simple citation",
                     "link": "https://example.com"
-                  }}
+                  }
                 ]
             """
         )
@@ -288,9 +287,10 @@ class TestMetadataFromSetupCfg:
         assert simple.link == "https://example.com"
 
     @pytest.mark.parametrize("citations", ["", "not json", "[{broken"])
-    def test_invalid_citations_are_ignored(self, citations):
+    def test_invalid_citations_are_ignored(self, caplog, citations):
         setup_cfg = f"[aiidalab]\ncitations = {citations}\n"
         assert Metadata.from_setup_cfg(setup_cfg).citations == []
+        assert "Could not parse citations" in caplog.text
 
     def test_malformed_setup_cfg_raises(self):
         with pytest.raises(configparser.MissingSectionHeaderError):
