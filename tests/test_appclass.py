@@ -242,6 +242,21 @@ class TestAppCompatibility:
         )
         assert not app.compatible
 
+    def test_install_rejects_explicit_core_dependency_conflict(
+        self, generate_app, installed_packages, monkeypatch
+    ):
+        app_data = self.set_python_requirements(["aiida-core~=1.0"])
+        app = generate_app(app_data=app_data)
+        move_to_trash_calls = []
+        monkeypatch.setattr(
+            app._app, "_move_to_trash", lambda: move_to_trash_calls.append(True)
+        )
+
+        with pytest.raises(ValueError, match="incompatible with core packages"):
+            app._app.install(version="1.0")
+
+        assert move_to_trash_calls == []
+
 
 @pytest.mark.usefixtures("installed_packages")
 def test_dependencies(generate_app):
