@@ -32,7 +32,7 @@ dependencies = [
 description = "Implements core functions of AiiDAlab"
 license = {file = 'LICENSE'}
 readme = 'README.md'
-requires-python = '>=3.9'
+requires-python = '>=3.12'
 
 [project.scripts]
 aiidalab = "aiidalab.__main__:cli"
@@ -123,6 +123,8 @@ push = true
 [tool.ruff]
 line-length = 88
 show-fixes = true
+# TODO: Remove this once we fully drop support for 3.9 AiiDAlab image
+target-version = "py39"
 
 [tool.inline-snapshot]
 format-command="ruff format --stdin-filename {filename}"

@@ -19,7 +19,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                python-version: ['3.9', '3.12']
+                python-version: ['3.12', '3.14']
                 # Test latest and oldest supported package versions
                 uv-resolution: [lowest-direct, highest]
 
