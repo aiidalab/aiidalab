@@ -1,7 +1,11 @@
+import io
+import subprocess
+import sys
 import threading
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
+from subprocess import CalledProcessError
 from time import sleep
 from typing import ClassVar
 
@@ -11,6 +15,20 @@ from inline_snapshot import HasRepr, snapshot
 from packaging.requirements import Requirement
 
 from aiidalab.app import AiidaLabApp, AiidaLabAppWatch, AppVersion
+
+
+def _run_python_process(python_bin, output, returncode=0):
+    return subprocess.Popen(
+        [
+            python_bin,
+            "-c",
+            "import sys; print(sys.argv[1]); sys.exit(int(sys.argv[2]))",
+            output,
+            str(returncode),
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
 
 
 def test_init_refresh(generate_app):
@@ -36,6 +54,125 @@ def test_prereleases(generate_app):
     app.include_prereleases = True
     assert "v23.01.0b1" in app.available_versions
     assert len(app.available_versions) == 3
+
+
+def test_reinstall_app(generate_app, installed_packages, monkeypatch, tmp_path):
+    local_app_path = tmp_path / "quantum-espresso"
+    local_app_path.mkdir()
+    (local_app_path / "requirements.txt").write_text("ordinary-missing-package>=1\n")
+    post_install = local_app_path / "post_install"
+    marker = tmp_path / "post_install_ran"
+    post_install.write_text(f"#!/bin/sh\nprintf 'ran' > '{marker}'\n")
+    post_install.chmod(0o755)
+    app = generate_app(aiidalab_apps_path=tmp_path)
+    pip_calls = []
+
+    def run_pip(*args, python_bin):
+        pip_calls.append(args)
+        return _run_python_process(python_bin, "dependencies installed")
+
+    monkeypatch.setattr("aiidalab.app.run_pip_install", run_pip)
+    monkeypatch.setattr(
+        "aiidalab.app.run_verdi_daemon_restart",
+        lambda: _run_python_process(sys.executable, "daemon restarted"),
+    )
+    stdout = io.StringIO()
+
+    app.reinstall_app(stdout=stdout)
+
+    assert pip_calls == [(f"--requirement={local_app_path / 'requirements.txt'}",)]
+    assert "dependencies installed" in stdout.getvalue()
+    assert "daemon restarted" in stdout.getvalue()
+    assert marker.read_text() == "ran"
+
+
+def test_reinstall_app_pip_failure_skips_post_install(
+    generate_app, installed_packages, monkeypatch, tmp_path
+):
+    local_app_path = tmp_path / "quantum-espresso"
+    local_app_path.mkdir()
+    (local_app_path / "requirements.txt").write_text("ordinary-missing-package>=1\n")
+    marker = tmp_path / "post_install_ran"
+    post_install = local_app_path / "post_install"
+    post_install.write_text(f"#!/bin/sh\nprintf 'ran' > '{marker}'\n")
+    post_install.chmod(0o755)
+    app = generate_app(aiidalab_apps_path=tmp_path)
+    monkeypatch.setattr(
+        "aiidalab.app.run_pip_install",
+        lambda *args, python_bin: _run_python_process(
+            python_bin, "pip failed", returncode=1
+        ),
+    )
+    stdout = io.StringIO()
+
+    with pytest.raises(RuntimeError, match="pip failed"):
+        app.reinstall_app(stdout=stdout)
+
+    assert "pip failed" in stdout.getvalue()
+    assert not marker.exists()
+
+
+def test_reinstall_app_rejects_core_dependency_conflict(
+    generate_app, installed_packages, monkeypatch, tmp_path
+):
+    local_app_path = tmp_path / "quantum-espresso"
+    local_app_path.mkdir()
+    (local_app_path / "requirements.txt").write_text("aiida-core~=1.0\n")
+    app = generate_app(aiidalab_apps_path=tmp_path)
+    install_calls = []
+
+    def run_pip(*args, python_bin):
+        install_calls.append(args)
+        return _run_python_process(python_bin, "unexpected install")
+
+    monkeypatch.setattr("aiidalab.app.run_pip_install", run_pip)
+    monkeypatch.setattr(
+        "aiidalab.app.run_verdi_daemon_restart",
+        lambda: _run_python_process(sys.executable, "daemon restarted"),
+    )
+
+    with pytest.raises(RuntimeError, match="core packages"):
+        app.reinstall_app()
+    assert install_calls == []
+
+
+def test_reinstall_app_refreshes_after_post_install_failure(
+    generate_app, installed_packages, monkeypatch, tmp_path
+):
+    local_app_path = tmp_path / "quantum-espresso"
+    local_app_path.mkdir()
+    (local_app_path / "requirements.txt").write_text("ordinary-missing-package>=1\n")
+    marker = tmp_path / "failing_hook_ran"
+    post_install = local_app_path / "post_install"
+    post_install.write_text(
+        f"#!/bin/sh\necho 'Hello from failing post_install script'\nprintf 'ran' > '{marker}'\nexit 1\n"
+    )
+    post_install.chmod(0o755)
+    app = generate_app(aiidalab_apps_path=tmp_path)
+    from aiidalab.utils import FIND_INSTALLED_PACKAGES_CACHE
+
+    refresh_calls = []
+    monkeypatch.setattr(
+        "aiidalab.app.run_pip_install",
+        lambda *args, python_bin: _run_python_process(
+            python_bin, "dependencies installed"
+        ),
+    )
+    monkeypatch.setattr(
+        "aiidalab.app.run_verdi_daemon_restart",
+        lambda: _run_python_process(sys.executable, "daemon restarted"),
+    )
+    monkeypatch.setattr(app, "refresh", lambda: refresh_calls.append(True))
+    FIND_INSTALLED_PACKAGES_CACHE["reinstall-test-sentinel"] = "cached"
+    stdout = io.StringIO()
+
+    with pytest.raises(CalledProcessError, match="post_install"):
+        app.reinstall_app(stdout=stdout)
+
+    assert marker.read_text() == "ran"
+    assert "dependencies installed" in stdout.getvalue()
+    assert refresh_calls == [True]
+    assert "reinstall-test-sentinel" not in FIND_INSTALLED_PACKAGES_CACHE
 
 
 class TestAppCompatibility:
