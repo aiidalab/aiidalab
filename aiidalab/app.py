@@ -636,7 +636,15 @@ class _AiidaLabApp:
         if isinstance(version, PEP508CompliantUrl):
             url = version
         else:
-            url = self.releases[version]["url"]
+            release = self._get_release(version)
+            requirements = self.parse_python_requirements(
+                release.get("environment", {}).get("python_requirements", [])
+            )
+            if not self._core_dependencies_met(requirements, python_bin):
+                raise ValueError(
+                    f"Version '{version}' is incompatible with core packages."
+                )
+            url = release["url"]
 
         trash_path = self._move_to_trash()
 
