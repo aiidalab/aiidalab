@@ -147,7 +147,7 @@ def _parse_setup_cfg(
     except json.JSONDecodeError as e:
         logger.error(f"Could not parse citations:\n{citation_string}\nERROR: {e}")
     else:
-        if not isinstance(citations, list):
+        if not isinstance(citations_raw, list):
             logger.error(
                 f"Could not parse invalid citations\n{citations}\nERROR: Expected a list"
             )
