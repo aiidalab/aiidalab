@@ -82,7 +82,7 @@ class MetadataDict(TypedDict):
     logo: str | None
     categories: list[str]
     version: str | None
-    citations: list[dict[str, str | list[str] | None]]
+    citations: list[SimpleCitation | StandardCitation]
 
 
 def package_name_from_setup_cfg(setup_cfg: str) -> str:
@@ -137,12 +137,28 @@ def _parse_setup_cfg(
     if isinstance(categories, str):
         categories = [c for c in categories.split("\n") if c]
 
+    citations: list[SimpleCitation | StandardCitation] = []
     citation_string = aiidalab.get("citations", "[]")
     try:
-        citations = json.loads(str(citation_string))
+        citation_dicts = json.loads(str(citation_string))
     except json.JSONDecodeError as e:
         logger.error(f"Could not parse citations:\n{citation_string}\nERROR: {e}")
-        citations = []
+    else:
+        for cit in citation_dicts:
+            try:
+                simple_citation = SimpleCitation(**cit)
+            except (ValueError, TypeError):
+                pass
+            else:
+                citations.append(simple_citation)
+                continue
+
+            try:
+                standard_citation = StandardCitation(**cit)
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Could not parse invalid citation\n{cit}\nERROR: {e}")
+            else:
+                citations.append(standard_citation)
 
     return MetadataDict(
         title=title,
@@ -174,7 +190,7 @@ class Metadata:
     logo: str | None = None
     categories: list[str] = field(default_factory=list)
     version: str | None = None
-    citations: list[dict[str, str | list[str] | None]] = field(default_factory=list)
+    citations: list[SimpleCitation | StandardCitation] = field(default_factory=list)
 
     _search_dirs = (".aiidalab", "./")
 

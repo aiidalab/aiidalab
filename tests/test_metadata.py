@@ -258,6 +258,7 @@ class TestMetadataFromSetupCfg:
                     "title": "HatApp",
                     "journal": "Rabbits weekly",
                     "volume": "12",
+                    "issue": "1",
                     "pages": "72",
                     "year": "2026",
                     "doi": "10.1234/app"
@@ -272,22 +273,86 @@ class TestMetadataFromSetupCfg:
         meta = Metadata.from_setup_cfg(setup_cfg)
         assert len(meta.citations) == 2
 
-        standard = StandardCitation(**meta.citations[0])
+        standard = meta.citations[0]
+        assert isinstance(standard, StandardCitation)
         assert standard.authors == ["Bob", "Bobek"]
         assert standard.title == "HatApp"
         assert standard.journal == "Rabbits weekly"
         assert standard.volume == "12"
+        assert standard.issue == "1"
         assert standard.pages == "72"
         assert standard.year == "2026"
         assert standard.doi == "10.1234/app"
-        assert standard.issue is None
+        assert standard.issue == "1"
 
-        simple = SimpleCitation(**meta.citations[1])
+        simple = meta.citations[1]
+        assert isinstance(simple, SimpleCitation)
         assert simple.text == "A simple citation"
         assert simple.link == "https://example.com"
 
+    def test_minimal_citations(self, caplog):
+        """Test citations without optional fields"""
+        setup_cfg = dedent(
+            """
+            [aiidalab]
+            citations =
+                [
+                  {
+                    "authors": ["Bob", "Bobek"],
+                    "journal": "Rabbits weekly",
+                    "year": "2026",
+                    "doi": "10.1234/app"
+                  },
+                  {
+                    "text": "Simple citation without url"
+                  }
+                ]
+            """
+        )
+        meta = Metadata.from_setup_cfg(setup_cfg)
+        assert caplog.text == ""
+        assert len(meta.citations) == 2
+
+        standard = meta.citations[0]
+        assert standard.authors == ["Bob", "Bobek"]
+        assert standard.journal == "Rabbits weekly"
+        assert standard.year == "2026"
+        assert standard.doi == "10.1234/app"
+        assert standard.title is None
+        assert standard.volume is None
+        assert standard.pages is None
+        assert standard.issue is None
+
+        simple = meta.citations[1]
+        assert simple.text == "Simple citation without url"
+        assert simple.link is None
+
+    def test_invalid_citations_warn(self, caplog):
+        setup_cfg = dedent(
+            """
+            [aiidalab]
+            citations =
+                [
+                  {
+                    "journal": "Journal of Missing Authors",
+                    "year": "2026",
+                    "doi": "10.1234/app"
+                  },
+                  {
+                    "text": "Simple citation with invalid field",
+                    "invalid": "Whoops"
+                  }
+                ]
+            """
+        )
+        meta = Metadata.from_setup_cfg(setup_cfg)
+        assert len(meta.citations) == 0
+
+        assert "missing 1 required positional argument: 'authors'" in caplog.messages[0]
+        assert "got an unexpected keyword argument 'text'" in caplog.messages[1]
+
     @pytest.mark.parametrize("citations", ["", "not json", "[{broken"])
-    def test_invalid_citations_are_ignored(self, caplog, citations):
+    def test_invalid_json_citations_are_ignored(self, caplog, citations):
         setup_cfg = f"[aiidalab]\ncitations = {citations}\n"
         assert Metadata.from_setup_cfg(setup_cfg).citations == []
         assert "Could not parse citations" in caplog.text
