@@ -39,7 +39,7 @@ from watchdog.observers.polling import PollingObserver
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
-from .metadata import Metadata, MetadataDict, package_name_from_setup_cfg
+from .metadata import Metadata, MetadataDict, _CitationType, package_name_from_setup_cfg
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     Package,
@@ -1131,7 +1131,7 @@ class AiidaLabApp(traitlets.HasTraits):
         return self._app.metadata.get("external_url")
 
     @property
-    def citations(self) -> list[dict[str, str | list[str] | None]]:
+    def citations(self) -> list[_CitationType]:
         return self._app.metadata.get("citations") or []
 
     @property

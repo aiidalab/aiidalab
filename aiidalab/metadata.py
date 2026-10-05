@@ -48,6 +48,9 @@ def _parse_config_dict(dict_: str) -> Generator[tuple[str, str], None, None]:
             yield key.strip(), value.strip()
 
 
+_CitationType = dict[str, str | list[str] | None]
+
+
 @dataclass
 class SimpleCitation:
     """App citation specification for free-form text with an optional link."""
@@ -82,7 +85,7 @@ class MetadataDict(TypedDict):
     logo: str | None
     categories: list[str]
     version: str | None
-    citations: list[dict[str, str | list[str] | None]]
+    citations: list[_CitationType]
 
 
 def package_name_from_setup_cfg(setup_cfg: str) -> str:
@@ -138,11 +141,32 @@ def _parse_setup_cfg(
         categories = [c for c in categories.split("\n") if c]
 
     citation_string = aiidalab.get("citations", "[]")
+    citations: list[_CitationType] = []
     try:
-        citations = json.loads(str(citation_string))
+        citations_raw = json.loads(str(citation_string))
     except json.JSONDecodeError as e:
         logger.error(f"Could not parse citations:\n{citation_string}\nERROR: {e}")
-        citations = []
+    else:
+        if not isinstance(citations_raw, list):
+            logger.error(
+                f"Could not parse citations:\n{citations_raw}\nERROR: Expected a list"
+            )
+            citations_raw = []
+        for cit in citations_raw:
+            try:
+                SimpleCitation(**cit)
+            except (ValueError, TypeError):
+                pass
+            else:
+                citations.append(cit)
+                continue
+
+            try:
+                StandardCitation(**cit)
+            except (ValueError, TypeError) as e:
+                logger.error(f"Could not parse invalid citation\n{cit}\nERROR: {e}")
+            else:
+                citations.append(cit)
 
     return MetadataDict(
         title=title,
@@ -174,7 +198,7 @@ class Metadata:
     logo: str | None = None
     categories: list[str] = field(default_factory=list)
     version: str | None = None
-    citations: list[dict[str, str | list[str] | None]] = field(default_factory=list)
+    citations: list[_CitationType] = field(default_factory=list)
 
     _search_dirs = (".aiidalab", "./")
 
