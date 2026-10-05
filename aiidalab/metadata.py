@@ -144,6 +144,11 @@ def _parse_setup_cfg(
     except json.JSONDecodeError as e:
         logger.error(f"Could not parse citations:\n{citation_string}\nERROR: {e}")
     else:
+        if not isinstance(citation_dicts, list):
+            logger.warning(
+                f"Could not parse invalid citations\n{citation_dicts}\nERROR: Expected a list"
+            )
+            citation_dicts = []
         for cit in citation_dicts:
             try:
                 simple_citation = SimpleCitation(**cit)
