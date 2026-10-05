@@ -273,8 +273,7 @@ class TestMetadataFromSetupCfg:
         meta = Metadata.from_setup_cfg(setup_cfg)
         assert len(meta.citations) == 2
 
-        standard = meta.citations[0]
-        assert isinstance(standard, StandardCitation)
+        standard = StandardCitation(**meta.citations[0])
         assert standard.authors == ["Bob", "Bobek"]
         assert standard.title == "HatApp"
         assert standard.journal == "Rabbits weekly"
@@ -285,8 +284,7 @@ class TestMetadataFromSetupCfg:
         assert standard.doi == "10.1234/app"
         assert standard.issue == "1"
 
-        simple = meta.citations[1]
-        assert isinstance(simple, SimpleCitation)
+        simple = SimpleCitation(**meta.citations[1])
         assert simple.text == "A simple citation"
         assert simple.link == "https://example.com"
 
@@ -313,7 +311,7 @@ class TestMetadataFromSetupCfg:
         assert caplog.text == ""
         assert len(meta.citations) == 2
 
-        standard = meta.citations[0]
+        standard = StandardCitation(**meta.citations[0])
         assert standard.authors == ["Bob", "Bobek"]
         assert standard.journal == "Rabbits weekly"
         assert standard.year == "2026"
@@ -323,7 +321,7 @@ class TestMetadataFromSetupCfg:
         assert standard.pages is None
         assert standard.issue is None
 
-        simple = meta.citations[1]
+        simple = SimpleCitation(**meta.citations[1])
         assert simple.text == "Simple citation without url"
         assert simple.link is None
 

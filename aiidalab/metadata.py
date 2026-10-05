@@ -48,6 +48,9 @@ def _parse_config_dict(dict_: str) -> Generator[tuple[str, str], None, None]:
             yield key.strip(), value.strip()
 
 
+_CitationType = dict[str, str | list[str] | None]
+
+
 @dataclass
 class SimpleCitation:
     """App citation specification for free-form text with an optional link."""
@@ -82,7 +85,7 @@ class MetadataDict(TypedDict):
     logo: str | None
     categories: list[str]
     version: str | None
-    citations: list[SimpleCitation | StandardCitation]
+    citations: list[_CitationType]
 
 
 def package_name_from_setup_cfg(setup_cfg: str) -> str:
@@ -137,33 +140,33 @@ def _parse_setup_cfg(
     if isinstance(categories, str):
         categories = [c for c in categories.split("\n") if c]
 
-    citations: list[SimpleCitation | StandardCitation] = []
     citation_string = aiidalab.get("citations", "[]")
+    citations: list[_CitationType] = []
     try:
-        citation_dicts = json.loads(str(citation_string))
+        citations_raw = json.loads(str(citation_string))
     except json.JSONDecodeError as e:
         logger.error(f"Could not parse citations:\n{citation_string}\nERROR: {e}")
     else:
-        if not isinstance(citation_dicts, list):
-            logger.warning(
-                f"Could not parse invalid citations\n{citation_dicts}\nERROR: Expected a list"
+        if not isinstance(citations, list):
+            logger.error(
+                f"Could not parse invalid citations\n{citations}\nERROR: Expected a list"
             )
-            citation_dicts = []
-        for cit in citation_dicts:
+            citations_raw = []
+        for cit in citations_raw:
             try:
-                simple_citation = SimpleCitation(**cit)
+                SimpleCitation(**cit)
             except (ValueError, TypeError):
                 pass
             else:
-                citations.append(simple_citation)
+                citations.append(cit)
                 continue
 
             try:
-                standard_citation = StandardCitation(**cit)
+                StandardCitation(**cit)
             except (ValueError, TypeError) as e:
-                logger.warning(f"Could not parse invalid citation\n{cit}\nERROR: {e}")
+                logger.error(f"Could not parse invalid citation\n{cit}\nERROR: {e}")
             else:
-                citations.append(standard_citation)
+                citations.append(cit)
 
     return MetadataDict(
         title=title,
@@ -195,7 +198,7 @@ class Metadata:
     logo: str | None = None
     categories: list[str] = field(default_factory=list)
     version: str | None = None
-    citations: list[SimpleCitation | StandardCitation] = field(default_factory=list)
+    citations: list[_CitationType] = field(default_factory=list)
 
     _search_dirs = (".aiidalab", "./")
 
