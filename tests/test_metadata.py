@@ -355,6 +355,14 @@ class TestMetadataFromSetupCfg:
         assert Metadata.from_setup_cfg(setup_cfg).citations == []
         assert "Could not parse citations" in caplog.text
 
+    @pytest.mark.parametrize("citations", ["{}", '{"text": "Simple citation"}'])
+    def test_invalid_citations_not_a_list(self, caplog, citations):
+        setup_cfg = f"[aiidalab]\ncitations = {citations}\n"
+        assert Metadata.from_setup_cfg(setup_cfg).citations == []
+        assert len(caplog.messages) == 1
+        log = caplog.messages[0].replace("'", '"')
+        assert log == f"Could not parse citations:\n{citations}\nERROR: Expected a list"
+
     def test_malformed_setup_cfg_raises(self):
         with pytest.raises(configparser.MissingSectionHeaderError):
             Metadata.from_setup_cfg("title = no section header")
