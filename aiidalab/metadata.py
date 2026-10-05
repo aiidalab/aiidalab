@@ -149,7 +149,7 @@ def _parse_setup_cfg(
     else:
         if not isinstance(citations_raw, list):
             logger.error(
-                f"Could not parse invalid citations\n{citations}\nERROR: Expected a list"
+                f"Could not parse invalid citations\n{citations_raw}\nERROR: Expected a list"
             )
             citations_raw = []
         for cit in citations_raw:
