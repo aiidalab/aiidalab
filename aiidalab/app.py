@@ -805,7 +805,7 @@ class AiidaLabAppWatch:
                 if self._observer:
                     self._observer.stop()
 
-            self._monitor_thread = Thread(target=check_path_exists_changed)
+            self._monitor_thread = Thread(target=check_path_exists_changed, daemon=True)
             self._monitor_thread_stop.clear()
             self._monitor_thread.start()
 
@@ -1106,7 +1106,7 @@ class AiidaLabApp(traitlets.HasTraits):
 
     def refresh_async(self) -> None:
         """Asynchronized (non-blocking) refresh of the app state."""
-        refresh_thread = Thread(target=self.refresh)
+        refresh_thread = Thread(target=self.refresh, daemon=True)
         refresh_thread.start()
 
     @property
