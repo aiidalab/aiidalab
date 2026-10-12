@@ -337,7 +337,7 @@ class _AiidaLabApp:
         pkg_name = ""
 
         setup_cfg = self.path.joinpath("setup.cfg")
-        pyproject_toml = self.path.joinpath("setup.cfg")
+        pyproject_toml = self.path.joinpath("pyproject.toml")
         if setup_cfg.is_file():
             pkg_name = package_name_from_setup_cfg(setup_cfg.read_text())
         elif pyproject_toml.is_file():

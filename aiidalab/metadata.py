@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypedDict
 
+import tomllib
+
 if TYPE_CHECKING:
     from configparser import SectionProxy
 
@@ -101,15 +103,100 @@ def package_name_from_setup_cfg(setup_cfg: str) -> str:
 
 
 def package_name_from_pyproject_toml(pyproject_toml: str) -> str:
-    # TODO:
-    return ""
+    pyproject = tomllib.loads(pyproject_toml)
+
+    # This really shouldn't happen, build backends would probably not be happy
+    if "project" not in pyproject:
+        return ""
+
+    metadata_pep621 = pyproject["project"]
+    return str(metadata_pep621.get("name", ""))
+
+
+def _validate_citations(citations_raw: Any) -> list[_CitationType]:
+    "Validate a list of raw citation dicts, dropping (and logging) invalid ones."
+    citations: list[_CitationType] = []
+    if not isinstance(citations_raw, list):
+        logger.error(
+            f"Could not parse citations:\n{citations_raw}\nERROR: Expected a list"
+        )
+        return citations
+
+    for cit in citations_raw:
+        try:
+            SimpleCitation(**cit)
+        except (ValueError, TypeError):
+            pass
+        else:
+            citations.append(cit)
+            continue
+
+        try:
+            StandardCitation(**cit)
+        except (ValueError, TypeError) as e:
+            logger.error(f"Could not parse invalid citation\n{cit}\nERROR: {e}")
+        else:
+            citations.append(cit)
+
+    return citations
 
 
 def _parse_pyproject_toml(
-    setup_cfg: str,
+    pyproject_toml: str,
 ) -> MetadataDict:
-    # TODO:
-    return MetadataDict()
+    "Parse a pyproject.toml configuration file string for metadata."
+    pyproject = tomllib.loads(pyproject_toml)
+
+    metadata_pep621: dict[str, Any] = pyproject.get("project", {})
+    aiidalab: dict[str, Any] = pyproject.get("tool", {}).get("aiidalab", {})
+
+    # PEP 621 authors is a list of tables with "name" and/or "email" keys
+    pep621_authors = ", ".join(
+        author.get("name") or author.get("email", "")
+        for author in metadata_pep621.get("authors", [])
+    )
+
+    title = aiidalab.get("title", metadata_pep621.get("name", ""))
+    version = aiidalab.get("version", metadata_pep621.get("version", ""))
+    description = aiidalab.get("description", metadata_pep621.get("description", ""))
+    authors = aiidalab.get("authors", pep621_authors)
+
+    project_urls: dict[str, str] = metadata_pep621.get("urls", {})
+    external_url = aiidalab.get(
+        "external_url",
+        project_urls.get("Homepage") or project_urls.get("homepage", ""),
+    )
+    documentation_url = aiidalab.get(
+        "documentation_url",
+        project_urls.get("Documentation") or project_urls.get("documentation", ""),
+    )
+    logo = aiidalab.get(
+        "logo", project_urls.get("Logo") or project_urls.get("logo", "")
+    )
+    state = aiidalab.get(
+        "state", _map_development_state(metadata_pep621.get("classifiers", []))
+    )
+
+    # Allow passing single category and convert to list
+    # and allow parse line separated string as list
+    categories = aiidalab.get("categories", [])
+    if isinstance(categories, str):
+        categories = [c for c in categories.split("\n") if c]
+
+    citations = _validate_citations(aiidalab.get("citations", []))
+
+    return MetadataDict(
+        title=title,
+        description=description,
+        authors=authors,
+        state=state,
+        documentation_url=documentation_url,
+        external_url=external_url,
+        logo=logo,
+        categories=categories,
+        version=version,
+        citations=citations,
+    )
 
 
 def _parse_setup_cfg(
@@ -159,26 +246,7 @@ def _parse_setup_cfg(
     except json.JSONDecodeError as e:
         logger.error(f"Could not parse citations:\n{citation_string}\nERROR: {e}")
     else:
-        if not isinstance(citations_raw, list):
-            logger.error(
-                f"Could not parse citations:\n{citations_raw}\nERROR: Expected a list"
-            )
-            citations_raw = []
-        for cit in citations_raw:
-            try:
-                SimpleCitation(**cit)
-            except (ValueError, TypeError):
-                pass
-            else:
-                citations.append(cit)
-                continue
-
-            try:
-                StandardCitation(**cit)
-            except (ValueError, TypeError) as e:
-                logger.error(f"Could not parse invalid citation\n{cit}\nERROR: {e}")
-            else:
-                citations.append(cit)
+        citations = _validate_citations(citations_raw)
 
     return MetadataDict(
         title=title,
@@ -224,11 +292,11 @@ class Metadata:
 
     @classmethod
     def from_pyproject_toml(cls, content: str) -> Metadata:
-        """Parse the app metadata from a setup.cfg within the app repository.
+        """Parse the app metadata from a pyproject.toml within the app repository.
 
-        This function will parse metadata fields from a possible "aiidalab"
-        section, but falls back to the standard fields defined as part of the
-        PEP 426-compliant metadata section for any missing values.
+        This function will parse metadata fields from a possible "tool.aiidalab"
+        table, but falls back to the standard fields defined as part of the
+        PEP 621-compliant "project" table for any missing values.
         """
         return cls(**_parse_pyproject_toml(content))
 
