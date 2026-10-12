@@ -18,7 +18,6 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
          If the app was created with the app cookiecutter it should already have all necessary information and this step can be skipped.
 
       In preparation of registering your AiiDAlab app in the `AiiDAlab registry`_, ensure you have a valid and updated ``setup.cfg`` file in the root of your app's repository.
-      The ``setup.cfg`` file can alternatively also be placed within a hidden ``.aiidalab/`` directory in which case it will be parsed with precedence.
 
       AiiDAlab parses the ``setup.cfg`` file for metadata and will recognize fields both from the standard `[metadata] <https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#metadata>`__ section and a dedicated ``[aiidalab]`` section (fields declared within the ``[aiidalab]`` section take precedence).
       We suggest using the ``[aiidalab]`` section only for the ``title`` and ``categories`` fields, and the ``[metadata]`` for all others.

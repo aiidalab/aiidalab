@@ -384,35 +384,6 @@ class TestMetadataFromPath:
         assert meta.title == "root"
         assert meta.description == "Test app"
 
-    def test_setup_cfg_in_aiidalab_dir(self, tmp_path):
-        aiidalab_dir = tmp_path / ".aiidalab"
-        aiidalab_dir.mkdir()
-        aiidalab_dir.joinpath("setup.cfg").write_text(
-            self.SETUP_CFG.format(title="aiidalab")
-        )
-        meta = Metadata.from_path(tmp_path)
-        assert meta is not None
-        assert meta.title == "aiidalab"
-
-    def test_aiidalab_dir_takes_precedence(self, tmp_path):
-        tmp_path.joinpath("setup.cfg").write_text(self.SETUP_CFG.format(title="root"))
-        aiidalab_dir = tmp_path / ".aiidalab"
-        aiidalab_dir.mkdir()
-        aiidalab_dir.joinpath("setup.cfg").write_text(
-            self.SETUP_CFG.format(title="aiidalab")
-        )
-        meta = Metadata.from_path(tmp_path)
-        assert meta is not None
-        assert meta.title == "aiidalab"
-
-    def test_empty_aiidalab_dir_does_not_fallback_to_root(self, tmp_path):
-        tmp_path.joinpath("setup.cfg").write_text(self.SETUP_CFG.format(title="root"))
-        tmp_path.joinpath(".aiidalab").mkdir()
-        with pytest.raises(ValueError):
-            meta = Metadata.from_path(tmp_path)
-            assert meta is not None
-            assert meta.title == "root"
-
     def test_no_setup_cfg_raises(self, tmp_path):
         with pytest.raises(ValueError):
             Metadata.from_path(tmp_path)
