@@ -263,7 +263,12 @@ class TestRegistryParseAppRepo:
 
     @staticmethod
     def invoke(url):
-        runner = CliRunner()
+        # Click < 8.2 mixes stderr into stdout by default,
+        # click >= 8.2 always captures them separately and removed `mix_stderr`.
+        try:
+            runner = CliRunner(mix_stderr=False)
+        except TypeError:
+            runner = CliRunner()
         return runner.invoke(cli.cli, ["registry", "parse-app-repo", str(url)])
 
     @pytest.fixture
