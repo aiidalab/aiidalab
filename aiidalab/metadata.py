@@ -200,8 +200,6 @@ class Metadata:
     version: str | None = None
     citations: list[_CitationType] = field(default_factory=list)
 
-    _search_dirs = (".aiidalab", "./")
-
     @classmethod
     def from_setup_cfg(cls, content: str) -> Metadata:
         """Parse the app metadata from a setup.cfg within the app repository.
@@ -214,13 +212,11 @@ class Metadata:
 
     @classmethod
     def from_path(cls, root: Path | GitPath) -> Metadata:
-        for path in (root.joinpath(dir_) for dir_ in cls._search_dirs):
-            if path.is_dir():
-                try:
-                    setup_cfg = path.joinpath("setup.cfg").read_text()
-                except FileNotFoundError:
-                    raise ValueError(f"File setup.cfg not found in {path}")
-                else:
-                    return cls.from_setup_cfg(setup_cfg)
-
-        raise ValueError(f"Directory '{root}' does not exist.")
+        if not root.is_dir():
+            raise ValueError(f"Directory '{root}' does not exist.")
+        try:
+            setup_cfg = root.joinpath("setup.cfg").read_text()
+        except FileNotFoundError:
+            raise ValueError(f"File setup.cfg not found in {root}")
+        else:
+            return cls.from_setup_cfg(setup_cfg)
