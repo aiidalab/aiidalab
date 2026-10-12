@@ -39,7 +39,13 @@ from watchdog.observers.polling import PollingObserver
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
-from .metadata import Metadata, MetadataDict, _CitationType, package_name_from_setup_cfg
+from .metadata import (
+    Metadata,
+    MetadataDict,
+    _CitationType,
+    package_name_from_pyproject_toml,
+    package_name_from_setup_cfg,
+)
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     Package,
@@ -330,10 +336,12 @@ class _AiidaLabApp:
 
         pkg_name = ""
 
-        # TODO: Once we support pyproject.toml, we should try reading package name from it first!
         setup_cfg = self.path.joinpath("setup.cfg")
+        pyproject_toml = self.path.joinpath("setup.cfg")
         if setup_cfg.is_file():
             pkg_name = package_name_from_setup_cfg(setup_cfg.read_text())
+        elif pyproject_toml.is_file():
+            pkg_name = package_name_from_pyproject_toml(pyproject_toml.read_text())
 
         if not pkg_name:
             pkg_name = str(self.name)

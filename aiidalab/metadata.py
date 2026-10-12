@@ -100,6 +100,18 @@ def package_name_from_setup_cfg(setup_cfg: str) -> str:
     return metadata_pep426.get("name", "")
 
 
+def package_name_from_pyproject_toml(pyproject_toml: str) -> str:
+    # TODO:
+    return ""
+
+
+def _parse_pyproject_toml(
+    setup_cfg: str,
+) -> MetadataDict:
+    # TODO:
+    return MetadataDict()
+
+
 def _parse_setup_cfg(
     setup_cfg: str,
 ) -> MetadataDict:
@@ -211,12 +223,34 @@ class Metadata:
         return cls(**_parse_setup_cfg(content))
 
     @classmethod
+    def from_pyproject_toml(cls, content: str) -> Metadata:
+        """Parse the app metadata from a setup.cfg within the app repository.
+
+        This function will parse metadata fields from a possible "aiidalab"
+        section, but falls back to the standard fields defined as part of the
+        PEP 426-compliant metadata section for any missing values.
+        """
+        return cls(**_parse_pyproject_toml(content))
+
+    @classmethod
     def from_path(cls, root: Path | GitPath) -> Metadata:
         if not root.is_dir():
             raise ValueError(f"Directory '{root}' does not exist.")
+
+        # First, try reading metadata from `setup.cfg`
         try:
             setup_cfg = root.joinpath("setup.cfg").read_text()
         except FileNotFoundError:
-            raise ValueError(f"File setup.cfg not found in {root}")
+            pass
         else:
             return cls.from_setup_cfg(setup_cfg)
+
+        # setup.cfg did not exist, try reading metadata from pyproject.toml
+        try:
+            pyproject_toml = root.joinpath("pyproject.toml").read_text()
+        except FileNotFoundError:
+            raise ValueError(
+                f"Directory '{root}' does not contain setup.cfg nor pyproject.toml"
+            )
+        else:
+            return cls.from_pyproject_toml(pyproject_toml)
