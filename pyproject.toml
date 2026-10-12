@@ -25,7 +25,6 @@ dependencies = [
     "requests~=2.27",
     "requests-cache~=1.0",
     "tabulate~=0.9",
-    "toml~=0.10",
     "traitlets~=5.0",
     "watchdog~=6.0",
 ]
@@ -47,11 +46,10 @@ dev = [
     "inline-snapshot~=0.35.0",
     "ruamel.yaml~=0.16",
     "mypy~=2.4.0",
-    "types-tabulate~=0.8",
+    "types-tabulate~=0.9",
     "types-jsonschema~=3.2",
     "types-cachetools~=4.1",
     "types-requests~=2.27",
-    "types-toml~=0.10",
     "types-click-spinner~=0.1",
 ]
 registry = [
