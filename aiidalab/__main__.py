@@ -637,7 +637,7 @@ def parse_app_repo(url: str) -> None:
 
         parse-app-repo git+https://github.com/aiidalab/aiidalab-hello-world.git@v1.0.0
     """
-    click.echo(f"Parsing {url} ...", err=True)
+    click.echo(f"Parsing '{url}'", err=True)
     try:
         click.echo(json.dumps(_parse_app_repo(url)))
     except (ValueError, TypeError, RuntimeError, configparser.Error) as error:
