@@ -639,7 +639,7 @@ def parse_app_repo(url: str) -> None:
     """
     click.echo(f"Parsing '{url}'", err=True)
     try:
-        click.echo(json.dumps(_parse_app_repo(url)))
+        click.echo(json.dumps(_parse_app_repo(url), indent=2))
     except (ValueError, TypeError, RuntimeError, configparser.Error) as error:
         raise click.ClickException(f"Failed to parse metadata from '{url}': {error!s}")
 
