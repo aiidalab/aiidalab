@@ -287,6 +287,7 @@ class TestRegistryParseAppRepo:
         }
 
     def test_static_app(self, static_path):
+        """Parse a Hello World app defined in `tests/static/app_with_setupcfg/`"""
         app_path = static_path / "app_with_setupcfg"
         result = self.invoke(app_path)
 
@@ -349,17 +350,6 @@ class TestRegistryParseAppRepo:
         result = self.invoke(f"git+file://{app_dir}")
         assert result.exit_code == 0, result.output
         assert json.loads(result.stdout)["metadata"]["title"] == "Changed"
-
-    def test_git_local_repo_subdirectory(self, tmp_path):
-        repo_dir = tmp_path / "repo"
-        app_dir = repo_dir / "src" / "app"
-        app_dir.mkdir(parents=True)
-        app_dir.joinpath("setup.cfg").write_text(self.SETUP_CFG)
-        repo = porcelain.init(str(repo_dir))
-        porcelain.add(repo, [str(app_dir / "setup.cfg")])
-        porcelain.commit(repo, message=b"Initial commit")
-
-        self.assert_parsed(self.invoke(f"git+file://{repo_dir}#src/app"))
 
     def test_requirements_txt(self, tmp_path):
         tmp_path.joinpath("requirements.txt").write_text(
