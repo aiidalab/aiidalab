@@ -291,7 +291,7 @@ class TestRegistryParseAppRepo:
         result = self.invoke(app_path)
 
         assert result.exit_code == 0, result.output
-        assert result.stderr == f"Parsing {app_path} ...\n"
+        assert result.stderr == f"Parsing '{app_path}'\n"
         parsed = json.loads(result.stdout)
         assert parsed["metadata"]["title"] == "Hello World"
         assert parsed["metadata"]["version"] == "0.1.1"
@@ -389,7 +389,7 @@ class TestRegistryParseAppRepo:
     def assert_failed(self, result, url, message):
         assert result.exit_code == 1, result.output
         assert result.stdout == ""
-        assert result.stderr.startswith(f"Parsing {url} ...\n")
+        assert result.stderr.startswith(f"Parsing '{url}'\n")
         assert f"Error: Failed to parse metadata from '{url}': " in result.stderr
         assert message in result.stderr
         # No traceback, the error is handled by click
