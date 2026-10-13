@@ -578,24 +578,7 @@ class _AiidaLabApp:
             return
 
         with tempfile.TemporaryDirectory() as tmp_dir, tarfile.open(path) as tar_file:
-
-            def is_within_directory(directory: str, target: str) -> bool:
-                abs_directory = os.path.abspath(directory)
-                abs_target = os.path.abspath(target)
-
-                prefix = os.path.commonprefix([abs_directory, abs_target])
-
-                return prefix == abs_directory
-
-            def safe_extract(tar: tarfile.TarFile, path: str) -> None:
-                for member in tar.getmembers():
-                    member_path = os.path.join(path, member.name)
-                    if not is_within_directory(path, member_path):
-                        raise Exception("Attempted Path Traversal in Tar File")  # noqa: TRY002
-
-                tar.extractall(path)
-
-            safe_extract(tar_file, path=tmp_dir)
+            tar_file.extractall(tmp_dir, filter="data")
             self._install_from_path(Path(tmp_dir))
 
     def _install_from_https(self, url: str) -> None:
