@@ -15,6 +15,10 @@ import requests
 
 from .git_util import GitPath, GitRepo
 
+__all__ = [
+    "fetch_from_url",
+]
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,16 +37,22 @@ def _fetch_from_path(path: Path | GitPath) -> Generator[Path | GitPath, None, No
             try:
                 with tarfile.open(fileobj=BytesIO(data)) as tar_file:
                     tar_file.extractall(path=tmp_dir, filter="data")
-                    yield _this_or_only_subdir(Path(tmp_dir))
             except tarfile.ReadError as error:
                 logger.debug(str(error))
                 try:
                     with zipfile.ZipFile(BytesIO(data)) as zip_file:
                         zip_file.extractall(path=tmp_dir)
-                        yield _this_or_only_subdir(Path(tmp_dir))
                 except zipfile.BadZipFile as error:
                     logger.debug(str(error))
                     raise RuntimeError("Failed to extract archive from file.")
+            except tarfile.TarError as error:
+                # E.g. tarfile.FilterError for members rejected by the "data" filter.
+                raise RuntimeError(
+                    f"Failed to extract archive from file: {error}"
+                ) from error
+            # Yield outside of the try block so that exceptions raised
+            # in the caller's context are not handled here.
+            yield _this_or_only_subdir(Path(tmp_dir))
 
 
 @contextmanager
@@ -53,11 +63,8 @@ def _fetch_from_https(url: str) -> Generator[Path | GitPath, None, None]:
     with tempfile.NamedTemporaryFile() as tmp_file:
         tmp_file.write(content)
         tmp_file.flush()
-        try:
-            with _fetch_from_path(Path(tmp_file.name)) as path:
-                yield path
-        except RuntimeError as error:
-            raise RuntimeError(f"Unable to read from '{url}': {error}")
+        with _fetch_from_path(Path(tmp_file.name)) as path:
+            yield path
 
 
 def _parse_git_url(git_url: str) -> tuple[str, str, str]:
@@ -102,13 +109,13 @@ def fetch_from_url(url: str) -> Generator[Path | GitPath, None, None]:
     ps = urlsplit(url)
 
     if ps.scheme in ("", "file"):  # on the local file system
-        try:
-            with _fetch_from_path(Path(ps.path)) as path:
-                yield path
-        except FileNotFoundError as error:
+        if not Path(ps.path).exists():
             raise RuntimeError(
-                f"{error}" + (" Did you use a relative path?" if ps.netloc else "")
+                f"No such file or directory: '{ps.path}'"
+                + (" Did you use a relative path?" if ps.netloc else "")
             )
+        with _fetch_from_path(Path(ps.path)) as path:
+            yield path
 
     elif ps.scheme == "https":  # access archive via https
         with _fetch_from_https(url) as path:
