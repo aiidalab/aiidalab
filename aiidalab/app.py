@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import configparser
 import errno
 import io
 import logging
@@ -25,6 +26,7 @@ from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
 import requests
+import tomllib
 import traitlets
 from dulwich.errors import NotGitRepository
 from packaging.version import InvalidVersion, Version
@@ -338,10 +340,16 @@ class _AiidaLabApp:
 
         setup_cfg = self.path.joinpath("setup.cfg")
         pyproject_toml = self.path.joinpath("pyproject.toml")
-        if setup_cfg.is_file():
-            pkg_name = package_name_from_setup_cfg(setup_cfg.read_text())
-        elif pyproject_toml.is_file():
-            pkg_name = package_name_from_pyproject_toml(pyproject_toml.read_text())
+        try:
+            if setup_cfg.is_file():
+                pkg_name = package_name_from_setup_cfg(setup_cfg.read_text())
+            elif pyproject_toml.is_file():
+                pkg_name = package_name_from_pyproject_toml(pyproject_toml.read_text())
+        except (configparser.Error, tomllib.TOMLDecodeError) as error:
+            logger.warning(
+                f"{self.name} app: Unable to determine package name, "
+                f"falling back to '{self.name}': {error}"
+            )
 
         if not pkg_name:
             pkg_name = str(self.name)

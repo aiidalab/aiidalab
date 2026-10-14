@@ -17,32 +17,42 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
 
          If the app was created with the app cookiecutter it should already have all necessary information and this step can be skipped.
 
-      In preparation of registering your AiiDAlab app in the `AiiDAlab registry`_, ensure you have a valid and updated ``setup.cfg`` file in the root of your app's repository.
+      In preparation of registering your AiiDAlab app in the `AiiDAlab registry`_, ensure you have a valid and updated ``setup.cfg`` or ``pyproject.toml`` file in the root of your app's repository.
 
-      AiiDAlab parses the ``setup.cfg`` file for metadata and will recognize fields both from the standard `[metadata] <https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#metadata>`__ section and a dedicated ``[aiidalab]`` section (fields declared within the ``[aiidalab]`` section take precedence).
-      We suggest using the ``[aiidalab]`` section only for the ``title`` and ``categories`` fields, and the ``[metadata]`` for all others.
+      .. important::
 
-      .. dropdown:: List of recognized keys and (where applicable) [metadata]-[aiidalab] mapping.
+         If a ``setup.cfg`` file is present, AiiDAlab reads metadata only from it and ignores ``pyproject.toml`` entirely.
+         When migrating to ``pyproject.toml``, move all metadata (including the ``[aiidalab]`` section) and remove the ``setup.cfg`` file.
 
-         =================  ============================  ======== =========================================================
-         [aiidalab]         [metadata]                    required description
-         =================  ============================  ======== =========================================================
-         title              *n/a* [#f0]_                  yes      A human-readable title for the app.
-         description        description                   yes      A brief description of the app's purpose and function.
-         authors            author                        no       A list of all contributing authors.
-         version            version                       no       A version specifier. [#f1]_
-         external_url       url                           no       A URL for the app home page.
-         documentation_url  project_urls: documentation   no       A URL for the app's documentation, e.g., a README file.
-         logo               project_urls: logo            no       A URL for the app's logo.
-         state [#f2]_       *from classifiers* [#f3]_     no       A classification of the app's development state.
-         categories         *n/a* [#f4]_                  no       Categories under which the app will be listed.
-         =================  ============================  ======== =========================================================
+      **setup.cfg**: AiiDAlab recognizes fields both from the standard `[metadata] <https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#metadata>`__ section and a dedicated ``[aiidalab]`` section (fields declared within the ``[aiidalab]`` section take precedence).
 
-         .. [#f0] The title cannot be declared within the ``[metadata]`` section.
+      **pyproject.toml**: AiiDAlab recognizes fields both from the standard `[project] <https://packaging.python.org/en/latest/specifications/pyproject-toml/>`__ table and a dedicated ``[tool.aiidalab]`` table (fields declared within the ``[tool.aiidalab]`` table take precedence).
+
+      We suggest using the dedicated AiiDAlab section only for the ``title`` and ``categories`` fields, and the standard metadata for all others.
+
+      .. dropdown:: List of recognized keys and (where applicable) mapping to the standard metadata.
+
+         =================  ============================  ===========================  ======== =========================================================
+         [aiidalab]         setup.cfg [metadata]          pyproject.toml [project]     required description
+         =================  ============================  ===========================  ======== =========================================================
+         title              *n/a* [#f0]_                  *n/a* [#f0]_                 yes      A human-readable title for the app.
+         description        description                   description                  yes      A brief description of the app's purpose and function.
+         authors            author                        authors [#fauthors]_         no       A list of all contributing authors.
+         version            version                       version                      no       A version specifier. [#f1]_
+         external_url       url                           urls: homepage               no       A URL for the app home page.
+         documentation_url  project_urls: documentation   urls: documentation          no       A URL for the app's documentation, e.g., a README file.
+         logo               project_urls: logo            urls: logo                   no       A URL for the app's logo.
+         state [#f2]_       *from classifiers* [#f3]_     *from classifiers* [#f3]_    no       A classification of the app's development state.
+         categories         *n/a* [#f4]_                  *n/a* [#f4]_                 no       Categories under which the app will be listed.
+         =================  ============================  ===========================  ======== =========================================================
+
+         .. [#f0] The title cannot be declared within the standard metadata.
+         .. [#fauthors] Must be a list of tables, each with a ``name`` and/or ``email`` key, as `specified by PEP 621 <https://packaging.python.org/en/latest/specifications/pyproject-toml/#authors-maintainers>`__.
+            The names (or emails, if no name is given) of all authors are joined into a single comma-separated string. Invalid entries are skipped.
          .. [#f1] If an app is automatically released from git tags, the registry will use the tag as a version identifier instead.
          .. [#f2] The app state must be one of ["registered", "development", "stable"].
          .. [#f3] The development state is parsed from the *Development State* `trove classifiers <https://pypi.org/classifiers/>`__ and automatically mapped to the AiiDAlab development states.
-         .. [#f4] The categories cannot be declared within the ``[metadata]`` section. The complete list of valid categories can be found `here <https://github.com/aiidalab/aiidalab-registry/blob/master/categories.yaml>`__.
+         .. [#f4] The categories cannot be declared within the standard metadata. The complete list of valid categories can be found `here <https://github.com/aiidalab/aiidalab-registry/blob/master/categories.yaml>`__.
 
       .. dropdown:: Example of a setup.cfg file generated with the AiiDAlab app cutter
 
@@ -70,6 +80,45 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
                Operating System :: OS Independent
                Programming Language :: Python :: 3
                Development Status :: 1 - Planning
+
+      .. dropdown:: Example of an equivalent pyproject.toml file
+
+         .. code-block:: toml
+
+            [tool.aiidalab]
+            title = "My App"
+            categories = ["quantum"]
+
+            # Citations are declared as an array of tables, one table per citation
+            [[tool.aiidalab.citations]]
+            text = "My App: a simple AiiDAlab application"
+            link = "https://github.com/aiidalab/aiidalab-my-app"
+
+            [[tool.aiidalab.citations]]
+            authors = ["The AiiDAlab Team"]
+            title = "My App paper"
+            journal = "Journal of AiiDAlab Apps"
+            year = "2026"
+            doi = "10.1234/my-app"
+
+            [project]
+            name = "aiidalab-my-app"
+            version = "0.1a0"
+            authors = [{name = "The AiiDAlab Team", email = "email@example.com"}]
+            description = "This AiiDAlab application was created with the app cutter."
+            readme = "README.md"
+            classifiers = [
+               "License :: OSI Approved :: MIT License",
+               "Operating System :: OS Independent",
+               "Programming Language :: Python :: 3",
+               "Development Status :: 1 - Planning",
+            ]
+
+            [project.urls]
+            Homepage = "https://github.com/aiidalab/aiidalab-my-app"
+            Logo = "https://raw.githubusercontent.com/aiidalab/aiidalab-my-app/master/img/logo.png"
+            Documentation = "https://github.com/aiidalab/aiidalab-my-app/#readme"
+            "Bug Tracker" = "https://github.com/aiidalab/aiidalab-my-app/issues"
 
       .. tip::
 
