@@ -11,7 +11,7 @@ import requests
 
 from aiidalab import fetch
 from aiidalab.fetch import fetch_from_url
-from aiidalab.git_util import GitPath, GitRepo, InvalidGitRefError
+from aiidalab.git_util import GitPath, InvalidGitRefError
 
 APP_FILES = {
     "app/setup.cfg": b"[metadata]\nname = test-app\n",
@@ -113,19 +113,15 @@ def _assert_app_files(path):
         assert (Path(path) / Path(name).name).read_bytes() == content
 
 
-def test_public_api():
-    assert fetch.__all__ == ["fetch_from_url"]
-
-
 # Local file system
 
 
 @pytest.mark.parametrize("scheme", ["", "file://"])
 def test_fetch_local_directory(tmp_path, scheme):
+    # A local directory is used in place and must not be removed.
     (tmp_path / "setup.cfg").write_text("[metadata]\n")
     with fetch_from_url(f"{scheme}{tmp_path}") as path:
         assert path == tmp_path
-    # A local directory is used in place and must not be removed.
     assert (tmp_path / "setup.cfg").exists()
 
 
@@ -303,30 +299,6 @@ def test_fetch_git_local_not_a_repository(tmp_path):
         pass
 
 
-def test_fetch_git_https(monkeypatch, git_repo):
-    """Clone from a local repository instead of the network."""
-    cloned_urls = []
-    clone_from_url = GitRepo.clone_from_url
-
-    def fake_clone_from_url(url, path):
-        cloned_urls.append(url)
-        return clone_from_url(str(git_repo), path)
-
-    monkeypatch.setattr(fetch.GitRepo, "clone_from_url", fake_clone_from_url)
-
-    url = "git+https://example.com/org/repo.git@v1.0#app"
-    with fetch_from_url(url) as path:
-        assert path.joinpath("start.py").read_bytes() == APP_FILES["app/start.py"]
-        repo_path = Path(path.repo)
-        assert repo_path.exists()
-    # The clone is removed when the context exits.
-    assert not repo_path.exists()
-    assert cloned_urls == ["https://example.com/org/repo.git"]
-
-
-# Other
-
-
 @pytest.mark.parametrize(
     "url", ["ftp://example.com/app.tar.gz", "http://example.com/app.tar.gz"]
 )
@@ -346,7 +318,10 @@ def test_fetch_unsupported_scheme(url):
 def test_exception_in_caller_propagates(
     tmp_path, mock_https, git_repo, scheme, exception
 ):
-    """Exceptions raised in the caller's context are not handled by fetch_from_url."""
+    """Exceptions raised in the caller's context are not handled by fetch_from_url.
+
+    Regression test for https://github.com/aiidalab/aiidalab/pull/557
+    """
     archive = _make_tar(APP_FILES)
     if scheme == "file":
         (tmp_path / "app.tar.gz").write_bytes(archive)

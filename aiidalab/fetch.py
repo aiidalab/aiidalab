@@ -50,8 +50,7 @@ def _fetch_from_path(path: Path | GitPath) -> Generator[Path | GitPath, None, No
                 raise RuntimeError(
                     f"Failed to extract archive from file: {error}"
                 ) from error
-            # Yield outside of the try block so that exceptions raised
-            # in the caller's context are not handled here.
+
             yield _this_or_only_subdir(Path(tmp_dir))
 
 
