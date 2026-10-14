@@ -477,6 +477,44 @@ class TestMetadataFromPyprojectToml:
         assert meta.categories == []
         assert meta.citations == []
 
+    @pytest.mark.parametrize(
+        "authors,expected",
+        [
+            ("[]", ""),
+            ('[{name = "Jane"}]', "Jane"),
+            ('[{name = "Jane", email = "jane@example.com"}]', "Jane"),
+            ('[{name = "Jane"}, {email = "bob@example.com"}]', "Jane, bob@example.com"),
+        ],
+    )
+    def test_authors(self, caplog, authors, expected):
+        pyproject_toml = f"[project]\nauthors = {authors}\n"
+        assert Metadata.from_pyproject_toml(pyproject_toml).authors == expected
+        assert caplog.text == ""
+
+    @pytest.mark.parametrize("authors", ['"Jane Doe"', "42", '{name = "Jane"}'])
+    def test_invalid_authors_not_a_list(self, caplog, authors):
+        pyproject_toml = f"[project]\nauthors = {authors}\n"
+        assert Metadata.from_pyproject_toml(pyproject_toml).authors == ""
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].endswith("ERROR: Expected a list")
+
+    @pytest.mark.parametrize(
+        "invalid_author,error",
+        [
+            ('"Jane Doe"', "Expected a table"),
+            ("42", "Expected a table"),
+            ("{}", "Expected a non-empty 'name' or 'email'"),
+            ('{name = ""}', "Expected a non-empty 'name' or 'email'"),
+            ("{name = 42}", "Expected a non-empty 'name' or 'email'"),
+        ],
+    )
+    def test_invalid_author_is_skipped(self, caplog, invalid_author, error):
+        pyproject_toml = f'[project]\nauthors = [{{name = "Jane"}}, {invalid_author}, {{name = "Bob"}}]\n'
+        assert Metadata.from_pyproject_toml(pyproject_toml).authors == "Jane, Bob"
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith("Could not parse invalid author")
+        assert caplog.messages[0].endswith(f"ERROR: {error}")
+
     def test_lowercase_project_urls(self):
         pyproject_toml = dedent(
             """

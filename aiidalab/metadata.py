@@ -141,6 +141,30 @@ def _validate_citations(citations_raw: Any) -> list[_CitationType]:
     return citations
 
 
+def _parse_pep621_authors(authors_raw: Any) -> str:
+    "Join PEP 621 authors (a list of tables with name and/or email) into a string."
+    if not isinstance(authors_raw, list):
+        logger.error(f"Could not parse authors:\n{authors_raw}\nERROR: Expected a list")
+        return ""
+
+    authors = []
+    for author in authors_raw:
+        if not isinstance(author, dict):
+            logger.error(
+                f"Could not parse invalid author\n{author}\nERROR: Expected a table"
+            )
+            continue
+        name = author.get("name") or author.get("email")
+        if not name or not isinstance(name, str):
+            logger.error(
+                f"Could not parse invalid author\n{author}\n"
+                "ERROR: Expected a non-empty 'name' or 'email'"
+            )
+            continue
+        authors.append(name)
+    return ", ".join(authors)
+
+
 def _parse_pyproject_toml(
     pyproject_toml: str,
 ) -> MetadataDict:
@@ -150,11 +174,7 @@ def _parse_pyproject_toml(
     metadata_pep621: dict[str, Any] = pyproject.get("project", {})
     aiidalab: dict[str, Any] = pyproject.get("tool", {}).get("aiidalab", {})
 
-    # PEP 621 authors is a list of tables with "name" and/or "email" keys
-    pep621_authors = ", ".join(
-        author.get("name") or author.get("email", "")
-        for author in metadata_pep621.get("authors", [])
-    )
+    pep621_authors = _parse_pep621_authors(metadata_pep621.get("authors", []))
 
     title = aiidalab.get("title", metadata_pep621.get("name", ""))
     version = aiidalab.get("version", metadata_pep621.get("version", ""))
