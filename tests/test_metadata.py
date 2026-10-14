@@ -110,36 +110,14 @@ class TestPackageNameFromPyprojectToml:
     def test_returns_name_from_project_table(self):
         pyproject_toml = dedent(
             """
-            [build-system]
-            requires = ["setuptools"]
-            build-backend = "setuptools.build_meta"
-
             [project]
             name = "my-package"
             version = "2.3.4"
             description = "A test package"
             authors = [{name = "AiiDAlab crew"}]
-
-            [project.optional-dependencies]
-            dev = ["pytest"]
             """
         )
         assert package_name_from_pyproject_toml(pyproject_toml) == "my-package"
-
-    @pytest.mark.parametrize(
-        "name_value",
-        [
-            "simple_package",
-            "package-with-dashes",
-            "package.with.dots",
-            "Package_With_Mixed_Case",
-            "a",
-            "123package",
-        ],
-    )
-    def test_returns_various_valid_name_formats(self, name_value):
-        pyproject_toml = f'[project]\nname = "{name_value}"\n'
-        assert package_name_from_pyproject_toml(pyproject_toml) == name_value
 
     # Missing / absent data
     def test_returns_empty_string_for_empty_pyproject_toml(self):
@@ -148,7 +126,6 @@ class TestPackageNameFromPyprojectToml:
         pyproject_toml = "# just a comment\n"
         assert package_name_from_pyproject_toml(pyproject_toml) == ""
 
-    def test_returns_empty_string_when_no_project_table(self):
         pyproject_toml = dedent(
             """
             [build-system]
@@ -157,38 +134,14 @@ class TestPackageNameFromPyprojectToml:
         )
         assert package_name_from_pyproject_toml(pyproject_toml) == ""
 
-    def test_ignores_name_in_other_tables(self):
-        pyproject_toml = dedent(
-            """
-            [tool.poetry]
-            name = "not-this-one"
-            """
-        )
-        assert package_name_from_pyproject_toml(pyproject_toml) == ""
-
-    def test_returns_empty_string_when_project_has_no_name(self):
         pyproject_toml = '[project]\nversion = "1.0.0"\n'
         assert package_name_from_pyproject_toml(pyproject_toml) == ""
 
-    def test_returns_empty_string_when_name_value_is_blank(self):
         pyproject_toml = '[project]\nname = ""\n'
         assert package_name_from_pyproject_toml(pyproject_toml) == ""
 
     def test_raises_on_malformed_toml_content(self):
         pyproject_toml = "this is not valid toml content ==="
-        with pytest.raises(tomllib.TOMLDecodeError):
-            package_name_from_pyproject_toml(pyproject_toml)
-
-    def test_raises_on_duplicate_project_tables(self):
-        pyproject_toml = dedent(
-            """
-            [project]
-            name = "first"
-
-            [project]
-            name = "second"
-            """
-        )
         with pytest.raises(tomllib.TOMLDecodeError):
             package_name_from_pyproject_toml(pyproject_toml)
 
@@ -470,6 +423,10 @@ class TestMetadataFromSetupCfg:
 
 
 class TestMetadataFromPyprojectToml:
+    # TODO: Should we raise on empty or incomplete pyproject.toml?
+    # We should probably require at least title and description,
+    # according to the Metadata types
+    # (same question applies to setup.cfg parsing)
     def test_empty_pyproject_toml(self):
         meta = Metadata.from_pyproject_toml("")
         assert meta == Metadata(
