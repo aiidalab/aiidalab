@@ -515,13 +515,13 @@ class TestMetadataFromPyprojectToml:
         assert caplog.messages[0].startswith("Could not parse invalid author")
         assert caplog.messages[0].endswith(f"ERROR: {error}")
 
-    def test_lowercase_project_urls(self):
+    def test_project_url_labels_normalization(self):
         pyproject_toml = dedent(
             """
             [project.urls]
-            homepage = "https://example.com"
+            "Home Page" = "https://example.com"
             documentation = "https://docs.example.com"
-            logo = "https://example.com/logo.png"
+            "lo go" = "https://example.com/logo.png"
             """
         )
         meta = Metadata.from_pyproject_toml(pyproject_toml)

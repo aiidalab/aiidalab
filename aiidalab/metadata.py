@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import string
 from collections.abc import Generator
 from configparser import ConfigParser
 from dataclasses import dataclass, field
@@ -169,6 +170,15 @@ def _parse_pyproject_toml(
     pyproject_toml: str,
 ) -> MetadataDict:
     "Parse a pyproject.toml configuration file string for metadata."
+
+    def normalize_url_label(label: str) -> str:
+        """Normalize Project URL labels according to:
+        https://packaging.python.org/en/latest/specifications/well-known-project-urls/#label-normalization
+        """
+        chars_to_remove = string.punctuation + string.whitespace
+        removal_map = str.maketrans("", "", chars_to_remove)
+        return label.translate(removal_map).lower()
+
     pyproject = tomllib.loads(pyproject_toml)
 
     metadata_pep621: dict[str, Any] = pyproject.get("project", {})
@@ -181,18 +191,19 @@ def _parse_pyproject_toml(
     description = aiidalab.get("description", metadata_pep621.get("description", ""))
     authors = aiidalab.get("authors", pep621_authors)
 
-    project_urls: dict[str, str] = metadata_pep621.get("urls", {})
+    project_urls: dict[str, str] = {
+        normalize_url_label(label): value
+        for label, value in metadata_pep621.get("urls", {}).items()
+    }
     external_url = aiidalab.get(
         "external_url",
-        project_urls.get("Homepage") or project_urls.get("homepage", ""),
+        project_urls.get("homepage", ""),
     )
     documentation_url = aiidalab.get(
         "documentation_url",
-        project_urls.get("Documentation") or project_urls.get("documentation", ""),
+        project_urls.get("documentation", ""),
     )
-    logo = aiidalab.get(
-        "logo", project_urls.get("Logo") or project_urls.get("logo", "")
-    )
+    logo = aiidalab.get("logo", project_urls.get("logo", ""))
     state = aiidalab.get(
         "state", _map_development_state(metadata_pep621.get("classifiers", []))
     )
