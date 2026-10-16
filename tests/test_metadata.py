@@ -2,11 +2,13 @@ import configparser
 from textwrap import dedent
 
 import pytest
+import tomllib
 
 from aiidalab.metadata import (
     Metadata,
     SimpleCitation,
     StandardCitation,
+    package_name_from_pyproject_toml,
     package_name_from_setup_cfg,
 )
 
@@ -101,6 +103,58 @@ class TestPackageNameFromSetupCfg:
         """
         with pytest.raises(configparser.DuplicateOptionError):
             package_name_from_setup_cfg(setup_cfg)
+
+
+class TestPackageNameFromPyprojectToml:
+    # Happy path
+    def test_returns_name_from_project_table(self):
+        pyproject_toml = dedent(
+            """
+            [project]
+            name = "my-package"
+            version = "2.3.4"
+            description = "A test package"
+            authors = [{name = "AiiDAlab crew"}]
+            """
+        )
+        assert package_name_from_pyproject_toml(pyproject_toml) == "my-package"
+
+    # Missing / absent data
+    def test_returns_empty_string_for_empty_pyproject_toml(self):
+        assert package_name_from_pyproject_toml("") == ""
+
+        pyproject_toml = "# just a comment\n"
+        assert package_name_from_pyproject_toml(pyproject_toml) == ""
+
+        pyproject_toml = dedent(
+            """
+            [build-system]
+            requires = ["setuptools"]
+            """
+        )
+        assert package_name_from_pyproject_toml(pyproject_toml) == ""
+
+        pyproject_toml = '[project]\nversion = "1.0.0"\n'
+        assert package_name_from_pyproject_toml(pyproject_toml) == ""
+
+        pyproject_toml = '[project]\nname = ""\n'
+        assert package_name_from_pyproject_toml(pyproject_toml) == ""
+
+    def test_raises_on_malformed_toml_content(self):
+        pyproject_toml = "this is not valid toml content ==="
+        with pytest.raises(tomllib.TOMLDecodeError):
+            package_name_from_pyproject_toml(pyproject_toml)
+
+    def test_raises_on_duplicate_name_keys_in_project(self):
+        pyproject_toml = dedent(
+            """
+            [project]
+            name = "first"
+            name = "second"
+            """
+        )
+        with pytest.raises(tomllib.TOMLDecodeError):
+            package_name_from_pyproject_toml(pyproject_toml)
 
 
 class TestMetadataFromSetupCfg:
@@ -368,12 +422,321 @@ class TestMetadataFromSetupCfg:
             Metadata.from_setup_cfg("title = no section header")
 
 
+class TestMetadataFromPyprojectToml:
+    # TODO: Should we raise on empty or incomplete pyproject.toml?
+    # We should probably require at least title and description,
+    # according to the Metadata types
+    # (same question applies to setup.cfg parsing)
+    def test_empty_pyproject_toml(self):
+        meta = Metadata.from_pyproject_toml("")
+        assert meta == Metadata(
+            title="",
+            description="",
+            authors="",
+            state="registered",
+            documentation_url="",
+            external_url="",
+            logo="",
+            categories=[],
+            version="",
+            citations=[],
+        )
+
+    def test_project_table(self):
+        pyproject_toml = dedent(
+            """
+            [project]
+            name = "my-app"
+            version = "1.2.3"
+            description = "My app description"
+            authors = [
+                {name = "AiiDAlab crew"},
+                {name = "Bob", email = "bob@example.com"},
+                {email = "anonymous@example.com"},
+            ]
+            classifiers = [
+                "Development Status :: 5 - Production/Stable",
+                "Framework :: AiiDA",
+            ]
+
+            [project.urls]
+            Homepage = "https://example.com"
+            Documentation = "https://docs.example.com"
+            Logo = "https://example.com/logo.png"
+            """
+        )
+        meta = Metadata.from_pyproject_toml(pyproject_toml)
+        assert meta.title == "my-app"
+        assert meta.version == "1.2.3"
+        assert meta.description == "My app description"
+        assert meta.authors == "AiiDAlab crew, Bob, anonymous@example.com"
+        assert meta.external_url == "https://example.com"
+        assert meta.documentation_url == "https://docs.example.com"
+        assert meta.logo == "https://example.com/logo.png"
+        assert meta.state == "stable"
+        assert meta.categories == []
+        assert meta.citations == []
+
+    @pytest.mark.parametrize(
+        "authors,expected",
+        [
+            ("[]", ""),
+            ('[{name = "Jane"}]', "Jane"),
+            ('[{name = "Jane", email = "jane@example.com"}]', "Jane"),
+            ('[{name = "Jane"}, {email = "bob@example.com"}]', "Jane, bob@example.com"),
+        ],
+    )
+    def test_authors(self, caplog, authors, expected):
+        pyproject_toml = f"[project]\nauthors = {authors}\n"
+        assert Metadata.from_pyproject_toml(pyproject_toml).authors == expected
+        assert caplog.text == ""
+
+    @pytest.mark.parametrize("authors", ['"Jane Doe"', "42", '{name = "Jane"}'])
+    def test_invalid_authors_not_a_list(self, caplog, authors):
+        pyproject_toml = f"[project]\nauthors = {authors}\n"
+        assert Metadata.from_pyproject_toml(pyproject_toml).authors == ""
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].endswith("ERROR: Expected a list")
+
+    @pytest.mark.parametrize(
+        "invalid_author,error",
+        [
+            ('"Jane Doe"', "Expected a table"),
+            ("42", "Expected a table"),
+            ("{}", "Expected a non-empty 'name' or 'email'"),
+            ('{name = ""}', "Expected a non-empty 'name' or 'email'"),
+            ("{name = 42}", "Expected a non-empty 'name' or 'email'"),
+        ],
+    )
+    def test_invalid_author_is_skipped(self, caplog, invalid_author, error):
+        pyproject_toml = f'[project]\nauthors = [{{name = "Jane"}}, {invalid_author}, {{name = "Bob"}}]\n'
+        assert Metadata.from_pyproject_toml(pyproject_toml).authors == "Jane, Bob"
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith("Could not parse invalid author")
+        assert caplog.messages[0].endswith(f"ERROR: {error}")
+
+    def test_project_url_labels_normalization(self):
+        pyproject_toml = dedent(
+            """
+            [project.urls]
+            "Home Page" = "https://example.com"
+            documentation = "https://docs.example.com"
+            "lo go" = "https://example.com/logo.png"
+            """
+        )
+        meta = Metadata.from_pyproject_toml(pyproject_toml)
+        assert meta.external_url == "https://example.com"
+        assert meta.documentation_url == "https://docs.example.com"
+        assert meta.logo == "https://example.com/logo.png"
+
+    def test_aiidalab_table_takes_precedence(self):
+        pyproject_toml = dedent(
+            """
+            [project]
+            name = "my-app"
+            version = "1.2.3"
+            description = "PEP 621 description"
+            authors = [{name = "PEP 621 author"}]
+            classifiers = ["Development Status :: 5 - Production/Stable"]
+
+            [project.urls]
+            Homepage = "https://pep621.example.com"
+            Documentation = "https://docs.pep621.example.com"
+            Logo = "https://pep621.example.com/logo.png"
+
+            [tool.aiidalab]
+            title = "My App"
+            version = "2.0.0"
+            description = "AiiDAlab description"
+            authors = "AiiDAlab author"
+            external_url = "https://aiidalab.example.com"
+            documentation_url = "https://docs.aiidalab.example.com"
+            logo = "https://aiidalab.example.com/logo.png"
+            state = "development"
+            """
+        )
+        meta = Metadata.from_pyproject_toml(pyproject_toml)
+        assert meta.title == "My App"
+        assert meta.version == "2.0.0"
+        assert meta.description == "AiiDAlab description"
+        assert meta.authors == "AiiDAlab author"
+        assert meta.external_url == "https://aiidalab.example.com"
+        assert meta.documentation_url == "https://docs.aiidalab.example.com"
+        assert meta.logo == "https://aiidalab.example.com/logo.png"
+        assert meta.state == "development"
+
+    def test_aiidalab_table_falls_back_to_project_table(self):
+        pyproject_toml = dedent(
+            """
+            [project]
+            name = "my-app"
+            version = "1.2.3"
+
+            [tool.aiidalab]
+            title = "My App"
+            """
+        )
+        meta = Metadata.from_pyproject_toml(pyproject_toml)
+        assert meta.title == "My App"
+        assert meta.version == "1.2.3"
+
+    @pytest.mark.parametrize(
+        "classifier,state",
+        [
+            ("Development Status :: 1 - Planning", "registered"),
+            ("Development Status :: 2 - Pre-Alpha", "development"),
+            ("Development Status :: 3 - Alpha", "development"),
+            ("Development Status :: 4 - Beta", "development"),
+            ("Development Status :: 5 - Production/Stable", "stable"),
+            ("Development Status :: 6 - Mature", "registered"),
+            ("Framework :: AiiDA", "registered"),
+        ],
+    )
+    def test_state_from_classifiers(self, classifier, state):
+        pyproject_toml = dedent(
+            f"""
+            [project]
+            classifiers = [
+                "Programming Language :: Python :: 3",
+                "{classifier}",
+            ]
+            """
+        )
+        assert Metadata.from_pyproject_toml(pyproject_toml).state == state
+
+    @pytest.mark.parametrize(
+        "categories,expected",
+        [
+            ('"quantum"', ["quantum"]),
+            ('"""\nquantum\nutilities"""', ["quantum", "utilities"]),
+            ('["quantum"]', ["quantum"]),
+            ('["quantum", "utilities"]', ["quantum", "utilities"]),
+        ],
+    )
+    def test_categories(self, categories, expected):
+        pyproject_toml = f"[tool.aiidalab]\ncategories = {categories}\n"
+        assert Metadata.from_pyproject_toml(pyproject_toml).categories == expected
+
+    def test_citations(self):
+        pyproject_toml = dedent(
+            """
+            [[tool.aiidalab.citations]]
+            authors = ["Bob", "Bobek"]
+            title = "HatApp"
+            journal = "Rabbits weekly"
+            volume = "12"
+            issue = "1"
+            pages = "72"
+            year = "2026"
+            doi = "10.1234/app"
+
+            [[tool.aiidalab.citations]]
+            text = "A simple citation"
+            link = "https://example.com"
+            """
+        )
+        meta = Metadata.from_pyproject_toml(pyproject_toml)
+        assert len(meta.citations) == 2
+
+        standard = StandardCitation(**meta.citations[0])
+        assert standard.authors == ["Bob", "Bobek"]
+        assert standard.title == "HatApp"
+        assert standard.journal == "Rabbits weekly"
+        assert standard.volume == "12"
+        assert standard.issue == "1"
+        assert standard.pages == "72"
+        assert standard.year == "2026"
+        assert standard.doi == "10.1234/app"
+
+        simple = SimpleCitation(**meta.citations[1])
+        assert simple.text == "A simple citation"
+        assert simple.link == "https://example.com"
+
+    def test_minimal_citations(self, caplog):
+        """Test citations without optional fields"""
+        pyproject_toml = dedent(
+            """
+            [[tool.aiidalab.citations]]
+            authors = ["Bob", "Bobek"]
+            journal = "Rabbits weekly"
+            year = "2026"
+            doi = "10.1234/app"
+
+            [[tool.aiidalab.citations]]
+            text = "Simple citation without url"
+            """
+        )
+        meta = Metadata.from_pyproject_toml(pyproject_toml)
+        assert caplog.text == ""
+        assert len(meta.citations) == 2
+
+        standard = StandardCitation(**meta.citations[0])
+        assert standard.authors == ["Bob", "Bobek"]
+        assert standard.journal == "Rabbits weekly"
+        assert standard.year == "2026"
+        assert standard.doi == "10.1234/app"
+        assert standard.title is None
+        assert standard.volume is None
+        assert standard.pages is None
+        assert standard.issue is None
+
+        simple = SimpleCitation(**meta.citations[1])
+        assert simple.text == "Simple citation without url"
+        assert simple.link is None
+
+    def test_invalid_citations_warn(self, caplog):
+        pyproject_toml = dedent(
+            """
+            [[tool.aiidalab.citations]]
+            journal = "Journal of Missing Authors"
+            year = "2026"
+            doi = "10.1234/app"
+
+            [[tool.aiidalab.citations]]
+            text = "Simple citation with invalid field"
+            invalid = "Whoops"
+            """
+        )
+        meta = Metadata.from_pyproject_toml(pyproject_toml)
+        assert len(meta.citations) == 0
+
+        assert "missing 1 required positional argument: 'authors'" in caplog.messages[0]
+        assert "got an unexpected keyword argument 'text'" in caplog.messages[1]
+
+    @pytest.mark.parametrize(
+        "citations",
+        [
+            "{}",
+            '{text = "Simple citation"}',
+            "42",
+            '"Simple citation"',
+            """'[{"text": "JSON citation"}]'""",
+        ],
+    )
+    def test_invalid_citations_not_a_list(self, caplog, citations):
+        pyproject_toml = f"[tool.aiidalab]\ncitations = {citations}\n"
+        assert Metadata.from_pyproject_toml(pyproject_toml).citations == []
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].endswith("ERROR: Expected a list")
+
+    def test_malformed_pyproject_toml_raises(self):
+        with pytest.raises(tomllib.TOMLDecodeError):
+            Metadata.from_pyproject_toml("[project\nname = 'unterminated'")
+
+
 class TestMetadataFromPath:
     SETUP_CFG = dedent(
         """
         [aiidalab]
         title = {title}
         description = Test app
+        """
+    )
+    PYPROJECT_TOML = dedent(
+        """
+        [tool.aiidalab]
+        title = "{title}"
+        description = "Test app"
         """
     )
 
@@ -384,8 +747,23 @@ class TestMetadataFromPath:
         assert meta.title == "root"
         assert meta.description == "Test app"
 
-    def test_no_setup_cfg_raises(self, tmp_path):
-        with pytest.raises(ValueError):
+    def test_pyproject_toml_in_root(self, tmp_path):
+        tmp_path.joinpath("pyproject.toml").write_text(
+            self.PYPROJECT_TOML.format(title="root")
+        )
+        meta = Metadata.from_path(tmp_path)
+        assert meta.title == "root"
+        assert meta.description == "Test app"
+
+    def test_setup_cfg_takes_precedence_over_pyproject_toml(self, tmp_path):
+        tmp_path.joinpath("setup.cfg").write_text(self.SETUP_CFG.format(title="cfg"))
+        tmp_path.joinpath("pyproject.toml").write_text(
+            self.PYPROJECT_TOML.format(title="toml")
+        )
+        assert Metadata.from_path(tmp_path).title == "cfg"
+
+    def test_no_setup_cfg_nor_pyproject_toml_raises(self, tmp_path):
+        with pytest.raises(ValueError, match="setup.cfg nor pyproject.toml"):
             Metadata.from_path(tmp_path)
 
     def test_nonexistent_directory_raises(self, tmp_path):
