@@ -969,7 +969,9 @@ class AiidaLabApp(traitlets.HasTraits):
         """Installing the app."""
         with self._show_busy():
             self._app.install(
-                version=version, stdout=stdout, prereleases=self.include_prereleases
+                version=version,
+                stdout=stdout or sys.stdout,
+                prereleases=self.include_prereleases,
             )
             FIND_INSTALLED_PACKAGES_CACHE.clear()
             self.refresh()
@@ -1127,5 +1129,5 @@ class AiidaLabApp(traitlets.HasTraits):
         if not self.is_installed():
             raise AppNotInstalledException("The app is not installed")
         if not self.path:
-            raise AppNotInstalledException("Invalid app path '{self.path}'")
+            raise AppNotInstalledException(f"Invalid app path '{self.path}'")
         return Repo(self.path)
