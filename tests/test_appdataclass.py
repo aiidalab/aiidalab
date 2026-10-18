@@ -261,3 +261,69 @@ def test_find_incompatibilities_python_skips_inapplicable_markers(
     )
 
     assert [req.name for req in incompatibilities] == ["not-installed-package-2"]
+
+
+@pytest.fixture
+def app_archive(tmp_path):
+    """Return a function creating an app archive in the given format."""
+    import shutil
+
+    source = tmp_path / "source"
+    (source / "app").mkdir(parents=True)
+    (source / "app" / "start.py").write_text("print('hello')\n")
+
+    def _app_archive(archive_format):
+        return Path(
+            shutil.make_archive(tmp_path / "app", archive_format, root_dir=source)
+        )
+
+    return _app_archive
+
+
+def _archive_app(path, url):
+    return _AiidaLabApp(
+        metadata={},
+        name="test",
+        path=path,
+        releases={"v1.0.0": {"metadata": {}, "url": url}},
+    )
+
+
+@pytest.mark.parametrize("archive_format", ["zip", "gztar", "tar"])
+def test_install_from_local_archive(
+    installed_packages, tmp_path, app_archive, archive_format
+):
+    app = _archive_app(tmp_path / "apps" / "test", str(app_archive(archive_format)))
+
+    app.install("v1.0.0", install_dependencies=False, post_install_triggers=False)
+
+    assert (app.path / "start.py").read_text() == "print('hello')\n"
+
+
+@pytest.mark.parametrize("archive_format", ["zip", "gztar"])
+def test_install_from_https_archive(
+    monkeypatch, installed_packages, tmp_path, app_archive, archive_format
+):
+    from aiidalab import fetch
+
+    content = app_archive(archive_format).read_bytes()
+    requests_kwargs = []
+
+    class Response:
+        def __init__(self, content):
+            self.content = content
+
+        def raise_for_status(self):
+            pass
+
+    def fake_get(url, **kwargs):
+        requests_kwargs.append(kwargs)
+        return Response(content)
+
+    monkeypatch.setattr(fetch.requests, "get", fake_get)
+    app = _archive_app(tmp_path / "apps" / "test", "https://example.com/app-archive")
+
+    app.install("v1.0.0", install_dependencies=False, post_install_triggers=False)
+
+    assert (app.path / "start.py").read_text() == "print('hello')\n"
+    assert requests_kwargs == [{"timeout": fetch.REQUESTS_TIMEOUT}]
