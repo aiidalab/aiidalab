@@ -5,16 +5,21 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "aiidalab"
+description = "Implements core functions of AiiDAlab"
 dynamic = ['version']
 authors = [{name = 'The AiiDAlab team', email = 'aiidalab@materialcloud.org'}]
+license = 'MIT'
+license-files = ['LICENSE']
+readme = 'README.md'
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Framework :: AiiDA",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
+
+requires-python = '>=3.12'
 dependencies = [
     "cachetools~=4.1",
     "click>=7.0,<9",
@@ -28,10 +33,6 @@ dependencies = [
     "traitlets~=5.0",
     "watchdog~=6.0",
 ]
-description = "Implements core functions of AiiDAlab"
-license = {file = 'LICENSE'}
-readme = 'README.md'
-requires-python = '>=3.12'
 
 [project.scripts]
 aiidalab = "aiidalab.__main__:cli"
@@ -82,8 +83,9 @@ docs = [
 
 [project.urls]
 Documentation = 'https://aiidalab.readthedocs.io/en/latest/'
-Home = 'https://www.aiidalab.net/'
+Homepage = 'https://www.aiidalab.net/'
 Source = 'https://github.com/aiidalab/aiidalab'
+Issues = 'https://github.com/aiidalab/aiidalab/issues'
 
 [tool.flit.module]
 name = 'aiidalab'
