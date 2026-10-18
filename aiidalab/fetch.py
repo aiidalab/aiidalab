@@ -21,6 +21,9 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
+# Timeout (in seconds) for connecting to the server, and for each read.
+REQUESTS_TIMEOUT = 60
+
 
 def _this_or_only_subdir(path: Path) -> Path:
     members = list(path.iterdir())
@@ -56,7 +59,7 @@ def _fetch_from_path(path: Path | GitPath) -> Generator[Path | GitPath, None, No
 
 @contextmanager
 def _fetch_from_https(url: str) -> Generator[Path | GitPath, None, None]:
-    response = requests.get(url, stream=True)
+    response = requests.get(url, timeout=REQUESTS_TIMEOUT)
     response.raise_for_status()
     content = response.content
     with tempfile.NamedTemporaryFile() as tmp_file:
