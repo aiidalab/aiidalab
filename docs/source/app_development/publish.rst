@@ -52,7 +52,7 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
          .. [#f1] If an app is automatically released from git tags, the registry will use the tag as a version identifier instead.
          .. [#f2] The app state must be one of ["registered", "development", "stable"].
          .. [#f3] The development state is parsed from the *Development State* `trove classifiers <https://pypi.org/classifiers/>`__ and automatically mapped to the AiiDAlab development states.
-         .. [#f4] The categories cannot be declared within the standard metadata. The complete list of valid categories can be found `here <https://github.com/aiidalab/aiidalab-registry/blob/master/categories.yaml>`__.
+         .. [#f4] The categories cannot be declared within the standard metadata. The complete list of valid categories can be found `here <https://github.com/aiidalab/aiidalab-registry/blob/main/categories.yaml>`__.
 
       .. dropdown:: Example of a setup.cfg file generated with the AiiDAlab app cutter
 
@@ -71,7 +71,7 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
             long_description_content_type = text/markdown
             url = https://github.com/aiidalab/aiidalab-my-app
             project_urls =
-               Logo = https://raw.githubusercontent.com/aiidalab/aiidalab-my-app/master/img/logo.png
+               Logo = https://raw.githubusercontent.com/aiidalab/aiidalab-my-app/main/img/logo.png
                Documentation = https://github.com/aiidalab/aiidalab-my-app/#readme
                Bug Tracker = https://github.com/aiidalab/aiidalab-my-app/issues
 
@@ -107,8 +107,9 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
             authors = [{name = "The AiiDAlab Team", email = "email@example.com"}]
             description = "This AiiDAlab application was created with the app cutter."
             readme = "README.md"
+            license = "MIT"
+            license-files = ['LICENSE.txt']
             classifiers = [
-               "License :: OSI Approved :: MIT License",
                "Operating System :: OS Independent",
                "Programming Language :: Python :: 3",
                "Development Status :: 1 - Planning",
@@ -116,9 +117,9 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
 
             [project.urls]
             Homepage = "https://github.com/aiidalab/aiidalab-my-app"
-            Logo = "https://raw.githubusercontent.com/aiidalab/aiidalab-my-app/master/img/logo.png"
+            Logo = "https://raw.githubusercontent.com/aiidalab/aiidalab-my-app/main/img/logo.png"
             Documentation = "https://github.com/aiidalab/aiidalab-my-app/#readme"
-            "Bug Tracker" = "https://github.com/aiidalab/aiidalab-my-app/issues"
+            Issues = "https://github.com/aiidalab/aiidalab-my-app/issues"
 
       .. tip::
 
@@ -138,7 +139,7 @@ Here we explain how an app can be made available to AiiDAlab users by registerin
 
          <i class="fa fa-edit"></i>
 
-      To register an app, simply edit the `apps.yaml file <https://github.com/aiidalab/aiidalab-registry/blob/master/apps.yaml>`__ on GitHub by clicking on the :fa:`pencil` icon in the top right corner and add an entry for your app according to one of the approaches shown below.
+      To register an app, simply edit the `apps.yaml file <https://github.com/aiidalab/aiidalab-registry/blob/main/apps.yaml>`__ on GitHub by clicking on the :fa:`pencil` icon in the top right corner and add an entry for your app according to one of the approaches shown below.
 
       Releases are specified in the form of a list, where each list entry corresponds to one or more tagged commits of a git repository branch.
       In case that it corresponds to multiple commits, the release entry is called a *release line*.
