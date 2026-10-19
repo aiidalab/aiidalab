@@ -421,6 +421,9 @@ class _AiidaLabApp:
     ) -> Generator[Requirement, None, None]:
         packages = find_installed_packages(python_bin)
         for requirement in requirements:
+            # Skip requirements whose environment marker does not apply.
+            if requirement.marker and not requirement.marker.evaluate():
+                continue
             pkg = get_package_by_name(packages, requirement.name)
             if pkg is None or not pkg.fulfills(requirement):
                 yield requirement

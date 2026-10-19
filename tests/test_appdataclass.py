@@ -215,3 +215,19 @@ def test_compatibility_check_with_local_repo_if_detached(
         lambda _: Environment(python_requirements=["aiida-core~=3.0"]),
     )
     assert len(list(aiidalab_app_data.find_incompatibilities("v0.1.0"))) == 1
+
+
+def test_find_incompatibilities_python_skips_inapplicable_markers(
+    installed_packages, python_bin
+):
+    """A missing package is not an incompatibility if its marker does not apply."""
+    requirements = [
+        Requirement("not-installed-package; sys_platform == 'no-such-platform'"),
+        Requirement("not-installed-package-2; sys_platform != 'no-such-platform'"),
+    ]
+
+    incompatibilities = list(
+        _AiidaLabApp._find_incompatibilities_python(requirements, python_bin)
+    )
+
+    assert [req.name for req in incompatibilities] == ["not-installed-package-2"]
