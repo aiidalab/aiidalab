@@ -8,8 +8,6 @@ import logging
 import os
 import shutil
 import sys
-import tarfile
-import tempfile
 import threading
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -24,7 +22,6 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
-import requests
 import traitlets
 from dulwich.errors import NotGitRepository
 from packaging.version import InvalidVersion, Version
@@ -37,6 +34,7 @@ from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 
 from .environment import Environment
+from .fetch import _fetch_from_path, fetch_from_url
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
 from .metadata import Metadata, MetadataDict, _CitationType, package_name_from_setup_cfg
@@ -586,19 +584,13 @@ class _AiidaLabApp:
             shutil.copytree(this_or_only_subdir(path), self.path)
             return
 
-        with tempfile.TemporaryDirectory() as tmp_dir, tarfile.open(path) as tar_file:
-            tar_file.extractall(tmp_dir, filter="data")
-            self._install_from_path(Path(tmp_dir))
+        # Extract archives the same way as when parsing the app metadata.
+        with _fetch_from_path(path) as extracted_path:
+            shutil.copytree(extracted_path, self.path)
 
     def _install_from_https(self, url: str) -> None:
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        content = response.content
-
-        with tempfile.NamedTemporaryFile() as tmp_file:
-            tmp_file.write(content)
-            tmp_file.flush()
-            self._install_from_path(Path(tmp_file.name))
+        with fetch_from_url(url) as extracted_path:
+            shutil.copytree(extracted_path, self.path)
 
     def _install_from_git_repository(self, git_url: str) -> None:
         if urldefrag(git_url).fragment:
