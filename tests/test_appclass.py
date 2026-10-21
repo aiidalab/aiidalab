@@ -242,6 +242,25 @@ class TestAppCompatibility:
         )
         assert not app.compatible
 
+    def test_not_installed_app_compatibility_is_unknown(self, generate_app, caplog):
+        app_data = deepcopy(self.app_data)
+        app_data["metadata"]["version"] = AppVersion.NOT_INSTALLED
+
+        app = generate_app(app_data=app_data)
+
+        assert app.compatible is None
+        assert app.compatibility_info == {}
+        assert "could not be determined" not in caplog.text
+
+    def test_unregistered_version_compatibility_is_unknown(self, generate_app):
+        app_data = deepcopy(self.app_data)
+        app_data["metadata"]["version"] = "2.0"
+
+        app = generate_app(app_data=app_data)
+
+        assert app.compatible is None
+        assert app.compatibility_info == {}
+
     def test_install_rejects_explicit_core_dependency_conflict(
         self, generate_app, installed_packages, monkeypatch
     ):
