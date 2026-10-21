@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def _map_development_state(classifiers: str | list[str]) -> str:
-    "Map standard trove classifiers (PEP 301) to aiidalab development states."
+    """Map standard trove classifiers (PEP 301) to aiidalab development states."""
     if "Development Status :: 1 - Planning" in classifiers:
         return "registered"
     elif "Development Status :: 5 - Production/Stable" in classifiers:
@@ -41,7 +41,7 @@ def _map_development_state(classifiers: str | list[str]) -> str:
 
 
 def _parse_config_dict(dict_: str) -> Generator[tuple[str, str], None, None]:
-    "Parse a config dict string for key-values pairs."
+    """Parse a config dict string for key-values pairs."""
     for line in dict_.splitlines():
         if line:
             key, value = line.split("=")
@@ -103,7 +103,7 @@ def package_name_from_setup_cfg(setup_cfg: str) -> str:
 def _parse_setup_cfg(
     setup_cfg: str,
 ) -> MetadataDict:
-    "Parse a setup.cfg configuration file string for metadata."
+    """Parse a setup.cfg configuration file string for metadata."""
     import json
 
     cfg = ConfigParser()

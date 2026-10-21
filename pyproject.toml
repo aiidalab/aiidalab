@@ -22,7 +22,7 @@ classifiers = [
 requires-python = '>=3.12'
 dependencies = [
     "cachetools~=4.1",
-    "click>=7.0,<9",
+    "click>=8.1,<9",
     "click-spinner~=0.1",
     "dulwich~=0.22",
     "packaging>=26.0",
