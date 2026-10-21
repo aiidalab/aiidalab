@@ -406,10 +406,8 @@ class _AiidaLabApp:
 
     def core_dependencies_met(self, python_bin: str | None = None) -> bool:
         """Return whether the local app requirements preserve core packages."""
-        for path in (self.path.joinpath(".aiidalab"), self.path):
-            if path.exists():
-                environment = Environment.scan(path)
-                break
+        if self.path.is_dir():
+            environment = Environment.scan(self.path)
         else:
             environment = Environment()
         requirements = self.parse_python_requirements(environment.python_requirements)
@@ -536,23 +534,21 @@ class _AiidaLabApp:
             if process.returncode != 0:
                 logger.warning("Failed to restart verdi daemon.")
 
-        for path in (self.path.joinpath(".aiidalab"), self.path):
-            if path.exists():
-                try:
-                    if self._has_python_package():
-                        _pip_install(str(path), stdout=stdout)
-                    elif path.joinpath("requirements.txt").is_file():
-                        _pip_install(
-                            f"--requirement={path.joinpath('requirements.txt')}",
-                            stdout=stdout,
-                        )
-                    else:
-                        logger.warning(
-                            f"Warning: App '{self.name}' does not declare any dependencies."
-                        )
-                    break
-                except CalledProcessError:
-                    raise RuntimeError("Failed to install dependencies.")
+        if self.path.exists():
+            try:
+                if self._has_python_package():
+                    _pip_install(str(self.path), stdout=stdout)
+                elif self.path.joinpath("requirements.txt").is_file():
+                    _pip_install(
+                        f"--requirement={self.path.joinpath('requirements.txt')}",
+                        stdout=stdout,
+                    )
+                else:
+                    logger.warning(
+                        f"Warning: App '{self.name}' does not declare any dependencies."
+                    )
+            except CalledProcessError:
+                raise RuntimeError("Failed to install dependencies.")
 
     def _post_install_triggers(self) -> None:
         """Run a post_install script.
