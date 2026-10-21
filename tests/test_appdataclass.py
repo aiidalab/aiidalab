@@ -177,6 +177,36 @@ def test_update_status_latest_version_incompatible(
     assert aiidalab_app_data.remote_update_status() is AppRemoteUpdateStatus.UP_TO_DATE
 
 
+@pytest.mark.parametrize(
+    ("installed_version", "expected"),
+    [
+        ("v0.1.0", AppRemoteUpdateStatus.UPDATE_AVAILABLE),
+        ("0.1.5", AppRemoteUpdateStatus.UPDATE_AVAILABLE),
+        ("v0.2.0", AppRemoteUpdateStatus.UP_TO_DATE),
+        ("0.3.0", AppRemoteUpdateStatus.UP_TO_DATE),
+        ("0.3.0b1", AppRemoteUpdateStatus.UP_TO_DATE),
+        ("my-release-1", AppRemoteUpdateStatus.UPDATE_AVAILABLE),
+    ],
+)
+def test_update_status_compares_versions(
+    monkeypatch, installed_packages, installed_version, expected
+):
+    """An update is only available if the installed version is older than the latest release."""
+    monkeypatch.setattr(_AiidaLabApp, "is_registered", lambda _: True)
+    monkeypatch.setattr(_AiidaLabApp, "is_installed", lambda _: True)
+    monkeypatch.setattr(_AiidaLabApp, "installed_version", lambda _: installed_version)
+    release = {"environment": {}, "metadata": {}, "url": ""}
+
+    aiidalab_app_data = _AiidaLabApp(
+        metadata={},
+        name="test",
+        path=Path("test"),
+        releases={"v0.2.0": release, "v0.1.0": release},
+    )
+
+    assert aiidalab_app_data.remote_update_status() is expected
+
+
 def test_compatibility_check_with_local_repo_if_detached(
     monkeypatch, tmp_path, installed_packages
 ):
