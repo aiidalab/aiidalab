@@ -33,7 +33,6 @@ from collections.abc import Generator
 from configparser import ConfigParser
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 import tomllib
 
@@ -58,7 +57,7 @@ class Environment:
     python_requirements: list[str] = field(default_factory=list)
 
     @staticmethod
-    def _scan(path: Path | GitPath) -> Generator[Any, None, None]:
+    def _scan(path: Path | GitPath) -> Generator[tuple[str, list[str]], None, None]:
         def _parse_reqs(requirements: str) -> Generator[str, None, None]:
             for line in (line.strip() for line in requirements.splitlines()):
                 if line and not line.startswith("#"):
