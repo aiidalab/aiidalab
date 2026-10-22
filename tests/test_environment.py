@@ -26,8 +26,6 @@ PYPROJECT_TOML = dedent(
     """
 )
 
-REQUIREMENTS_TXT = "aiida-core~=2.2\nase\n"
-
 
 def test_no_config_files(tmp_path):
     assert Environment.scan(tmp_path) == Environment(python_requirements=[])
@@ -77,14 +75,12 @@ class TestSetupCfg:
     def test_takes_precedence_over_other_files(self, tmp_path):
         tmp_path.joinpath("setup.cfg").write_text(SETUP_CFG)
         tmp_path.joinpath("pyproject.toml").write_text(PYPROJECT_TOML)
-        tmp_path.joinpath("requirements.txt").write_text(REQUIREMENTS_TXT)
         env = Environment.scan(tmp_path)
         assert env.python_requirements == ["aiida-core~=2.0", "numpy>=1.20"]
 
     def test_takes_precedence_even_without_install_requires(self, tmp_path):
         tmp_path.joinpath("setup.cfg").write_text("[metadata]\nname = my-app\n")
         tmp_path.joinpath("pyproject.toml").write_text(PYPROJECT_TOML)
-        tmp_path.joinpath("requirements.txt").write_text(REQUIREMENTS_TXT)
         assert Environment.scan(tmp_path).python_requirements == []
 
     def test_malformed_setup_cfg_raises(self, tmp_path):
@@ -114,17 +110,6 @@ class TestPyprojectToml:
         assert Environment.scan(tmp_path).python_requirements == []
         assert caplog.text == ""
 
-    def test_takes_precedence_over_requirements_txt(self, tmp_path):
-        tmp_path.joinpath("pyproject.toml").write_text(PYPROJECT_TOML)
-        tmp_path.joinpath("requirements.txt").write_text(REQUIREMENTS_TXT)
-        env = Environment.scan(tmp_path)
-        assert env.python_requirements == ["aiida-core~=2.1", "scipy"]
-
-    def test_takes_precedence_even_without_dependencies(self, tmp_path):
-        tmp_path.joinpath("pyproject.toml").write_text("[tool.ruff]\n")
-        tmp_path.joinpath("requirements.txt").write_text(REQUIREMENTS_TXT)
-        assert Environment.scan(tmp_path).python_requirements == []
-
     def test_dynamic_dependencies_warn(self, tmp_path, caplog):
         pyproject_toml = dedent(
             """
@@ -137,7 +122,7 @@ class TestPyprojectToml:
             """
         )
         tmp_path.joinpath("pyproject.toml").write_text(pyproject_toml)
-        tmp_path.joinpath("requirements.txt").write_text(REQUIREMENTS_TXT)
+        tmp_path.joinpath("requirements.txt").write_text("aiida-core~=2.2\nase\n")
         assert Environment.scan(tmp_path).python_requirements == []
         assert len(caplog.messages) == 1
         assert (
@@ -173,21 +158,3 @@ class TestPyprojectToml:
         tmp_path.joinpath("pyproject.toml").write_text("[project\ndependencies = []")
         with pytest.raises(tomllib.TOMLDecodeError):
             Environment.scan(tmp_path)
-
-
-class TestRequirementsTxt:
-    def test_requirements(self, tmp_path):
-        tmp_path.joinpath("requirements.txt").write_text(REQUIREMENTS_TXT)
-        env = Environment.scan(tmp_path)
-        assert env.python_requirements == ["aiida-core~=2.2", "ase"]
-
-    def test_comments_and_whitespace_are_ignored(self, tmp_path):
-        requirements_txt = "# a comment\n\n  aiida-core~=2.2  \n\n# another\nase\n"
-        tmp_path.joinpath("requirements.txt").write_text(requirements_txt)
-        env = Environment.scan(tmp_path)
-        assert env.python_requirements == ["aiida-core~=2.2", "ase"]
-
-    @pytest.mark.parametrize("requirements_txt", ["", "\n", "# just a comment\n"])
-    def test_no_requirements(self, tmp_path, requirements_txt):
-        tmp_path.joinpath("requirements.txt").write_text(requirements_txt)
-        assert Environment.scan(tmp_path).python_requirements == []

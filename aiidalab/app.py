@@ -554,11 +554,6 @@ class _AiidaLabApp:
             try:
                 if self._has_python_package():
                     _pip_install(str(self.path), stdout=stdout)
-                elif self.path.joinpath("requirements.txt").is_file():
-                    _pip_install(
-                        f"--requirement={self.path.joinpath('requirements.txt')}",
-                        stdout=stdout,
-                    )
                 else:
                     logger.warning(
                         f"Warning: App '{self.name}' does not declare any dependencies."

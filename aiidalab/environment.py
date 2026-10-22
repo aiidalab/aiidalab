@@ -19,11 +19,6 @@ requirements.
     pyproject.toml
         Requirements listed as part of the [project]/dependencies field are
         parsed as pip-installable Python requirements for this app.
-
-    requirements.txt
-        Requirements listed within this file are parsed as pip-installable
-        Python requirements for this app.
-
 """
 
 from __future__ import annotations
@@ -112,13 +107,6 @@ class Environment:
         else:
             yield "python_requirements", _parse_pyproject_toml(pyproject_toml)
             return
-
-        try:
-            requirements_txt = path.joinpath("requirements.txt").read_text()
-        except FileNotFoundError:
-            pass
-        else:
-            yield "python_requirements", list(_parse_reqs(requirements_txt))
 
     @classmethod
     def scan(cls, root: Path | GitPath) -> Environment:
