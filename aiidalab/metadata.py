@@ -105,13 +105,53 @@ def package_name_from_setup_cfg(setup_cfg: str) -> str:
 
 def package_name_from_pyproject_toml(pyproject_toml: str) -> str:
     pyproject = tomllib.loads(pyproject_toml)
+    metadata_pep621 = _get_toml_table(pyproject, "project", "")
+    return _get_toml_str(metadata_pep621, "name", "project") or ""
 
-    # This really shouldn't happen, build backends would probably not be happy
-    if "project" not in pyproject:
-        return ""
 
-    metadata_pep621 = pyproject["project"]
-    return str(metadata_pep621.get("name", ""))
+def _get_toml_table(table: dict[str, Any], key: str, name: str) -> dict[str, Any]:
+    "Get a sub-table from a parsed TOML table, logging an error if it is not a table."
+    value = table.get(key, {})
+    if not isinstance(value, dict):
+        full_key = f"{name}.{key}" if name else key
+        logger.error(f"Could not parse {full_key}:\n{value}\nERROR: Expected a table")
+        return {}
+    return value
+
+
+def _get_toml_str(table: dict[str, Any], key: str, name: str) -> str | None:
+    """Get a string value from a parsed TOML table.
+
+    Returns None if the key is missing or (logging an error) if it is not a string.
+    """
+    if key not in table:
+        return None
+    value = table[key]
+    if not isinstance(value, str):
+        logger.error(
+            f"Could not parse {name}.{key}:\n{value}\nERROR: Expected a string"
+        )
+        return None
+    return value
+
+
+def _get_toml_str_list(table: dict[str, Any], key: str, name: str) -> list[str]:
+    "Get a list of strings from a parsed TOML table, dropping (and logging) invalid ones."
+    values = table.get(key, [])
+    if not isinstance(values, list):
+        logger.error(f"Could not parse {name}.{key}:\n{values}\nERROR: Expected a list")
+        return []
+
+    strings = []
+    for value in values:
+        if not isinstance(value, str):
+            logger.error(
+                f"Could not parse invalid {name}.{key} entry\n{value}\n"
+                "ERROR: Expected a string"
+            )
+            continue
+        strings.append(value)
+    return strings
 
 
 def _validate_citations(citations_raw: Any) -> list[_CitationType]:
@@ -181,38 +221,49 @@ def _parse_pyproject_toml(
 
     pyproject = tomllib.loads(pyproject_toml)
 
-    metadata_pep621: dict[str, Any] = pyproject.get("project", {})
-    aiidalab: dict[str, Any] = pyproject.get("tool", {}).get("aiidalab", {})
+    metadata_pep621 = _get_toml_table(pyproject, "project", "")
+    tool = _get_toml_table(pyproject, "tool", "")
+    aiidalab = _get_toml_table(tool, "aiidalab", "tool")
 
-    pep621_authors = _parse_pep621_authors(metadata_pep621.get("authors", []))
+    def get_str(key: str, pep621_value: str | None = None) -> str:
+        "Get a string from [tool.aiidalab], falling back to the PEP 621 value."
+        value = _get_toml_str(aiidalab, key, "tool.aiidalab")
+        if value is not None:
+            return value
+        return pep621_value or ""
 
-    title = aiidalab.get("title", metadata_pep621.get("name", ""))
-    version = aiidalab.get("version", metadata_pep621.get("version", ""))
-    description = aiidalab.get("description", metadata_pep621.get("description", ""))
-    authors = aiidalab.get("authors", pep621_authors)
+    def get_pep621_str(key: str) -> str | None:
+        return _get_toml_str(metadata_pep621, key, "project")
 
-    project_urls: dict[str, str] = {
-        normalize_url_label(label): value
-        for label, value in metadata_pep621.get("urls", {}).items()
+    urls = _get_toml_table(metadata_pep621, "urls", "project")
+    project_urls = {
+        normalize_url_label(label): url
+        for label in urls
+        if (url := _get_toml_str(urls, label, "project.urls")) is not None
     }
-    external_url = aiidalab.get(
-        "external_url",
-        project_urls.get("homepage", ""),
+
+    title = get_str("title", get_pep621_str("name"))
+    version = get_str("version", get_pep621_str("version"))
+    description = get_str("description", get_pep621_str("description"))
+    authors = get_str(
+        "authors", _parse_pep621_authors(metadata_pep621.get("authors", []))
     )
-    documentation_url = aiidalab.get(
-        "documentation_url",
-        project_urls.get("documentation", ""),
-    )
-    logo = aiidalab.get("logo", project_urls.get("logo", ""))
-    state = aiidalab.get(
-        "state", _map_development_state(metadata_pep621.get("classifiers", []))
+    external_url = get_str("external_url", project_urls.get("homepage"))
+    documentation_url = get_str("documentation_url", project_urls.get("documentation"))
+    logo = get_str("logo", project_urls.get("logo"))
+    state = get_str(
+        "state",
+        _map_development_state(
+            _get_toml_str_list(metadata_pep621, "classifiers", "project")
+        ),
     )
 
     # Allow passing single category and convert to list
     # and allow parse line separated string as list
-    categories = aiidalab.get("categories", [])
-    if isinstance(categories, str):
-        categories = [c for c in categories.split("\n") if c]
+    if isinstance(aiidalab.get("categories"), str):
+        categories = [c for c in aiidalab["categories"].split("\n") if c]
+    else:
+        categories = _get_toml_str_list(aiidalab, "categories", "tool.aiidalab")
 
     citations = _validate_citations(aiidalab.get("citations", []))
 

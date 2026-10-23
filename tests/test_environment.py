@@ -1,8 +1,6 @@
-import configparser
 from textwrap import dedent
 
 import pytest
-import tomllib
 
 from aiidalab.environment import Environment
 
@@ -83,10 +81,11 @@ class TestSetupCfg:
         tmp_path.joinpath("pyproject.toml").write_text(PYPROJECT_TOML)
         assert Environment.scan(tmp_path).python_requirements == []
 
-    def test_malformed_setup_cfg_raises(self, tmp_path):
+    def test_malformed_setup_cfg_logs_error(self, tmp_path, caplog):
         tmp_path.joinpath("setup.cfg").write_text("install_requires = numpy")
-        with pytest.raises(configparser.MissingSectionHeaderError):
-            Environment.scan(tmp_path)
+        assert Environment.scan(tmp_path).python_requirements == []
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith("Could not parse setup.cfg")
 
 
 class TestPyprojectToml:
@@ -154,7 +153,15 @@ class TestPyprojectToml:
         assert caplog.messages[0].startswith("Could not parse invalid dependency")
         assert caplog.messages[0].endswith("ERROR: Expected a string")
 
-    def test_malformed_pyproject_toml_raises(self, tmp_path):
+    def test_malformed_pyproject_toml_logs_error(self, tmp_path, caplog):
         tmp_path.joinpath("pyproject.toml").write_text("[project\ndependencies = []")
-        with pytest.raises(tomllib.TOMLDecodeError):
-            Environment.scan(tmp_path)
+        assert Environment.scan(tmp_path).python_requirements == []
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith("Could not parse pyproject.toml")
+
+    def test_project_not_a_table(self, tmp_path, caplog):
+        tmp_path.joinpath("pyproject.toml").write_text('project = "my-app"\n')
+        assert Environment.scan(tmp_path).python_requirements == []
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith("Could not parse project")
+        assert caplog.messages[0].endswith("ERROR: Expected a table")

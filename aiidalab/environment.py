@@ -23,6 +23,7 @@ requirements.
 
 from __future__ import annotations
 
+import configparser
 import logging
 from collections.abc import Generator
 from configparser import ConfigParser
@@ -67,6 +68,11 @@ class Environment:
 
         def _parse_pyproject_toml(pyproject_toml: str) -> list[str]:
             project = tomllib.loads(pyproject_toml).get("project", {})
+            if not isinstance(project, dict):
+                logger.error(
+                    f"Could not parse project:\n{project}\nERROR: Expected a table"
+                )
+                return []
             if "dependencies" in project.get("dynamic", []):
                 logger.warning(
                     "Dynamic dependencies in pyproject.toml are not supported, "
@@ -92,12 +98,19 @@ class Environment:
             return requirements
 
         # Only the first existing file is parsed, in order of precedence.
+        # A malformed file is reported, but treated as declaring no requirements,
+        # so that it does not break callers scanning many apps (e.g. the registry).
         try:
             setup_cfg = path.joinpath("setup.cfg").read_text()
         except FileNotFoundError:
             pass
         else:
-            yield "python_requirements", _parse_setup_cfg(setup_cfg)
+            try:
+                requirements = _parse_setup_cfg(setup_cfg)
+            except configparser.Error as error:
+                logger.error(f"Could not parse setup.cfg in '{path}': {error}")
+                requirements = []
+            yield "python_requirements", requirements
             return
 
         try:
@@ -105,7 +118,12 @@ class Environment:
         except FileNotFoundError:
             pass
         else:
-            yield "python_requirements", _parse_pyproject_toml(pyproject_toml)
+            try:
+                requirements = _parse_pyproject_toml(pyproject_toml)
+            except tomllib.TOMLDecodeError as error:
+                logger.error(f"Could not parse pyproject.toml in '{path}': {error}")
+                requirements = []
+            yield "python_requirements", requirements
             return
 
     @classmethod

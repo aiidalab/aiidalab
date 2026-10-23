@@ -140,6 +140,20 @@ class TestPackageNameFromPyprojectToml:
         pyproject_toml = '[project]\nname = ""\n'
         assert package_name_from_pyproject_toml(pyproject_toml) == ""
 
+    @pytest.mark.parametrize(
+        "pyproject_toml,error",
+        [
+            ("[project]\nname = 42\n", "Could not parse project.name"),
+            ('project = "my-package"\n', "Could not parse project"),
+        ],
+    )
+    def test_returns_empty_string_for_invalid_types(
+        self, caplog, pyproject_toml, error
+    ):
+        assert package_name_from_pyproject_toml(pyproject_toml) == ""
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith(error)
+
     def test_raises_on_malformed_toml_content(self):
         pyproject_toml = "this is not valid toml content ==="
         with pytest.raises(tomllib.TOMLDecodeError):
@@ -515,6 +529,117 @@ class TestMetadataFromPyprojectToml:
         assert caplog.messages[0].startswith("Could not parse invalid author")
         assert caplog.messages[0].endswith(f"ERROR: {error}")
 
+    @pytest.mark.parametrize(
+        "field,key,invalid_value",
+        [
+            ("title", "title", '["My", "App"]'),
+            ("version", "version", "1.0"),
+            ("description", "description", "42"),
+            ("authors", "authors", '["Jane", "Bob"]'),
+            ("external_url", "external_url", "{url = 'https://example.com'}"),
+            ("documentation_url", "documentation_url", "true"),
+            ("logo", "logo", "42"),
+            ("state", "state", '["stable"]'),
+        ],
+    )
+    def test_invalid_aiidalab_string_falls_back(
+        self, caplog, field, key, invalid_value
+    ):
+        pyproject_toml = dedent(
+            """
+            [project]
+            name = "my-app"
+            version = "1.2.3"
+            description = "PEP 621 description"
+            authors = [{name = "PEP 621 author"}]
+            classifiers = ["Development Status :: 5 - Production/Stable"]
+
+            [project.urls]
+            Homepage = "https://example.com"
+            Documentation = "https://docs.example.com"
+            Logo = "https://example.com/logo.png"
+            """
+        )
+        expected = Metadata.from_pyproject_toml(pyproject_toml)
+        meta = Metadata.from_pyproject_toml(
+            pyproject_toml + f"\n[tool.aiidalab]\n{key} = {invalid_value}\n"
+        )
+        assert getattr(meta, field) == getattr(expected, field)
+        assert getattr(meta, field) != ""
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith(f"Could not parse tool.aiidalab.{key}")
+        assert caplog.messages[0].endswith("ERROR: Expected a string")
+
+    @pytest.mark.parametrize(
+        "field,key,invalid_value",
+        [
+            ("title", "name", "42"),
+            ("version", "version", "1.0"),
+            ("description", "description", '["A", "description"]'),
+        ],
+    )
+    def test_invalid_project_string_is_ignored(self, caplog, field, key, invalid_value):
+        pyproject_toml = f"[project]\n{key} = {invalid_value}\n"
+        assert getattr(Metadata.from_pyproject_toml(pyproject_toml), field) == ""
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith(f"Could not parse project.{key}")
+        assert caplog.messages[0].endswith("ERROR: Expected a string")
+
+    @pytest.mark.parametrize(
+        "pyproject_toml,error",
+        [
+            ('project = "my-app"\n', "Could not parse project:\n"),
+            ('tool = "my-tool"\n', "Could not parse tool:\n"),
+            ('[tool]\naiidalab = "my-app"\n', "Could not parse tool.aiidalab:\n"),
+            (
+                '[project]\nurls = "https://example.com"\n',
+                "Could not parse project.urls:\n",
+            ),
+        ],
+    )
+    def test_invalid_tables_are_ignored(self, caplog, pyproject_toml, error):
+        meta = Metadata.from_pyproject_toml(pyproject_toml)
+        assert meta == Metadata.from_pyproject_toml("")
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith(error)
+        assert caplog.messages[0].endswith("ERROR: Expected a table")
+
+    def test_invalid_project_url_is_skipped(self, caplog):
+        pyproject_toml = dedent(
+            """
+            [project.urls]
+            Homepage = 42
+            Documentation = "https://docs.example.com"
+            """
+        )
+        meta = Metadata.from_pyproject_toml(pyproject_toml)
+        assert meta.external_url == ""
+        assert meta.documentation_url == "https://docs.example.com"
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith("Could not parse project.urls.Homepage")
+
+    @pytest.mark.parametrize(
+        "classifiers,state,error",
+        [
+            (
+                '"Development Status :: 5 - Production/Stable"',
+                "registered",
+                "Expected a list",
+            ),
+            (
+                '[42, "Development Status :: 5 - Production/Stable"]',
+                "stable",
+                "Expected a string",
+            ),
+        ],
+    )
+    def test_invalid_classifiers(self, caplog, classifiers, state, error):
+        pyproject_toml = f"[project]\nclassifiers = {classifiers}\n"
+        assert Metadata.from_pyproject_toml(pyproject_toml).state == state
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith("Could not parse")
+        assert caplog.messages[0].endswith(f"ERROR: {error}")
+
     def test_project_url_labels_normalization(self):
         pyproject_toml = dedent(
             """
@@ -616,6 +741,25 @@ class TestMetadataFromPyprojectToml:
     def test_categories(self, categories, expected):
         pyproject_toml = f"[tool.aiidalab]\ncategories = {categories}\n"
         assert Metadata.from_pyproject_toml(pyproject_toml).categories == expected
+
+    @pytest.mark.parametrize(
+        "categories,expected,error",
+        [
+            ("42", [], "Expected a list"),
+            ("{name = 'quantum'}", [], "Expected a list"),
+            (
+                '["quantum", 42, "utilities"]',
+                ["quantum", "utilities"],
+                "Expected a string",
+            ),
+        ],
+    )
+    def test_invalid_categories(self, caplog, categories, expected, error):
+        pyproject_toml = f"[tool.aiidalab]\ncategories = {categories}\n"
+        assert Metadata.from_pyproject_toml(pyproject_toml).categories == expected
+        assert len(caplog.messages) == 1
+        assert caplog.messages[0].startswith("Could not parse")
+        assert caplog.messages[0].endswith(f"ERROR: {error}")
 
     def test_citations(self):
         pyproject_toml = dedent(
