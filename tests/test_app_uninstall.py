@@ -131,3 +131,32 @@ class TestUninstallPythonPackage:
 
         assert "Running 'pip uninstall my-app'" in caplog.text
         assert "pip failed to uninstall python package my-app" in caplog.text
+
+    def test_pyproject_toml_name(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "Totally_Different.Package"\n'
+        )
+        app = make_app(tmp_path, name="my-app")
+        assert app._get_python_pkg_name() == "totally-different-package"
+
+    def test_setup_cfg_takes_precedence_over_pyproject_toml(self, tmp_path):
+        (tmp_path / "setup.cfg").write_text("[metadata]\nname = from-setup-cfg\n")
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "from-pyproject"\n')
+        app = make_app(tmp_path, name="my-app")
+        assert app._get_python_pkg_name() == "from-setup-cfg"
+
+    @pytest.mark.parametrize(
+        "filename,content",
+        [
+            ("pyproject.toml", "[project\nname = 'unterminated'"),
+            ("setup.cfg", "name = no section header"),
+        ],
+    )
+    def test_falls_back_to_app_name_on_malformed_file(
+        self, tmp_path, caplog, filename, content
+    ):
+        (tmp_path / "setup.py").write_text("")
+        (tmp_path / filename).write_text(content)
+        app = make_app(tmp_path, name="My_App")
+        assert app._get_python_pkg_name() == "my-app"
+        assert "Unable to determine package name" in caplog.text
