@@ -351,6 +351,15 @@ class TestRegistryParseAppRepo:
         assert result.exit_code == 0, result.output
         assert json.loads(result.stdout)["metadata"]["title"] == "Changed"
 
+    def test_empty_directory(self, tmp_path):
+        result = self.invoke(tmp_path)
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(result.stdout) == {
+            "metadata": None,
+            "environment": {"python_requirements": []},
+        }
+
     def assert_failed(self, result, url, message):
         assert result.exit_code == 1, result.output
         assert result.stdout == ""
