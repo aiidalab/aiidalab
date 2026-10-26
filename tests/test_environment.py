@@ -61,8 +61,6 @@ class TestSetupCfg:
         "setup_cfg",
         [
             "",
-            "[metadata]\nname = my-app\n",
-            "[options]\npackages = find:\n",
             "[options]\ninstall_requires =\n",
         ],
     )
@@ -99,8 +97,6 @@ class TestPyprojectToml:
         "pyproject_toml",
         [
             "",
-            "[tool.ruff]\nline-length = 88\n",
-            '[project]\nname = "my-app"\n',
             "[project]\ndependencies = []\n",
         ],
     )
