@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import configparser
 import errno
 import io
 import logging
@@ -25,6 +26,7 @@ from urllib.parse import urldefrag, urlsplit, urlunsplit
 from uuid import uuid4
 
 import requests
+import tomllib
 import traitlets
 from dulwich.errors import NotGitRepository
 from packaging.version import InvalidVersion, Version
@@ -39,7 +41,13 @@ from watchdog.observers.polling import PollingObserver
 from .environment import Environment
 from .git_util import GitManagedAppRepo as Repo
 from .git_util import git_clone
-from .metadata import Metadata, MetadataDict, _CitationType, package_name_from_setup_cfg
+from .metadata import (
+    Metadata,
+    MetadataDict,
+    _CitationType,
+    package_name_from_pyproject_toml,
+    package_name_from_setup_cfg,
+)
 from .utils import (
     FIND_INSTALLED_PACKAGES_CACHE,
     Package,
@@ -330,10 +338,18 @@ class _AiidaLabApp:
 
         pkg_name = ""
 
-        # TODO: Once we support pyproject.toml, we should try reading package name from it first!
         setup_cfg = self.path.joinpath("setup.cfg")
-        if setup_cfg.is_file():
-            pkg_name = package_name_from_setup_cfg(setup_cfg.read_text())
+        pyproject_toml = self.path.joinpath("pyproject.toml")
+        try:
+            if setup_cfg.is_file():
+                pkg_name = package_name_from_setup_cfg(setup_cfg.read_text())
+            elif pyproject_toml.is_file():
+                pkg_name = package_name_from_pyproject_toml(pyproject_toml.read_text())
+        except (configparser.Error, tomllib.TOMLDecodeError) as error:
+            logger.warning(
+                f"{self.name} app: Unable to determine package name, "
+                f"falling back to '{self.name}': {error}"
+            )
 
         if not pkg_name:
             pkg_name = str(self.name)
@@ -538,11 +554,6 @@ class _AiidaLabApp:
             try:
                 if self._has_python_package():
                     _pip_install(str(self.path), stdout=stdout)
-                elif self.path.joinpath("requirements.txt").is_file():
-                    _pip_install(
-                        f"--requirement={self.path.joinpath('requirements.txt')}",
-                        stdout=stdout,
-                    )
                 else:
                     logger.warning(
                         f"Warning: App '{self.name}' does not declare any dependencies."

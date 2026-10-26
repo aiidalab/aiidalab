@@ -6,7 +6,9 @@ specific app, similar to the Reproducible Environment Specification (REES) [1]
 [1] https://repo2docker.readthedocs.io/en/latest/specification.html
 
 The following configuration files are recognized with the order of precedence
-matching the order shown here:
+matching the order shown here. Only the first file found is parsed, i.e. if a
+file exists, the files listed after it are ignored, even if it declares no
+requirements.
 
 .. glossary::
 
@@ -14,26 +16,29 @@ matching the order shown here:
         Requirements listed as part of the [options]/install_requires field are
         parsed as pip-installable Python requirements for this app.
 
-    requirements.txt
-        Requirements listed within this file are parsed as pip-installable
-        Python requirements for this app unless already parsed from the
-        setup.cfg file.
-
+    pyproject.toml
+        Requirements listed as part of the [project]/dependencies field are
+        parsed as pip-installable Python requirements for this app.
 """
 
 from __future__ import annotations
 
+import configparser
+import logging
 from collections.abc import Generator
 from configparser import ConfigParser
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+
+import tomllib
 
 from .git_util import GitPath
 
 __all__ = [
     "Environment",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -48,36 +53,78 @@ class Environment:
     python_requirements: list[str] = field(default_factory=list)
 
     @staticmethod
-    def _scan(path: Path | GitPath) -> Generator[Any, None, None]:
+    def _scan(path: Path | GitPath) -> Generator[tuple[str, list[str]], None, None]:
         def _parse_reqs(requirements: str) -> Generator[str, None, None]:
             for line in (line.strip() for line in requirements.splitlines()):
                 if line and not line.startswith("#"):
                     yield line
 
-        def _parse_setup_cfg(setup_cfg: str) -> Any:
+        def _parse_setup_cfg(setup_cfg: str) -> list[str]:
             cfg = ConfigParser()
             cfg.read_string(setup_cfg)
-            return cfg["options"].get("install_requires", None)
+            if "options" not in cfg:
+                return []
+            return list(_parse_reqs(cfg["options"].get("install_requires", "")))
 
-        # Parse the setup.cfg file (if present).
-        try:
-            yield (
-                "python_requirements",
-                list(
-                    _parse_reqs(
-                        _parse_setup_cfg(path.joinpath("setup.cfg").read_text())
-                    )
-                ),
-            )
-        except (FileNotFoundError, KeyError):
-            # Parse the requirements.txt file (if present).
-            try:
-                yield (
-                    "python_requirements",
-                    list(_parse_reqs(path.joinpath("requirements.txt").read_text())),
+        def _parse_pyproject_toml(pyproject_toml: str) -> list[str]:
+            project = tomllib.loads(pyproject_toml).get("project", {})
+            if not isinstance(project, dict):
+                logger.error(
+                    f"Could not parse project:\n{project}\nERROR: Expected a table"
                 )
-            except FileNotFoundError:
-                pass
+                return []
+            if "dependencies" in project.get("dynamic", []):
+                logger.warning(
+                    "Dynamic dependencies in pyproject.toml are not supported, "
+                    "declare them in the [project].dependencies field instead"
+                )
+            dependencies = project.get("dependencies", [])
+            if not isinstance(dependencies, list):
+                logger.error(
+                    f"Could not parse dependencies:\n{dependencies}\n"
+                    "ERROR: Expected a list"
+                )
+                return []
+
+            requirements = []
+            for dependency in dependencies:
+                if not isinstance(dependency, str):
+                    logger.error(
+                        f"Could not parse invalid dependency\n{dependency}\n"
+                        "ERROR: Expected a string"
+                    )
+                    continue
+                requirements.append(dependency)
+            return requirements
+
+        # Only the first existing file is parsed, in order of precedence.
+        # A malformed file is reported, but treated as declaring no requirements,
+        # so that it does not break callers scanning many apps (e.g. the registry).
+        try:
+            setup_cfg = path.joinpath("setup.cfg").read_text()
+        except FileNotFoundError:
+            pass
+        else:
+            try:
+                requirements = _parse_setup_cfg(setup_cfg)
+            except configparser.Error as error:
+                logger.error(f"Could not parse setup.cfg in '{path}': {error}")
+                requirements = []
+            yield "python_requirements", requirements
+            return
+
+        try:
+            pyproject_toml = path.joinpath("pyproject.toml").read_text()
+        except FileNotFoundError:
+            pass
+        else:
+            try:
+                requirements = _parse_pyproject_toml(pyproject_toml)
+            except tomllib.TOMLDecodeError as error:
+                logger.error(f"Could not parse pyproject.toml in '{path}': {error}")
+                requirements = []
+            yield "python_requirements", requirements
+            return
 
     @classmethod
     def scan(cls, root: Path | GitPath) -> Environment:

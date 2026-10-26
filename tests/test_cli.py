@@ -351,22 +351,6 @@ class TestRegistryParseAppRepo:
         assert result.exit_code == 0, result.output
         assert json.loads(result.stdout)["metadata"]["title"] == "Changed"
 
-    def test_requirements_txt(self, tmp_path):
-        tmp_path.joinpath("requirements.txt").write_text(
-            "numpy\n\n# comment\naiida-core>=2.0\n"
-        )
-        result = self.invoke(tmp_path)
-
-        assert result.exit_code == 0, result.output
-        parsed = json.loads(result.stdout)
-        # No setup.cfg means no metadata, but environment is still parsed
-        assert parsed["metadata"] is None
-        assert parsed["environment"] == self.EXPECTED_ENVIRONMENT
-
-    def test_setup_cfg_takes_precedence_over_requirements_txt(self, app_dir):
-        app_dir.joinpath("requirements.txt").write_text("scipy\n")
-        self.assert_parsed(self.invoke(app_dir))
-
     def test_empty_directory(self, tmp_path):
         result = self.invoke(tmp_path)
 
