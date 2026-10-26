@@ -1028,8 +1028,10 @@ class AiidaLabApp(traitlets.HasTraits):
     def _default_compatible(self) -> None:
         return None
 
-    def _is_compatible(self, app_version: str) -> bool:
-        """Determine whether the specified version is compatible."""
+    def _is_compatible(self, app_version: str) -> bool | None:
+        """Determine whether the specified version is compatible.
+
+        Returns None if compatibility cannot be determined."""
         try:
             incompatibilities = list(
                 self._app.find_incompatibilities(version=app_version)
@@ -1043,7 +1045,8 @@ class AiidaLabApp(traitlets.HasTraits):
             return not any(incompatibilities)
         except KeyError:
             logger.warning(f"{self.name} compatibility could not be determined")
-            return False  # compatibility indetermined for given version
+            self.compatibility_info = {}
+            return None
 
     def _refresh_versions(self) -> None:
         from packaging.version import parse
@@ -1081,7 +1084,13 @@ class AiidaLabApp(traitlets.HasTraits):
         with self._show_busy(), self.hold_trait_notifications():
             self._refresh_versions()
             self._refresh_dependencies_to_install()
-            self.set_trait("compatible", self._is_compatible(self.installed_version))
+            if self.installed_version is AppVersion.NOT_INSTALLED:
+                self.compatibility_info = {}
+                self.set_trait("compatible", None)
+            else:
+                self.set_trait(
+                    "compatible", self._is_compatible(self.installed_version)
+                )
             self.set_trait(
                 "core_compatible",
                 self._app.core_dependencies_met() if self.is_installed() else None,
