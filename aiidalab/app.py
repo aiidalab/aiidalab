@@ -295,7 +295,7 @@ class _AiidaLabApp:
             if (
                 available_versions
                 and isinstance(installed_version, str)
-                and not self._versions_equal(installed_version, available_versions[0])
+                and self._version_older(installed_version, available_versions[0])
             ):
                 return AppRemoteUpdateStatus.UPDATE_AVAILABLE
 
@@ -516,6 +516,16 @@ class _AiidaLabApp:
             return Version(left) == Version(right)
         except InvalidVersion:
             return left == right
+
+    def _version_older(self, left: str, right: str) -> bool:
+        """Check if left version is older than right, considering PEP 440.
+
+        Versions that are not PEP 440 compliant cannot be ordered,
+        so they are only checked for equality."""
+        try:
+            return Version(left) < Version(right)
+        except InvalidVersion:
+            return left != right
 
     def _get_release(self, version: str) -> dict[str, Any]:
         """Return the registry release matching the given PEP 440 version."""
