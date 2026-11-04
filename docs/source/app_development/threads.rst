@@ -1,5 +1,5 @@
-Background work and kernel lifecycle in AiiDAlab apps
-=======================================================
+Kernel lifecycle in AiiDAlab apps
+=================================
 
 A Jupyter app has two distinct lifecycles: the browser page and its Python kernel.
 An AiiDA workchain submitted with ``aiida.engine.submit()`` has a third: it runs through the AiiDA daemon and does not need the notebook kernel to remain open.
