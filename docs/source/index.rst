@@ -22,44 +22,56 @@ AiiDAlab is open-source, released under the MIT license, and available on `GitHu
 
    .. grid-item-card:: Usage
       :class-card: sd-shadow-sm
+      :class-title: sd-text-center
 
       Learn how to install, launch, and use AiiDAlab apps in practice.
 
-      .. button-link:: usage/index
+      .. button-ref:: usage/index
+         :ref-type: doc
          :color: primary
+         :outline:
          :expand:
 
          Go to Usage
 
    .. grid-item-card:: App development
       :class-card: sd-shadow-sm
+      :class-title: sd-text-center
 
       Build and package your own AiiDAlab apps, widgets, and workflows.
 
-      .. button-link:: app_development/index
+      .. button-ref:: app_development/index
+         :ref-type: doc
          :color: primary
+         :outline:
          :expand:
 
          Go to App development
 
    .. grid-item-card:: Administration
       :class-card: sd-shadow-sm
+      :class-title: sd-text-center
 
       Deploy, configure, and maintain AiiDAlab installations and services.
 
-      .. button-link:: admin/index
+      .. button-ref:: admin/index
+         :ref-type: doc
          :color: primary
+         :outline:
          :expand:
 
          Go to Administration
 
    .. grid-item-card:: Reference
       :class-card: sd-shadow-sm
+      :class-title: sd-text-center
 
       Browse the API documentation and technical reference material.
 
-      .. button-link:: reference/index
+      .. button-ref:: reference/index
+         :ref-type: doc
          :color: primary
+         :outline:
          :expand:
 
          Go to Reference
